@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "JoyReactor.Accordion.Workers": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}
