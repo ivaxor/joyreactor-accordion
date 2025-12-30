@@ -1,8 +1,7 @@
-﻿
-using SixLabors.ImageSharp;
+﻿using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace JoyReactor.Accordion.Logic.Image.Downloader;
+namespace JoyReactor.Accordion.Logic.Media.Images;
 
 public record ImageDownloaderResult : IDisposable
 {

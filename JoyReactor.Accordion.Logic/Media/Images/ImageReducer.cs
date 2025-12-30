@@ -3,7 +3,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
-namespace JoyReactor.Accordion.Logic.Image.Reducer;
+namespace JoyReactor.Accordion.Logic.Media.Images;
 
 public class ImageReducer(IOptions<ImageSettings> settings)
     : IImageReducer
@@ -17,7 +17,7 @@ public class ImageReducer(IOptions<ImageSettings> settings)
 
     public async Task<Image<Rgb24>> ReduceAsync(Stream stream, CancellationToken cancellationToken = default)
     {
-        var image = await SixLabors.ImageSharp.Image.LoadAsync<Rgb24>(stream, cancellationToken);
+        var image = await Image.LoadAsync<Rgb24>(stream, cancellationToken);
         image.Mutate(x => x.Resize(ResizeOptions));
 
         return image;

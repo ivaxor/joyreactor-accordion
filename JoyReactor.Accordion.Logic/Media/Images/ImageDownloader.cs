@@ -1,8 +1,7 @@
 ﻿using JoyReactor.Accordion.Logic.ApiClient.Models;
-using JoyReactor.Accordion.Logic.Image.Reducer;
 using Microsoft.Extensions.Options;
 
-namespace JoyReactor.Accordion.Logic.Image.Downloader;
+namespace JoyReactor.Accordion.Logic.Media.Images;
 
 public class ImageDownloader(
     HttpClient httpClient,
@@ -10,10 +9,13 @@ public class ImageDownloader(
     IOptions<ImageSettings> settings)
     : IImageDownloader
 {
-    public Task<ImageDownloaderResult> DownloadAsync(PostAttributePicture postAttributePicture, CancellationToken cancellationToken = default)
+    public Task<ImageDownloaderResult> DownloadAsync(PostAttribute postAttribute, CancellationToken cancellationToken = default)
     {
-        var path = $"pics/post/picture-{postAttributePicture.NumberId}.{postAttributePicture.Image!.Type}";
-        return DownloadAsync(path, cancellationToken);
+        return postAttribute.Type switch
+        {
+            "PICTURE" => DownloadAsync($"pics/post/picture-{postAttribute.NumberId}.{postAttribute.Image!.Type}", cancellationToken),
+            _ => Task.FromResult(ImageDownloaderResult.Fail("Invalid type"))
+        };
     }
 
     internal async Task<ImageDownloaderResult> DownloadAsync(string path, CancellationToken cancellationToken = default)
@@ -39,5 +41,5 @@ public class ImageDownloader(
 
 public interface IImageDownloader
 {
-    Task<ImageDownloaderResult> DownloadAsync(PostAttributePicture postAttributePicture, CancellationToken cancellationToken = default);
+    Task<ImageDownloaderResult> DownloadAsync(PostAttribute postAttribute, CancellationToken cancellationToken = default);
 }

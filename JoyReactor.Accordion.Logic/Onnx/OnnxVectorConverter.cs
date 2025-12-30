@@ -4,36 +4,39 @@ using Microsoft.ML.OnnxRuntime.Tensors;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace JoyReactor.Accordion.Logic.Image.Vector;
+namespace JoyReactor.Accordion.Logic.Onnx;
 
-public class ImageOnnxVectorConverter(
+public class OnnxVectorConverter(
     InferenceSession inferenceSession,
-    IOptions<ImageSettings> settings)
-    : IImageOnnxVectorConverter
+    IOptions<OnnxSettings> settings)
+    : IOnnxVectorConverter
 {
     internal static readonly float[] Mean = [0.48145466f, 0.4578275f, 0.40821073f];
     internal static readonly float[] Std = [0.26862954f, 0.26130258f, 0.27577711f];
 
-    public async Task<float[]> Convert(Image<Rgb24> image, CancellationToken cancellationToken = default)
+    public async Task<float[]> Convert(Image<Rgb24> image)
     {
-        var input = ConvertToTensor(image, settings.Value.ResizedSize);
-        var output = new float[settings.Value.OnnxModelOutputVectorSize];
+        var inputSize = settings.Value.InputSize;
+        var outputSize = settings.Value.OutputSize;
+
+        var input = ConvertToTensor(image, inputSize);
+        var output = new float[outputSize];
 
         using var inputValue = OrtValue.CreateTensorValueFromMemory(
             OrtMemoryInfo.DefaultInstance,
             input.Buffer,
-            [1, 3, settings.Value.ResizedSize, settings.Value.ResizedSize]);
+            [1, 3, inputSize, inputSize]);
 
         using var outputValue = OrtValue.CreateTensorValueFromMemory(
             OrtMemoryInfo.DefaultInstance,
             output.AsMemory(),
-            [1, settings.Value.OnnxModelOutputVectorSize]);
+            [1, outputSize]);
 
         await inferenceSession.RunAsync(
             new RunOptions(),
-            [settings.Value.OnnxModelInputName],
+            [settings.Value.InputName],
             [inputValue],
-            [settings.Value.OnnxModelOutputName],
+            [settings.Value.OutputName],
             [outputValue]);
 
         L2Normalize(output);
@@ -77,7 +80,7 @@ public class ImageOnnxVectorConverter(
     }
 }
 
-public interface IImageOnnxVectorConverter
+public interface IOnnxVectorConverter
 {
-    Task<float[]> Convert(Image<Rgb24> image, CancellationToken cancellationToken = default);
+    Task<float[]> Convert(Image<Rgb24> image);
 }

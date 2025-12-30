@@ -17,19 +17,26 @@ public class ApiClient(IGraphQLClient graphQlClient)
     {
         const string query = @"
             query($nodeId: ID!) {
-              node(id: $nodeId) {
-                id
-                ... on Post {
-                  id,
-                  attributes {
-                    id,
-                    type,
-                    image {
-                      id
+                node(id: $nodeId) {
+                    id
+                    ... on Post {
+                        id,
+                        attributes {
+                            id,
+                            type,
+                            ... on PostAttributePicture {
+                                image {
+                                    id,
+                                    type,
+                                    hasVideo
+                                }
+                            },
+                            ... on PostAttributeEmbed {
+                                value
+                            }
+                        }
                     }
-                  }
                 }
-              }
             }
         ";
         var request = new GraphQLRequest(query, new { nodeId });

@@ -10,14 +10,10 @@
 
   <ItemGroup>
     <None Remove="appsettings.json" />
-    <None Remove="Onnx\clip-ViT-B-32-vision.onnx" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="appsettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Onnx\clip-ViT-B-32-vision.onnx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

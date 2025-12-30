@@ -35,7 +35,7 @@ public class DatabaseWrapper(
             settings.Value.CollectionName,
             vector,
             limit: settings.Value.SearchLimit,
-            scoreThreshold: settings.Value.ScoreThreshold,
+            scoreThreshold: settings.Value.SearchScoreThreshold,
             cancellationToken: cancellationToken);
 
         return results

@@ -1,0 +1,7 @@
+﻿namespace JoyReactor.Accordion.Logic.Media.Images;
+
+public record ImageSettings
+{
+    public string[] CdnDomainNames { get; set; }
+    public int ResizedSize { get; set; }
+}
