@@ -1,14 +1,14 @@
-﻿using JoyReactor.Accordion.Database.Models;
+﻿using JoyReactor.Accordion.Logic.Database.Vector.Entities;
 using Microsoft.Extensions.Options;
 using Qdrant.Client;
 using Qdrant.Client.Grpc;
 
-namespace JoyReactor.Accordion.Database;
+namespace JoyReactor.Accordion.Logic.Database.Vector;
 
-public class DatabaseWrapper(
+public class VectorDatabaseContext(
     IQdrantClient qdrantClient,
     IOptions<QdrantSettings> settings)
-    : IDatabaseWrapper
+    : IVectorDatabaseContext
 {
     public async Task InsertAsync(float[] vector, CancellationToken cancellationToken = default)
     {
@@ -39,30 +39,12 @@ public class DatabaseWrapper(
             cancellationToken: cancellationToken);
 
         return results
-            .Select(result => DeserializePayload(result))
+            .Select(result => new ImagePayload(result))
             .ToArray();
-    }
-
-    internal static ImagePayload DeserializePayload(ScoredPoint result)
-    {
-        var payload = new ImagePayload
-        {
-            PostIds = result.Payload.TryGetValue("postIds", out var postIdsValue) && postIdsValue.KindCase == Value.KindOneofCase.ListValue
-                ? postIdsValue.ListValue.Values.Select(v => v.StringValue).ToHashSet(StringComparer.Ordinal)
-                : [],
-            CommentIds = result.Payload.TryGetValue("commentIds", out var commentIdsValue) && commentIdsValue.KindCase == Value.KindOneofCase.ListValue
-                ? commentIdsValue.ListValue.Values.Select(v => v.StringValue).ToHashSet(StringComparer.Ordinal)
-                : [],
-            ImageIds = result.Payload.TryGetValue("imageIds", out var imageIdsValue) && imageIdsValue.KindCase == Value.KindOneofCase.ListValue
-                ? imageIdsValue.ListValue.Values.Select(v => v.StringValue).ToHashSet(StringComparer.Ordinal)
-                : [],
-        };
-
-        return payload;
     }
 }
 
-public interface IDatabaseWrapper
+public interface IVectorDatabaseContext
 {
     Task InsertAsync(float[] vector, CancellationToken cancellationToken = default);
     Task<ImagePayload[]> SearchAsync(float[] vector, CancellationToken cancellationToken = default);

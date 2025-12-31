@@ -5,18 +5,18 @@ using System.Text;
 
 namespace JoyReactor.Accordion.Logic.ApiClient;
 
-public class ApiClient(IGraphQLClient graphQlClient)
-    : IApiClient
+public class PostClient(IGraphQLClient graphQlClient)
+    : IPostClient
 {
-    public Task<ApiClientResult<Post>> GetPostInformationAsync(int numberId, CancellationToken cancellationToken = default)
+    public Task<ApiClientResult<Post>> GetAsync(int numberId, CancellationToken cancellationToken = default)
     {
-        return GetPostInformationAsync(Convert.ToBase64String(Encoding.UTF8.GetBytes($"Post:{numberId}")), cancellationToken);
+        return GetAsync(Convert.ToBase64String(Encoding.UTF8.GetBytes($"Post:{numberId}")), cancellationToken);
     }
 
-    public async Task<ApiClientResult<Post>> GetPostInformationAsync(string nodeId, CancellationToken cancellationToken = default)
+    public async Task<ApiClientResult<Post>> GetAsync(string nodeId, CancellationToken cancellationToken = default)
     {
         const string query = @"
-            query($nodeId: ID!) {
+            query PostClient_GetAsync($nodeId: ID!) {
                 node(id: $nodeId) {
                     id
                     ... on Post {
@@ -53,8 +53,8 @@ public class ApiClient(IGraphQLClient graphQlClient)
     }
 }
 
-public interface IApiClient
+public interface IPostClient
 {
-    Task<ApiClientResult<Post>> GetPostInformationAsync(int numberId, CancellationToken cancellationToken = default);
-    Task<ApiClientResult<Post>> GetPostInformationAsync(string nodeId, CancellationToken cancellationToken = default);
+    Task<ApiClientResult<Post>> GetAsync(int numberId, CancellationToken cancellationToken = default);
+    Task<ApiClientResult<Post>> GetAsync(string nodeId, CancellationToken cancellationToken = default);
 }

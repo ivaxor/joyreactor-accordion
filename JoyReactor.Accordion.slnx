@@ -1,5 +1,4 @@
 <Solution>
-  <Project Path="JoyReactor.Accordion.Database/JoyReactor.Accordion.Database.csproj" />
   <Project Path="JoyReactor.Accordion.Logic/JoyReactor.Accordion.Logic.csproj" />
   <Project Path="JoyReactor.Accordion.Workers/JoyReactor.Accordion.Workers.csproj" />
 </Solution>

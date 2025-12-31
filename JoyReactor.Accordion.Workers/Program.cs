@@ -3,41 +3,45 @@ using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.SystemTextJson;
 using JoyReactor.Accordion.Database;
 using JoyReactor.Accordion.Logic.ApiClient;
+using JoyReactor.Accordion.Logic.Database.Sql;
+using JoyReactor.Accordion.Logic.Database.Vector;
 using JoyReactor.Accordion.Logic.Media.Images;
 using JoyReactor.Accordion.Logic.Onnx;
-using Microsoft.Extensions.Configuration;
+using JoyReactor.Accordion.Workers.HostedServices;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.ML.OnnxRuntime;
 using Qdrant.Client;
 using Qdrant.Client.Grpc;
 using System.Text.Json;
 
-var configuration = new ConfigurationBuilder()
-    .SetBasePath(AppContext.BaseDirectory)
-    .AddEnvironmentVariables()
-    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-    .Build();
+var builder = Host.CreateApplicationBuilder(args);
 
-var services = new ServiceCollection();
-services.AddSingleton<IConfiguration>(configuration);
-services.Configure<ApiClientSettings>(configuration.GetSection(nameof(ApiClientSettings)));
-services.Configure<ImageSettings>(configuration.GetSection(nameof(ImageSettings)));
-services.Configure<OnnxSettings>(configuration.GetSection(nameof(OnnxSettings)));
-services.Configure<QdrantSettings>(configuration.GetSection(nameof(QdrantSettings)));
+builder.Services.Configure<ApiClientSettings>(builder.Configuration.GetSection(nameof(ApiClientSettings)));
+builder.Services.Configure<ImageSettings>(builder.Configuration.GetSection(nameof(ImageSettings)));
+builder.Services.Configure<OnnxSettings>(builder.Configuration.GetSection(nameof(OnnxSettings)));
+builder.Services.Configure<SqliteSettings>(builder.Configuration.GetSection(nameof(SqliteSettings)));
+builder.Services.Configure<QdrantSettings>(builder.Configuration.GetSection(nameof(QdrantSettings)));
 
-services.AddLogging();
-services.AddHttpClient();
+builder.Services.AddHttpClient();
 
-services.AddSingleton(serviceProvider => new JsonSerializerOptions() { });
+builder.Services.AddSingleton(serviceProvider => new JsonSerializerOptions() { });
 
-services.AddSingleton<IGraphQLClient, GraphQLHttpClient>(serviceProvider =>
+builder.Services.AddSingleton<IGraphQLClient, GraphQLHttpClient>(serviceProvider =>
 {
     var settings = serviceProvider.GetRequiredService<IOptions<ApiClientSettings>>();
     return new GraphQLHttpClient(settings.Value.GraphQlEndpointUrl, new SystemTextJsonSerializer());
 });
 
-services.AddSingleton<IQdrantClient, QdrantClient>(serviceProvider =>
+builder.Services.AddDbContext<SqlDatabaseContext>((serviceProvider, options) =>
+{
+    var settings = serviceProvider.GetRequiredService<IOptions<SqliteSettings>>();
+    options.UseSqlite(settings.Value.ConnectionString);
+});
+
+builder.Services.AddSingleton<IQdrantClient, QdrantClient>(serviceProvider =>
 {
     var settings = serviceProvider.GetRequiredService<IOptions<QdrantSettings>>();
     var client = new QdrantClient(settings.Value.Host);
@@ -61,14 +65,12 @@ services.AddSingleton<IQdrantClient, QdrantClient>(serviceProvider =>
                     AlwaysRam = true,
                 }
             }).GetAwaiter().GetResult();
-
-        //client.CreatePayloadIndexAsync("joy_reactor_assets", "post_id", PayloadSchemaType.Integer);
     }
 
     return client;
 });
 
-services.AddSingleton(serviceProvider =>
+builder.Services.AddSingleton(serviceProvider =>
 {
     var settings = serviceProvider.GetRequiredService<IOptions<OnnxSettings>>();
 
@@ -85,24 +87,20 @@ services.AddSingleton(serviceProvider =>
     return new InferenceSession(settings.Value.ModelPath, options);
 });
 
-services.AddSingleton<IApiClient, ApiClient>();
-services.AddSingleton<IImageDownloader, ImageDownloader>();
-services.AddSingleton<IImageReducer, ImageReducer>();
-services.AddSingleton<IOnnxVectorConverter, OnnxVectorConverter>();
-services.AddSingleton<IDatabaseWrapper, DatabaseWrapper>();
+builder.Services.AddSingleton<ITagClient, TagClient>();
+builder.Services.AddSingleton<IPostClient, PostClient>();
 
-var serviceProvider = services.BuildServiceProvider();
+builder.Services.AddSingleton<IImageDownloader, ImageDownloader>();
+builder.Services.AddSingleton<IImageReducer, ImageReducer>();
+builder.Services.AddSingleton<IOnnxVectorConverter, OnnxVectorConverter>();
+builder.Services.AddSingleton<IVectorDatabaseContext, VectorDatabaseContext>();
 
-var apiClient = serviceProvider.GetRequiredService<IApiClient>();
-var post = await apiClient.GetPostInformationAsync(6234782);
+// builder.Services.AddHostedService<TestWorker>();
+builder.Services.AddHostedService<TagCrawlerWorker>();
 
-var imageDownloader = serviceProvider.GetRequiredService<IImageDownloader>();
-using var image = await imageDownloader.DownloadAsync(post.Value.Attributes.First());
+var host = builder.Build();
 
-var imageOnnxVectorConverter = serviceProvider.GetRequiredService<IOnnxVectorConverter>();
-var vector = await imageOnnxVectorConverter.Convert(image.Value);
+using var sqlDatabaseContext = host.Services.GetRequiredService<SqlDatabaseContext>();
+await sqlDatabaseContext.Database.EnsureCreatedAsync();
 
-var databaseWrapper = serviceProvider.GetRequiredService<IDatabaseWrapper>();
-await databaseWrapper.InsertAsync(vector);
-
-Console.WriteLine(vector.Length);
+host.Run();

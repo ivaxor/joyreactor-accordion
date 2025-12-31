@@ -34,7 +34,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\JoyReactor.Accordion.Database\JoyReactor.Accordion.Database.csproj" />
     <ProjectReference Include="..\JoyReactor.Accordion.Logic\JoyReactor.Accordion.Logic.csproj" />
   </ItemGroup>
 

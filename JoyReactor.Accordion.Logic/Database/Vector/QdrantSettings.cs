@@ -1,4 +1,4 @@
-﻿namespace JoyReactor.Accordion.Database;
+﻿namespace JoyReactor.Accordion.Logic.Database.Vector;
 
 public record QdrantSettings
 {
