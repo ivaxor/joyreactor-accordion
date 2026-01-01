@@ -20,7 +20,7 @@ public class ApiClient(
         {
             ShouldHandle = new PredicateBuilder()
                 .Handle<HttpRequestException>()
-                .Handle<TimeoutException>(),
+                .Handle<GraphQL.Client.Http.GraphQLHttpRequestException>(),
             MaxRetryAttempts = settings.Value.MaxRetryAttempts,
             Delay = settings.Value.SubsequentCallDelay,
             BackoffType = DelayBackoffType.Exponential,
