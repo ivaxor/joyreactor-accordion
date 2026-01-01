@@ -32,7 +32,8 @@ public class ParsedCoubEntityTypeConfiguration : IEntityTypeConfiguration<Parsed
             .WithOne(e => e.Coub)
             .HasPrincipalKey<ParsedCoub>(e => e.PostAttributeEmbededId)
             .HasForeignKey<ParsedPostAttributeEmbeded>(e => e.CoubId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired(false);
 
         builder
             .Property(e => e.CreatedAt)

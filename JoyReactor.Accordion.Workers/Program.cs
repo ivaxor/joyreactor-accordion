@@ -101,7 +101,8 @@ builder.Services.AddHostedService<TagCrawlerWorker>();
 
 var host = builder.Build();
 
-using var sqlDatabaseContext = host.Services.GetRequiredService<SqlDatabaseContext>();
+using var serviceScope = host.Services.CreateScope();
+using var sqlDatabaseContext = serviceScope.ServiceProvider.GetRequiredService<SqlDatabaseContext>();
 await sqlDatabaseContext.Database.EnsureCreatedAsync();
 
 host.Run();

@@ -29,10 +29,11 @@ public class ParsedYoutubeEntityTypeConfiguration : IEntityTypeConfiguration<Par
 
         builder
             .HasOne(e => e.PostAttributeEmbeded)
-            .WithOne(e => e.YoutTube)
+            .WithOne(e => e.YouTube)
             .HasPrincipalKey<ParsedYoutube>(e => e.PostAttributeEmbededId)
-            .HasForeignKey<ParsedPostAttributeEmbeded>(e => e.YoutTube)
-            .OnDelete(DeleteBehavior.Cascade);
+            .HasForeignKey<ParsedPostAttributeEmbeded>(e => e.YouTubeId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired(false);
 
         builder
             .Property(e => e.CreatedAt)

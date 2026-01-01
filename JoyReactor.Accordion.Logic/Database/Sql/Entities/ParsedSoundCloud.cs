@@ -32,7 +32,8 @@ public class ParsedSoundCloudEntityTypeConfiguration : IEntityTypeConfiguration<
             .WithOne(e => e.SoundCloud)
             .HasPrincipalKey<ParsedSoundCloud>(e => e.PostAttributeEmbededId)
             .HasForeignKey<ParsedPostAttributeEmbeded>(e => e.SoundCloudId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired(false);
 
         builder
             .Property(e => e.CreatedAt)

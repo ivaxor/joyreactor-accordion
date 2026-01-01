@@ -3,19 +3,34 @@ using JoyReactor.Accordion.Logic.ApiClient.Constants;
 using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace JoyReactor.Accordion.Workers.HostedServices;
 
-public class TagCrawlerWorker(
-    ITagClient tagClient,
-    SqlDatabaseContext sqlDatabaseContext,
-    IOptions<ApiClientSettings> settings,
-    ILogger<TagCrawlerWorker> logger)
-    : IHostedService
+public class TagCrawlerWorker : IHostedService
 {
+    internal readonly SqlDatabaseContext sqlDatabaseContext;
+    internal readonly ITagClient tagClient;
+    internal readonly IOptions<ApiClientSettings> settings;
+    internal readonly ILogger<TagCrawlerWorker> logger;
+
+    public TagCrawlerWorker(
+        IServiceScopeFactory serviceScopeFactory,
+        ITagClient tagClient,
+        IOptions<ApiClientSettings> settings,
+        ILogger<TagCrawlerWorker> logger)
+    {
+        var serviceScope = serviceScopeFactory.CreateScope();
+        sqlDatabaseContext = serviceScope.ServiceProvider.GetRequiredService<SqlDatabaseContext>();
+
+        this.tagClient = tagClient;
+        this.settings = settings;
+        this.logger = logger;
+    }
+
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         var existingMainTagNames = await sqlDatabaseContext.ParsedTags
