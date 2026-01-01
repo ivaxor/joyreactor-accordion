@@ -18,7 +18,6 @@ public class VectorDatabaseContext(
             Vectors = vector,
             Payload = {
                 ["postIds"] = new string [] { },
-                ["commentIds"] = new string [] { },
                 ["immageIds"] = new string [] { },
             },
         };

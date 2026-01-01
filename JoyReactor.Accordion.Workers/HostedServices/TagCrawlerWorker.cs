@@ -1,16 +1,19 @@
-﻿using JoyReactor.Accordion.Database;
-using JoyReactor.Accordion.Logic.ApiClient;
+﻿using JoyReactor.Accordion.Logic.ApiClient;
 using JoyReactor.Accordion.Logic.ApiClient.Constants;
-using JoyReactor.Accordion.Logic.ApiClient.Models;
+using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace JoyReactor.Accordion.Workers.HostedServices;
 
 public class TagCrawlerWorker(
     ITagClient tagClient,
-    SqlDatabaseContext sqlDatabaseContext)
+    SqlDatabaseContext sqlDatabaseContext,
+    IOptions<ApiClientSettings> settings,
+    ILogger<TagCrawlerWorker> logger)
     : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -23,7 +26,12 @@ public class TagCrawlerWorker(
             .Where(tagName => !existingMainTagNames.Contains(tagName))
             .ToArray();
         foreach (var tagName in nonExistingMainTagNames)
+        {
+            logger.LogInformation("Crawling {TagName} main category tag", tagName);
+
             await Crawl(tagName, cancellationToken);
+            await Task.Delay(settings.Value.SubsequentCallDelay);
+        }
 
         var tagsWithEmptySubTags = await sqlDatabaseContext.ParsedTags
                 .Where(tag => tag.SubTagsCount > 0 && tag.SubTags.Count() < tag.SubTagsCount)
@@ -31,7 +39,12 @@ public class TagCrawlerWorker(
         while (tagsWithEmptySubTags.Length != 0)
         {
             foreach (var parsedTag in tagsWithEmptySubTags)
+            {
+                logger.LogInformation("Crawling {TagName} tag for sub tags", parsedTag.Name);
+
                 await Crawl(parsedTag, cancellationToken);
+                await Task.Delay(settings.Value.SubsequentCallDelay);
+            }
 
             tagsWithEmptySubTags = await sqlDatabaseContext.ParsedTags
                 .Where(tag => tag.SubTagsCount > 0 && tag.SubTags.Count() < tag.SubTagsCount)
@@ -41,7 +54,7 @@ public class TagCrawlerWorker(
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        return Task.CompletedTask;
     }
 
     internal async Task Crawl(string tagName, CancellationToken cancellationToken)
@@ -59,6 +72,7 @@ public class TagCrawlerWorker(
         var parsedTags = subTags
             .Select(tag => new ParsedTag(tag))
             .ToArray();
+        logger.LogInformation("Parsed {SubTagsCount} sub tags in {TagName} tag", parsedTags.Count(), parsedTag.Name);
 
         var parsedTagIds = parsedTags
             .Select(tag => tag.Id)

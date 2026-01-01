@@ -1,6 +1,6 @@
 ﻿namespace JoyReactor.Accordion.Logic.Database.Sql;
 
-public record SqliteSettings
+public record PostgreSqlSettings
 {
     public string ConnectionString { get; set; }
 }

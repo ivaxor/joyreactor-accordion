@@ -22,8 +22,8 @@ public record ParsedTag
         SubscriberCount = tag.SubscriberCount.Value;
         SubTagsCount = tag.Pager.SubTagsTotalCount.Value;
 
-        CreatedAt = DateTimeOffset.UtcNow;
-        UpdatedAt = DateTimeOffset.UtcNow;
+        CreatedAt = DateTime.UtcNow;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public Guid Id { get; set; }
@@ -42,8 +42,8 @@ public record ParsedTag
     public int SubscriberCount { get; set; }
     public int SubTagsCount { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset UpdatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 }
 
 public class ParsedTagEntityTypeConfiguration : IEntityTypeConfiguration<ParsedTag>

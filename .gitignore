@@ -364,3 +364,6 @@ FodyWeavers.xsd
 
 # Onnx models
 *.onnx
+
+# Development secrets & configuration
+appsettings.Development.json

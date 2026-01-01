@@ -1,11 +1,10 @@
 ﻿using GraphQL;
-using GraphQL.Client.Abstractions;
 using JoyReactor.Accordion.Logic.ApiClient.Models;
 using System.Text;
 
 namespace JoyReactor.Accordion.Logic.ApiClient;
 
-public class TagClient(IGraphQLClient graphQlClient)
+public class TagClient(IApiClient apiClient)
     : ITagClient
 {
     public async Task<Tag> GetAsync(int numberId, CancellationToken cancellationToken = default)
@@ -35,8 +34,8 @@ query TagClient_GetAsync($nodeId: ID!) {
 
         var nodeId = Convert.ToBase64String(Encoding.UTF8.GetBytes($"Tag:{numberId}"));
         var request = new GraphQLRequest(query, new { nodeId });
-        var response = await graphQlClient.SendQueryAsync<ApiClientResponse<Tag>>(request, cancellationToken);
-        return response.Data.Node;
+        var response = await apiClient.SendQueryAsync<Tag>(request, cancellationToken);
+        return response.Node;
     }
 
     public async Task<Tag> GetByNameAsync(string name, CancellationToken cancellationToken = default)
@@ -65,11 +64,9 @@ query TagClient_GetByNameAsync($name: String!) {
 }";
 
         var request = new GraphQLRequest(query, new { name });
-        var response = await graphQlClient.SendQueryAsync<ApiClientResponse<Tag>>(request, cancellationToken);
-        return response.Data.Node;
+        var response = await apiClient.SendQueryAsync<Tag>(request, cancellationToken);
+        return response.Node;
     }
-
-
 
     public async Task<Tag[]> GetSubTagsAsync(int numberId, CancellationToken cancellationToken = default)
     {
@@ -105,7 +102,7 @@ query TagClient_GetSubTagsAsync($nodeId: ID!, $page: Int!) {
 
         var nodeId = Convert.ToBase64String(Encoding.UTF8.GetBytes($"Tag:{numberId}"));
         var page = 0;
-        GraphQLResponse<ApiClientResponse<Tag>> response = null;
+        ApiClientResponse<Tag> response = null;
         var subTags = new List<Tag>();
 
         do
@@ -113,9 +110,9 @@ query TagClient_GetSubTagsAsync($nodeId: ID!, $page: Int!) {
             page++;
 
             var request = new GraphQLRequest(query, new { nodeId, page });
-            response = await graphQlClient.SendQueryAsync<ApiClientResponse<Tag>>(request, cancellationToken);
-            subTags.AddRange(response.Data.Node.Pager.Tags);
-        } while (subTags.Count() < response.Data.Node.Pager.SubTagsTotalCount);
+            response = await apiClient.SendQueryAsync<Tag>(request, cancellationToken);
+            subTags.AddRange(response.Node.Pager.Tags);
+        } while (subTags.Count() < response.Node.Pager.SubTagsTotalCount);
 
         // Unknown behaivor
         // TagPager reports coult less then actual summary of pages

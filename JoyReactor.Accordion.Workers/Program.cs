@@ -1,7 +1,6 @@
 ﻿using GraphQL.Client.Abstractions;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.SystemTextJson;
-using JoyReactor.Accordion.Database;
 using JoyReactor.Accordion.Logic.ApiClient;
 using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Vector;
@@ -18,11 +17,12 @@ using Qdrant.Client.Grpc;
 using System.Text.Json;
 
 var builder = Host.CreateApplicationBuilder(args);
+Console.OutputEncoding = System.Text.Encoding.Unicode;
 
 builder.Services.Configure<ApiClientSettings>(builder.Configuration.GetSection(nameof(ApiClientSettings)));
 builder.Services.Configure<ImageSettings>(builder.Configuration.GetSection(nameof(ImageSettings)));
 builder.Services.Configure<OnnxSettings>(builder.Configuration.GetSection(nameof(OnnxSettings)));
-builder.Services.Configure<SqliteSettings>(builder.Configuration.GetSection(nameof(SqliteSettings)));
+builder.Services.Configure<PostgreSqlSettings>(builder.Configuration.GetSection(nameof(PostgreSqlSettings)));
 builder.Services.Configure<QdrantSettings>(builder.Configuration.GetSection(nameof(QdrantSettings)));
 
 builder.Services.AddHttpClient();
@@ -37,8 +37,8 @@ builder.Services.AddSingleton<IGraphQLClient, GraphQLHttpClient>(serviceProvider
 
 builder.Services.AddDbContext<SqlDatabaseContext>((serviceProvider, options) =>
 {
-    var settings = serviceProvider.GetRequiredService<IOptions<SqliteSettings>>();
-    options.UseSqlite(settings.Value.ConnectionString);
+    var settings = serviceProvider.GetRequiredService<IOptions<PostgreSqlSettings>>();
+    options.UseNpgsql(settings.Value.ConnectionString);
 });
 
 builder.Services.AddSingleton<IQdrantClient, QdrantClient>(serviceProvider =>
@@ -87,6 +87,7 @@ builder.Services.AddSingleton(serviceProvider =>
     return new InferenceSession(settings.Value.ModelPath, options);
 });
 
+builder.Services.AddSingleton<IApiClient, ApiClient>();
 builder.Services.AddSingleton<ITagClient, TagClient>();
 builder.Services.AddSingleton<IPostClient, PostClient>();
 

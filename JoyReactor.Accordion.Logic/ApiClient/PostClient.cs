@@ -1,11 +1,10 @@
 ﻿using GraphQL;
-using GraphQL.Client.Abstractions;
 using JoyReactor.Accordion.Logic.ApiClient.Models;
 using System.Text;
 
 namespace JoyReactor.Accordion.Logic.ApiClient;
 
-public class PostClient(IGraphQLClient graphQlClient)
+public class PostClient(IApiClient apiClient)
     : IPostClient
 {
     public Task<ApiClientResult<Post>> GetAsync(int numberId, CancellationToken cancellationToken = default)
@@ -43,8 +42,8 @@ public class PostClient(IGraphQLClient graphQlClient)
 
         try
         {
-            var response = await graphQlClient.SendQueryAsync<ApiClientResponse<Post>>(request, cancellationToken);
-            return ApiClientResult<Post>.Success(response.Data.Node);
+            var response = await apiClient.SendQueryAsync<Post>(request, cancellationToken);
+            return ApiClientResult<Post>.Success(response.Node);
         }
         catch (Exception ex)
         {

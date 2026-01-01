@@ -9,13 +9,11 @@ public record ParsedVimeo
 
     public string VideoId { get; set; }
 
-    public string? PostIds { get; set; }
-    public string? PostAttributeIds { get; set; }
-    public string? CommentIds { get; set; }
-    public string? CommentAttributeIds { get; set; }
+    public Guid PostAttributeEmbededId { get; set; }
+    public virtual ParsedPostAttributeEmbeded PostAttributeEmbeded { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset UpdatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 }
 
 public class ParsedVimeoEntityTypeConfiguration : IEntityTypeConfiguration<ParsedVimeo>
@@ -30,20 +28,11 @@ public class ParsedVimeoEntityTypeConfiguration : IEntityTypeConfiguration<Parse
             .IsRequired(true);
 
         builder
-            .Property(e => e.PostIds)
-            .IsRequired(false);
-
-        builder
-            .Property(e => e.PostAttributeIds)
-            .IsRequired(false);
-
-        builder
-            .Property(e => e.CommentIds)
-            .IsRequired(false);
-
-        builder
-            .Property(e => e.CommentAttributeIds)
-            .IsRequired(false);
+            .HasOne(e => e.PostAttributeEmbeded)
+            .WithOne(e => e.Vimeo)
+            .HasPrincipalKey<ParsedVimeo>(e => e.PostAttributeEmbededId)
+            .HasForeignKey<ParsedPostAttributeEmbeded>(e => e.VimeoId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder
             .Property(e => e.CreatedAt)

@@ -9,13 +9,11 @@ public record ParsedBandCamp
 
     public string AlbumId { get; set; }
 
-    public string? PostIds { get; set; }
-    public string? PostAttributeIds { get; set; }
-    public string? CommentIds { get; set; }
-    public string? CommentAttributeIds { get; set; }
+    public Guid PostAttributeEmbededId { get; set; }
+    public virtual ParsedPostAttributeEmbeded PostAttributeEmbeded { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset UpdatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 }
 
 public class ParsedBandCampEntityTypeConfiguration : IEntityTypeConfiguration<ParsedBandCamp>
@@ -30,20 +28,11 @@ public class ParsedBandCampEntityTypeConfiguration : IEntityTypeConfiguration<Pa
             .IsRequired(true);
 
         builder
-            .Property(e => e.PostIds)
-            .IsRequired(false);
-
-        builder
-            .Property(e => e.PostAttributeIds)
-            .IsRequired(false);
-
-        builder
-            .Property(e => e.CommentIds)
-            .IsRequired(false);
-
-        builder
-            .Property(e => e.CommentAttributeIds)
-            .IsRequired(false);
+            .HasOne(e => e.PostAttributeEmbeded)
+            .WithOne(e => e.BandCamp)
+            .HasPrincipalKey<ParsedBandCamp>(e => e.PostAttributeEmbededId)
+            .HasForeignKey<ParsedPostAttributeEmbeded>(e => e.BandCampId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder
             .Property(e => e.CreatedAt)
