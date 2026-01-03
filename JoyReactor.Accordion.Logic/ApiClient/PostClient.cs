@@ -34,6 +34,7 @@ query PostClient_GetAsync($nodeId: ID!) {
           }
         }
         ... on PostAttributeEmbed {
+          id
           value
         }
       }
@@ -50,12 +51,12 @@ query PostClient_GetAsync($nodeId: ID!) {
     public async Task<PostPager> GetByTagAsync(int tagNumberId, PostLineType lineType, int page, CancellationToken cancellationToken)
     {
         const string query = @"
-query PostClient_GetByTagAsync($nodeId: ID!, $page: Int) {
+query PostClient_GetByTagAsync($nodeId: ID!, $page: Int!) {
   node(id: $nodeId) {
     ... on PostPager {
       id
       count
-      posts(page: $page, offset: 0) {
+      posts(page: $page) {
         ... on Post {
           id
           contentVersion
@@ -69,6 +70,7 @@ query PostClient_GetByTagAsync($nodeId: ID!, $page: Int) {
               }
             }
             ... on PostAttributeEmbed {
+              id
               value
             }
           }
@@ -79,7 +81,7 @@ query PostClient_GetByTagAsync($nodeId: ID!, $page: Int) {
 }";
 
         var type = PostLineTypeToValue[lineType];
-        var nodeId = Convert.ToBase64String(Encoding.UTF8.GetBytes($"PostPager:Tag,{tagNumberId},{type},{type}"));
+        var nodeId = Convert.ToBase64String(Encoding.UTF8.GetBytes($"PostPager:Tag,{tagNumberId},{type},"));
         var request = new GraphQLRequest(query, new { nodeId, page });
         var response = await apiClient.SendAsync<ApiClientNodeResponse<PostPager>>(request, cancellationToken);
         return response.Node;

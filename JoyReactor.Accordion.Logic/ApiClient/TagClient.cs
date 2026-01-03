@@ -52,7 +52,7 @@ query TagClient_GetAsync($nodeId: ID!, $type: TagLineType) {
     public async Task<Tag> GetByNameAsync(string name, TagLineType lineType, CancellationToken cancellationToken)
     {
         const string query = @"
-query TagClient_GetByNameAsync($name: String!, $type: TagLineType) {
+query TagClient_GetByNameAsync($name: String!, $type: TagLineType!) {
   node: tag(name: $name) {
     ... on Tag {
       id

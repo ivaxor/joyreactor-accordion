@@ -27,13 +27,13 @@ public static class DbSetExtensions
             .Select(entity => entity.Id)
             .ToHashSetAsync(cancellationToken);
 
-        var nonExistingEntities = entities
+        var newEntities = entities
             .Where(entity => !existingEntityIds.Contains(entity.Id))
             .ToArray();
 
-        if (nonExistingEntities.Length == 0)
+        if (newEntities.Length == 0)
             return;
 
-        await dbSet.AddRangeAsync(nonExistingEntities, cancellationToken);
+        await dbSet.AddRangeAsync(newEntities, cancellationToken);
     }
 }

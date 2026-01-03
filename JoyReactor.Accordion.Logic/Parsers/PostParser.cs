@@ -98,7 +98,7 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext) : IPostParser
             case "BANDCAMP":
                 var parsedBandCamp = new ParsedBandCamp(postAttribute);
                 var existingBandCampId = await sqlDatabaseContext.ParsedBandCamps
-                    .Where(bandCamp => bandCamp.AlbumId == parsedBandCamp.AlbumId)
+                    .Where(bandCamp => bandCamp.UrlPath == parsedBandCamp.UrlPath)
                     .Select(bandCamp => bandCamp.Id)
                     .FirstOrDefaultAsync(cancellationToken);
                 if (existingBandCampId != default)
@@ -118,7 +118,7 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext) : IPostParser
             case "SOUNDCLOUD":
                 var parsedSoundCloud = new ParsedSoundCloud(postAttribute);
                 var existingSoundCloudId = await sqlDatabaseContext.ParsedSoundClouds
-                    .Where(soundCloud => soundCloud.UrlPath == soundCloud.UrlPath)
+                    .Where(soundCloud => soundCloud.UrlPath == parsedSoundCloud.UrlPath)
                     .Select(soundCloud => soundCloud.Id)
                     .FirstOrDefaultAsync(cancellationToken);
                 if (existingSoundCloudId != default)

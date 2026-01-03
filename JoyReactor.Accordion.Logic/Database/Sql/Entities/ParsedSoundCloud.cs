@@ -1,17 +1,22 @@
 ﻿using JoyReactor.Accordion.Logic.ApiClient.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System.Text.RegularExpressions;
 
 namespace JoyReactor.Accordion.Logic.Database.Sql.Entities;
 
-public record ParsedSoundCloud : ISqlEntity, IParsedAttributeEmbeded
+public partial record ParsedSoundCloud : ISqlEntity, IParsedAttributeEmbeded
 {
+    [GeneratedRegex(@"(?<type>tracks|playlists)[\\/]+(?<id>\d+)", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex UrlPathRegex();
+
     public ParsedSoundCloud() { }
 
     public ParsedSoundCloud(PostAttribute attribute)
     {
         Id = Guid.NewGuid();
-        UrlPath = attribute.Value;
+        var match = UrlPathRegex().Match(attribute.Value);
+        UrlPath = $"{match.Groups["type"].Value}/{match.Groups["id"].Value}";
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
