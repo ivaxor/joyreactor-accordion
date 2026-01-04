@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "JoyReactor.Accordion.Workers": {
-      "commandName": "Project",
-      "commandLineArgs": "--environment Development"
-    }
-  }
-}

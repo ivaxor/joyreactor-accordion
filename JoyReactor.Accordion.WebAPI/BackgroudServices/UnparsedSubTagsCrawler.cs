@@ -4,14 +4,13 @@ using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using JoyReactor.Accordion.Logic.Extensions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
-namespace JoyReactor.Accordion.Workers.BackgroudServices;
+namespace JoyReactor.Accordion.WebAPI.BackgroudServices;
 
-public class EmptySubTagsCrawler(
+public class UnparsedSubTagsCrawler(
     SqlDatabaseContext sqlDatabaseContext,
     ITagClient tagClient,
-    ILogger<EmptySubTagsCrawler> logger)
+    ILogger<UnparsedSubTagsCrawler> logger)
     : ScopedBackgroudService
 {
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -26,14 +25,20 @@ public class EmptySubTagsCrawler(
                 .OrderByDescending(tag => tag.Id)
                 .Take(100)
                 .ToArrayAsync(cancellationToken);
-            logger.LogInformation("Crawling {TagsCount} tags for sub tags", tagsWithEmptySubTags.Count());
 
-            if (tagsWithEmptySubTags.Length == 0)
-                return;
+
+            if (tagsWithEmptySubTags.Length != 0)
+                logger.LogInformation("Crawling {TagsCount} tags for new sub tags", tagsWithEmptySubTags.Count());
+            else
+            {
+                logger.LogInformation("No tags with unparsed sub tags found. Will try again later");
+                continue;
+            }
+
 
             foreach (var parsedTag in tagsWithEmptySubTags)
             {
-                logger.LogInformation("Crawling \"{TagName}\" tag for sub tags", parsedTag.Name);
+                logger.LogInformation("Crawling \"{TagName}\" tag for new sub tags", parsedTag.Name);
                 await CrawlAsync(parsedTag, cancellationToken);
             }
         } while (tagsWithEmptySubTags.Length != 0 || await periodicTimer.WaitForNextTickAsync(cancellationToken));

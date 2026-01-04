@@ -1,10 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 
-namespace JoyReactor.Accordion.Workers.Extensions;
+namespace JoyReactor.Accordion.WebAPI.Extensions;
 
-public static class BackgroundServiceExtensions
+public static class ServiceCollectionExtensions
 {
     internal static ConcurrentDictionary<Type, IServiceScope> ServiceScopes = new ConcurrentDictionary<Type, IServiceScope>();
 

@@ -4,10 +4,8 @@ using JoyReactor.Accordion.Logic.ApiClient.Models;
 using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
-namespace JoyReactor.Accordion.Workers.BackgroudServices;
+namespace JoyReactor.Accordion.WebAPI.BackgroudServices;
 
 public class MainTagsCrawler(
     IServiceScopeFactory serviceScopeFactory,
@@ -27,10 +25,16 @@ public class MainTagsCrawler(
         var nonExistingMainTagNames = TagConstants.MainTags
             .Where(tagName => !existingMainTagNames.Contains(tagName))
             .ToArray();
-        logger.LogInformation("Crawling {TagsCount} main category tags", nonExistingMainTagNames.Count());
 
-        if (nonExistingMainTagNames.Length == 0)
+
+        if (nonExistingMainTagNames.Length != 0)
+            logger.LogInformation("Crawling {TagsCount} main category tags", nonExistingMainTagNames.Count());
+        else
+        {
+            logger.LogInformation("No new main category tags found");
             return;
+        }
+
 
         foreach (var tagName in nonExistingMainTagNames)
         {

@@ -1,7 +1,6 @@
-﻿using JoyReactor.Accordion.Workers.Extensions;
-using Microsoft.Extensions.Hosting;
+﻿using JoyReactor.Accordion.WebAPI.Extensions;
 
-namespace JoyReactor.Accordion.Workers.BackgroudServices;
+namespace JoyReactor.Accordion.WebAPI.BackgroudServices;
 
 public abstract class ScopedBackgroudService : BackgroundService
 {
@@ -9,13 +8,13 @@ public abstract class ScopedBackgroudService : BackgroundService
     {
         await base.StopAsync(cancellationToken);
 
-        if (BackgroundServiceExtensions.ServiceScopes.TryRemove(GetType(), out var serviceScope))
+        if (ServiceCollectionExtensions.ServiceScopes.TryRemove(GetType(), out var serviceScope))
             serviceScope.Dispose();
     }
 
     public override void Dispose()
     {
-        if (BackgroundServiceExtensions.ServiceScopes.TryRemove(GetType(), out var serviceScope))
+        if (ServiceCollectionExtensions.ServiceScopes.TryRemove(GetType(), out var serviceScope))
             serviceScope.Dispose();
 
         base.Dispose();

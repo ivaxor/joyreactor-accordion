@@ -1,10 +1,9 @@
 ﻿using JoyReactor.Accordion.Logic.ApiClient;
 using JoyReactor.Accordion.Logic.Parsers;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using System.Globalization;
 
-namespace JoyReactor.Accordion.Workers.BackgroudServices;
+namespace JoyReactor.Accordion.WebAPI.BackgroudServices;
 
 public class TopWeekPostsCrawler(
     IPostClient postClient,

@@ -4,11 +4,9 @@ using JoyReactor.Accordion.Logic.Database.Vector;
 using JoyReactor.Accordion.Logic.Media.Images;
 using JoyReactor.Accordion.Logic.Onnx;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using System.Collections.Frozen;
-using System.Diagnostics;
 
-namespace JoyReactor.Accordion.Workers.BackgroudServices;
+namespace JoyReactor.Accordion.WebAPI.BackgroudServices;
 
 public class UnprocessedPictureVectorCrawler(
     SqlDatabaseContext sqlDatabaseContext,
@@ -38,14 +36,17 @@ public class UnprocessedPictureVectorCrawler(
                 .OrderByDescending(picture => picture.Id)
                 .Take(100)
                 .ToArrayAsync(cancellationToken);
-            logger.LogInformation("Starting crawling {PicturesCount} pictures without vectors", unprocessedPictures.Length);
 
-            if (unprocessedPictures.Length == 0)
+            if (unprocessedPictures.Length != 0)
+                logger.LogInformation("Starting crawling {PicturesCount} pictures without vectors", unprocessedPictures.Length);
+            else
+            {
+
+                logger.LogInformation("No pictures without vectors found. Will try again later");
                 continue;
+            }
 
             var pictureVectors = unprocessedPictures.ToDictionary(picture => picture, picture => (float[])null);
-
-            var stopwatch = Stopwatch.StartNew();
             foreach (var picture in pictureVectors.Keys)
             {
                 try
@@ -61,7 +62,6 @@ public class UnprocessedPictureVectorCrawler(
                     logger.LogError(ex, "Failed to crawl {PictureAttributeId} picture without vector", picture.AttributeId);
                 }
             }
-            logger.LogInformation("Created vectors for {PicturesCount} pictures. Average processing time is {ElapsedMilliseconds} ms per image", unprocessedPictures.Length, stopwatch.ElapsedMilliseconds / unprocessedPictures.Length);
 
             await vectorDatabaseContext.UpsertAsync(pictureVectors, cancellationToken);
             sqlDatabaseContext.ParsedPostAttributePictures.UpdateRange(unprocessedPictures);
