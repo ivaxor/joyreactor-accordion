@@ -4,16 +4,18 @@ using JoyReactor.Accordion.Logic.Database.Vector;
 using JoyReactor.Accordion.Logic.Media.Images;
 using JoyReactor.Accordion.Logic.Onnx;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Collections.Frozen;
 
 namespace JoyReactor.Accordion.WebAPI.BackgroudServices;
 
-public class UnprocessedPictureVectorCrawler(
+public class PicturesWithoutVectorCrawler(
     SqlDatabaseContext sqlDatabaseContext,
     IImageDownloader imageDownloader,
     IOnnxVectorConverter oonxVectorConverter,
     IVectorDatabaseContext vectorDatabaseContext,
-    ILogger<UnprocessedPictureVectorCrawler> logger)
+    IOptions<CrawlerSettings> settings,
+    ILogger<PicturesWithoutVectorCrawler> logger)
     : ScopedBackgroudService
 {
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -26,7 +28,7 @@ public class UnprocessedPictureVectorCrawler(
         };
         var imageTypeToExtensions = imageTypes.ToDictionary(type => type, type => Enum.GetName(type)!).ToFrozenDictionary();
 
-        var periodicTimer = new PeriodicTimer(TimeSpan.FromMinutes(15));
+        var periodicTimer = new PeriodicTimer(settings.Value.SubsequentRunDelay);
         var unprocessedPictures = (ParsedPostAttributePicture[])null;
 
         do

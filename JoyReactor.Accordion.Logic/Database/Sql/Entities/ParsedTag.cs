@@ -13,7 +13,7 @@ public record ParsedTag : ISqlEntity
     {
         Id = tag.NumberId.ToGuid();
         MainTagId = tag.NodeId.Equals(tag.MainTag.NodeId, StringComparison.Ordinal) ? null : tag.MainTag.NumberId.ToGuid();
-        ParentId = parentTag?.Id ?? tag.Hierarchy.Where(h => !tag.NodeId.Equals(h.NodeId, StringComparison.Ordinal)).FirstOrDefault()?.NumberId.ToGuid();
+        ParentId = parentTag?.Id ?? tag.Hierarchy.Where(t => t.NumberId != tag.NumberId).FirstOrDefault()?.NumberId.ToGuid();
         NumberId = tag.NumberId;
         Name = tag.Name;
         PostCount = tag.PostCount.Value;
@@ -38,6 +38,8 @@ public record ParsedTag : ISqlEntity
     public int PostCount { get; set; }
     public int SubscriberCount { get; set; }
     public int SubTagsCount { get; set; }
+
+    public virtual IEnumerable<CrawlerTask>? CrawlerTasks { get; set; }
 
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

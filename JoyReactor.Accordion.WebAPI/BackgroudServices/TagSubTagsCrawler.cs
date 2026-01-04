@@ -4,37 +4,37 @@ using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using JoyReactor.Accordion.Logic.Extensions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace JoyReactor.Accordion.WebAPI.BackgroudServices;
 
-public class UnparsedSubTagsCrawler(
+public class TagSubTagsCrawler(
     SqlDatabaseContext sqlDatabaseContext,
     ITagClient tagClient,
-    ILogger<UnparsedSubTagsCrawler> logger)
+    IOptions<CrawlerSettings> settings,
+    ILogger<TagSubTagsCrawler> logger)
     : ScopedBackgroudService
 {
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        var periodicTimer = new PeriodicTimer(TimeSpan.FromMinutes(15));
+        var periodicTimer = new PeriodicTimer(settings.Value.SubsequentRunDelay);
         var tagsWithEmptySubTags = (ParsedTag[])null;
 
         do
         {
             tagsWithEmptySubTags = await sqlDatabaseContext.ParsedTags
-                .Where(tag => tag.SubTagsCount > 0 && tag.SubTags.Count() < tag.SubTagsCount)
+                .Where(tag => tag.MainTagId == null && tag.SubTagsCount > 0 && tag.SubTags.Count() < tag.SubTagsCount)
                 .OrderByDescending(tag => tag.Id)
                 .Take(100)
                 .ToArrayAsync(cancellationToken);
-
 
             if (tagsWithEmptySubTags.Length != 0)
                 logger.LogInformation("Crawling {TagsCount} tags for new sub tags", tagsWithEmptySubTags.Count());
             else
             {
-                logger.LogInformation("No tags with unparsed sub tags found. Will try again later");
+                logger.LogInformation("No tags without sub tags found. Will try again later");
                 continue;
             }
-
 
             foreach (var parsedTag in tagsWithEmptySubTags)
             {

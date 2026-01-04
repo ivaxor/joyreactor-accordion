@@ -6,6 +6,7 @@ using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Vector;
 using JoyReactor.Accordion.Logic.Media.Images;
 using JoyReactor.Accordion.Logic.Onnx;
+using JoyReactor.Accordion.WebAPI.BackgroudServices;
 using JoyReactor.Accordion.WebAPI.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -24,6 +25,7 @@ public static class HostApplicationBuilderExtensions
         builder.Services.Configure<OnnxSettings>(builder.Configuration.GetSection(nameof(OnnxSettings)));
         builder.Services.Configure<PostgreSqlSettings>(builder.Configuration.GetSection(nameof(PostgreSqlSettings)));
         builder.Services.Configure<QdrantSettings>(builder.Configuration.GetSection(nameof(QdrantSettings)));
+        builder.Services.Configure<CrawlerSettings>(builder.Configuration.GetSection(nameof(CrawlerSettings)));
     }
 
     public static void AddGraphQlClient(this IHostApplicationBuilder builder)

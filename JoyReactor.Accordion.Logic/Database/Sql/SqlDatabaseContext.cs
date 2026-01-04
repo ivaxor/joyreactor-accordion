@@ -10,15 +10,21 @@ public partial class SqlDatabaseContext : DbContext
         ChangeTracker.LazyLoadingEnabled = false;
     }
 
-    public DbSet<ParsedBandCamp> ParsedBandCamps { get; set; }
-    public DbSet<ParsedCoub> ParsedCoubs { get; set; }
+    public DbSet<CrawlerTask> CrawlerTasks { get; set; }
+
     public DbSet<ParsedPost> ParsedPost { get; set; }
+
     public DbSet<ParsedPostAttributeEmbeded> ParsedPostAttributeEmbeds { get; set; }
     public DbSet<ParsedPostAttributePicture> ParsedPostAttributePictures { get; set; }
+
+    public DbSet<ParsedBandCamp> ParsedBandCamps { get; set; }
+    public DbSet<ParsedCoub> ParsedCoubs { get; set; }
     public DbSet<ParsedSoundCloud> ParsedSoundClouds { get; set; }
-    public DbSet<ParsedTag> ParsedTags { get; set; }
     public DbSet<ParsedVimeo> ParsedVimeos { get; set; }
     public DbSet<ParsedYoutube> ParsedYoutubes { get; set; }
+
+    public DbSet<ParsedTag> ParsedTags { get; set; }
+    public DbSet<EmptyTag> EmptyTags { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

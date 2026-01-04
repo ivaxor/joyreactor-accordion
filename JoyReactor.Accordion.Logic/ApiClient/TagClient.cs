@@ -21,7 +21,7 @@ public class TagClient(
     public async Task<Tag> GetAsync(int numberId, TagLineType type, CancellationToken cancellationToken)
     {
         const string query = @"
-query TagClient_GetAsync($nodeId: ID!, $type: TagLineType) {
+query TagClient_GetAsync($nodeId: ID!, $type: TagLineType!) {
   node(id: $nodeId) {
     ... on Tag {
       id

@@ -19,6 +19,7 @@ public static class SharedDependencies
     public static readonly TagClient TagClient;
     public static readonly PostClient PostClient;
     public static readonly PostParser PostParser;
+    public static readonly ImageReducer ImageReducer;
     public static readonly ImageDownloader ImageDownloader;
 
     static SharedDependencies()
@@ -60,8 +61,12 @@ public static class SharedDependencies
             ],
             ResizedSize = 224,
         });
+
+        ImageReducer = new ImageReducer(imageSettingsOptions);
+
         ImageDownloader = new ImageDownloader(
             imageDownloaderHttpClient,
+            ImageReducer,
             imageSettingsOptions);
     }
 }

@@ -8,6 +8,9 @@ using JoyReactor.Accordion.WebAPI.Controllers;
 using JoyReactor.Accordion.WebAPI.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
+using System.Text;
+
+Console.OutputEncoding = Encoding.UTF8;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddOptionsFromConfiguration();
@@ -31,7 +34,7 @@ builder.Services
         MaxAutomaticRedirections = 3,
     });
 builder.Services
-    .AddHttpClient<SearchController>(httpClient =>
+    .AddHttpClient<SearchPictureController>(httpClient =>
     {
         httpClient.Timeout = TimeSpan.FromSeconds(10);
         httpClient.DefaultRequestHeaders.Add("User-Agent", "JoyReactor.Accordion (Bot; +https://joyreactor.cc)");
@@ -53,9 +56,11 @@ builder.Services.AddSingleton<IOnnxVectorConverter, OnnxVectorConverter>();
 builder.Services.AddSingleton<IVectorDatabaseContext, VectorDatabaseContext>();
 
 builder.Services.AddScopedHostedService<MainTagsCrawler>();
-builder.Services.AddScopedHostedService<UnparsedSubTagsCrawler>();
+builder.Services.AddScopedHostedService<TagSubTagsCrawler>();
+builder.Services.AddScopedHostedService<TagInnnerRangeCrawler>();
+//builder.Services.AddScopedHostedService<TagOuterRangeCrawler>();
+builder.Services.AddScopedHostedService<PicturesWithoutVectorCrawler>();
 //builder.Services.AddScopedHostedService<TopWeekPostsCrawler>();
-builder.Services.AddScopedHostedService<UnprocessedPictureVectorCrawler>();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();

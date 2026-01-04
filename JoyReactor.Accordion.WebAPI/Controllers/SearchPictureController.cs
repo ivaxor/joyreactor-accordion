@@ -9,9 +9,9 @@ using System.Collections.Frozen;
 
 namespace JoyReactor.Accordion.WebAPI.Controllers;
 
-[Route("api/[controller]")]
+[Route("api/search/picture")]
 [ApiController]
-public class SearchController(
+public class SearchPictureController(
     HttpClient httpClient,
     IImageReducer imageReducer,
     IOnnxVectorConverter onnxVectorConverter,
@@ -36,14 +36,12 @@ public class SearchController(
         "bmp",
     }.ToFrozenSet();
 
-    [HttpPost("search/download")]
+    [HttpPost("download")]
     public async Task<IActionResult> SearchPictureAsync([FromBody] SearchDownloadRequest request, CancellationToken cancellationToken = default)
     {
         using var downloadRequest = new HttpRequestMessage(HttpMethod.Get, request.PictureUrl);
-        /*
         if (request.PictureUrl.Host.Contains("joyreactor.cc", StringComparison.OrdinalIgnoreCase))
             downloadRequest.Headers.Add("Referer", "https://joyreactor.cc");
-        */
 
         var downloadResponse = await httpClient.SendAsync(downloadRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         if (!downloadResponse.IsSuccessStatusCode)
@@ -62,7 +60,7 @@ public class SearchController(
     }
 
     [RequestSizeLimit(FileSizeLimit)]
-    [HttpPost("search/upload")]
+    [HttpPost("upload")]
     public async Task<IActionResult> SearchPictureAsync([FromForm] SearchUploadRequest request, CancellationToken cancellationToken = default)
     {
         if (!AllowedMimeTypes.Contains(request.Picture.ContentType))
