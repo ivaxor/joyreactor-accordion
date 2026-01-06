@@ -31,7 +31,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile.API.CPU
+          file: ./JoyReactor.Accordion.WebAPI/Dockerfile.API.CPU
           build-args: |
             ONNX_RUNTIME=CPU
           tags: |

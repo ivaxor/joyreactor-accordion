@@ -1,4 +1,4 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled AS base
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
@@ -16,10 +16,12 @@ RUN dotnet publish "JoyReactor.Accordion.WebAPI.csproj" \
     -r linux-x64 \
     --self-contained false \
     -o /app/publish \
-    /p:OnnxRuntime=CPU \
+    /p:OnnxRuntime=Nvidia \
     /p:UseAppHost=false \
     /p:DebugType=none \
     /p:DebugSymbols=false
+
+RUN rm -f /app/publish/onnxruntime*.dll
 
 FROM base AS final
 WORKDIR /app
