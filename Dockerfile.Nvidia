@@ -1,27 +1,33 @@
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled AS base
 USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["JoyReactor.Accordion.WebAPI/JoyReactor.Accordion.WebAPI.csproj", "JoyReactor.Accordion.WebAPI/"]
 COPY ["JoyReactor.Accordion.Logic/JoyReactor.Accordion.Logic.csproj", "JoyReactor.Accordion.Logic/"]
-RUN dotnet restore "./JoyReactor.Accordion.WebAPI/JoyReactor.Accordion.WebAPI.csproj"
+RUN dotnet restore "JoyReactor.Accordion.WebAPI/JoyReactor.Accordion.WebAPI.csproj"
 COPY . .
 WORKDIR "/src/JoyReactor.Accordion.WebAPI"
-RUN dotnet build "./JoyReactor.Accordion.WebAPI.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet publish "JoyReactor.Accordion.WebAPI.csproj" \
+    -c Release \
+    -r linux-x64 \
+    --self-contained false \
+    -o /app/publish \
+    /p:OnnxRuntime=Nvidia \
+    /p:UseAppHost=false \
+    /p:DebugType=none \
+    /p:DebugSymbols=false
 
-FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./JoyReactor.Accordion.WebAPI.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN rm -f /app/publish/onnxruntime*.dll
 
 FROM base AS final
+WORKDIR /app
+
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 ENV LC_ALL=en_US.UTF-8
 ENV LANG=en_US.UTF-8
-WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "JoyReactor.Accordion.WebAPI.dll"]

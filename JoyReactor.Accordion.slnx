@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/Solution Items/">
-    <File Path="Dockerfile" />
+    <File Path=".github/workflows/build-push-docker-cpu.yml" />
+    <File Path="Dockerfile.CPU" />
     <File Path="Dockerfile.Nvidia" />
   </Folder>
   <Project Path="JoyReactor.Accordion.Logic/JoyReactor.Accordion.Logic.csproj" />
