@@ -1,4 +1,4 @@
-name: Build and Push CPU Docker image
+name: Build and Push API CPU-only Docker image
 
 on:
   push:
@@ -31,12 +31,12 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile.CPU
+          file: ./Dockerfile.API.CPU
           build-args: |
             ONNX_RUNTIME=CPU
           tags: |
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:latest-cpu
+            ghcr.io/${{ github.repository }}-api:latest
+            ghcr.io/${{ github.repository }}-api:latest-cpu
           push: ${{ github.event_name != 'pull_request' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
