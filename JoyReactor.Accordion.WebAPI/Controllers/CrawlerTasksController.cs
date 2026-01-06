@@ -35,7 +35,7 @@ public class CrawlerTasksController(SqlDatabaseContext sqlDatabaseContext)
 
         var task = new CrawlerTask()
         {
-            Type = request.Type,
+            IsIndefinite = request.IsIndefinite,
             TagId = tag.Id,
             PostLineType = request.PostLineType,
             PageFrom = request.PageFrom,
@@ -66,7 +66,7 @@ public class CrawlerTasksController(SqlDatabaseContext sqlDatabaseContext)
 
 public record CrawlerTaskCreateRequest
 {
-    public CrawlerTaskType Type { get; set; }
+    public bool IsIndefinite { get; set; }
     public string TagName { get; set; }
     public PostLineType PostLineType { get; set; }
     public int? PageFrom { get; set; }

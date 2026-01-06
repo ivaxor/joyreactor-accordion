@@ -8,8 +8,6 @@ public record CrawlerTask : ISqlEntity
 {
     public Guid Id { get; set; }
 
-    public CrawlerTaskType Type { get; set; }
-
     public Guid TagId { get; set; }
     public virtual ParsedTag? Tag { get; set; }
 
@@ -18,6 +16,7 @@ public record CrawlerTask : ISqlEntity
     public int? PageTo { get; set; }
     public int? PageCurrent { get; set; }
 
+    public bool IsIndefinite { get; set; }
     public bool IsCompleted { get; set; }
     public DateTime? StartedAt { get; set; }
     public DateTime? FinishedAt { get; set; }
@@ -26,19 +25,11 @@ public record CrawlerTask : ISqlEntity
     public DateTime UpdatedAt { get; set; }
 }
 
-public enum CrawlerTaskType
-{
-    OneTime,
-    Cron,
-}
-
 public class CrawlerTaskEntityTypeConfiguration : IEntityTypeConfiguration<CrawlerTask>
 {
     public void Configure(EntityTypeBuilder<CrawlerTask> builder)
     {
-        builder
-            .Property(e => e.Type)
-            .IsRequired(true);
+
 
         builder
             .HasOne(e => e.Tag)
@@ -62,6 +53,10 @@ public class CrawlerTaskEntityTypeConfiguration : IEntityTypeConfiguration<Crawl
         builder
             .Property(e => e.PageCurrent)
             .IsRequired(false);
+
+        builder
+            .Property(e => e.IsIndefinite)
+            .IsRequired(true);
 
         builder
             .Property(e => e.IsCompleted)

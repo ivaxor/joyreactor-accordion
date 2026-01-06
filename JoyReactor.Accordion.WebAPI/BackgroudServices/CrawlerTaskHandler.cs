@@ -100,7 +100,7 @@ public class CrawlerTaskHandler(
                     crawlerTask.PageCurrent += 1;
                 else
                 {
-                    crawlerTask.IsCompleted = crawlerTask.Type == CrawlerTaskType.OneTime;
+                    crawlerTask.IsCompleted = !crawlerTask.IsIndefinite;
                     crawlerTask.FinishedAt = DateTime.UtcNow;
                 }
                 crawlerTask.UpdatedAt = DateTime.UtcNow;
