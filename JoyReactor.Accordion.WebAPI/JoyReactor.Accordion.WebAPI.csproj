@@ -6,12 +6,25 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>150a8977-840f-464b-ae8f-8d6dee66aaf4</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <Title>JoyReactor Accordion</Title>
+    <Authors>Illia Khovanskyi</Authors>
+    <Company>IVAXOR</Company>
+    <PackageProjectUrl>https://github.com/ivaxor/joyreactor-accordion/pkgs/container/joyreactor-accordion</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ivaxor/joyreactor-accordion/</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>joyreactor;crawler;accordion;duplicates;search;oonx</PackageTags>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>
     <Content Include="Onnx\clip-ViT-B-32-vision.onnx" Condition="Exists('Onnx\clip-ViT-B-32-vision.onnx')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+	  
+	<None Include="..\LICENSE.txt">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
