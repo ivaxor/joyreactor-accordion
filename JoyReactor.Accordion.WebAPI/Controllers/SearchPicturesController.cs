@@ -5,7 +5,7 @@ using JoyReactor.Accordion.Logic.Onnx;
 using JoyReactor.Accordion.WebAPI.Models.Requests;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
-using System.Collections.Frozen;
+using System.Collections.Frozen; 
 
 namespace JoyReactor.Accordion.WebAPI.Controllers;
 
@@ -45,14 +45,23 @@ public class SearchPicturesController(
 
         var downloadResponse = await httpClient.SendAsync(downloadRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         if (!downloadResponse.IsSuccessStatusCode)
-            return BadRequest("Failed to download file");
+        {
+            ModelState.AddModelError(nameof(request.PictureUrl), "Failed to download file using provided url");
+            return BadRequest(ModelState);
+        }
 
         if (downloadResponse.Content.Headers.ContentLength >= FileSizeLimit)
-            return BadRequest("File is too big");
+        {
+            ModelState.AddModelError(nameof(request.PictureUrl), $"Picture size is too big. Max size is {FileSizeLimit} bytes");
+            return BadRequest(ModelState);
+        }
 
         var mediaType = downloadResponse.Content.Headers.ContentType?.MediaType;
         if (mediaType == null || !AllowedMimeTypes.Contains(mediaType))
-            return BadRequest("Unsupported picture file type");
+        {
+            ModelState.AddModelError(nameof(request.PictureUrl), "Picture media type is not allowed");
+            return BadRequest(ModelState);
+        }
 
         await using var stream = await downloadResponse.Content.ReadAsStreamAsync(cancellationToken);
         var results = await SearchAsync(stream, cancellationToken);
@@ -64,11 +73,17 @@ public class SearchPicturesController(
     public async Task<IActionResult> SearchPictureAsync([FromForm] SearchUploadRequest request, CancellationToken cancellationToken = default)
     {
         if (!AllowedMimeTypes.Contains(request.Picture.ContentType))
-            return BadRequest("Unsupported picture file type");
+        {
+            ModelState.AddModelError(nameof(request.Picture), "Picture media type is not allowed");
+            return BadRequest(ModelState);
+        }
 
         var pictureExtension = Path.GetExtension(request.Picture.FileName).TrimStart('.');
         if (!AllowedExtensions.Contains(pictureExtension))
-            return BadRequest("Unsupported picture file extension");
+        {
+            ModelState.AddModelError(nameof(request.Picture), "Picture extension type is not allowed");
+            return BadRequest(ModelState);
+        }
 
         await using var stream = request.Picture.OpenReadStream();
         var results = await SearchAsync(stream, cancellationToken);

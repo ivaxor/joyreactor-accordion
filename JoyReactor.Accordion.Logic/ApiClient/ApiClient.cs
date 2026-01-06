@@ -14,9 +14,9 @@ public class ApiClient(
     ILogger<ApiClient> logger)
     : IApiClient
 {
-    internal static readonly SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
+    internal static readonly SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
 
-    internal readonly ResiliencePipeline resiliencePipeline = new ResiliencePipelineBuilder()
+    internal readonly ResiliencePipeline ResiliencePipeline = new ResiliencePipelineBuilder()
         .AddRetry(new RetryStrategyOptions
         {
             ShouldHandle = new PredicateBuilder()
@@ -38,13 +38,13 @@ public class ApiClient(
 
     public async Task<T> SendAsync<T>(GraphQLRequest request, CancellationToken cancellationToken)
     {
-        await semaphore.WaitAsync(cancellationToken);
+        await Semaphore.WaitAsync(cancellationToken);
 
         try
         {
             await Task.Delay(settings.Value.SubsequentCallDelay);
 
-            return await resiliencePipeline.ExecuteAsync(async ct =>
+            return await ResiliencePipeline.ExecuteAsync(async ct =>
             {
                 var response = await graphQlClient.SendQueryAsync<T>(request, ct);
                 foreach (var error in response.Errors ?? [])
@@ -59,7 +59,7 @@ public class ApiClient(
         }
         finally
         {
-            semaphore.Release();
+            Semaphore.Release();
         }
     }
 }

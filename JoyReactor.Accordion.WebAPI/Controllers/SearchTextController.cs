@@ -74,7 +74,7 @@ public class SearchTextController(SqlDatabaseContext sqlDatabaseContext)
                 break;
 
             default:
-                return BadRequest();
+                throw new NotImplementedException();
         }
 
         var postNumberIds = postIds

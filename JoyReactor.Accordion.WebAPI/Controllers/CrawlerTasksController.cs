@@ -28,7 +28,10 @@ public class CrawlerTasksController(SqlDatabaseContext sqlDatabaseContext)
             .Where(t => t.Name == request.TagName)
             .FirstOrDefaultAsync(cancellationToken);
         if (tag == null)
-            return BadRequest();
+        {
+            ModelState.AddModelError(nameof(request.TagName), "Tag with specified name not found");
+            return BadRequest(ModelState);
+        }
 
         var task = new CrawlerTask()
         {
