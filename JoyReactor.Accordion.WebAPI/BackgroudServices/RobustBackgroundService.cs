@@ -15,22 +15,25 @@ public abstract class RobustBackgroundService(
     {
         do
         {
-            try
+            using (logger.BeginScope(new Dictionary<string, object>() { { "TraceId", Guid.NewGuid() } }))
             {
-                await RunAsync(cancellationToken);
-                if (IsIndefinite)
+                try
                 {
-                    logger.LogInformation("{BackgroundServiceName} background service succesfully ran. Next run is scheduled", GetType().Name);
+                    await RunAsync(cancellationToken);
+                    if (IsIndefinite)
+                    {
+                        logger.LogInformation("{BackgroundServiceName} background service succesfully ran. Next run is scheduled", GetType().Name);
+                    }
+                    else
+                    {
+                        logger.LogInformation("{BackgroundServiceName} background service succesfully ran", GetType().Name);
+                        return;
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    logger.LogInformation("{BackgroundServiceName} background service succesfully ran", GetType().Name);
-                    return;
+                    logger.LogError(ex, "{BackgroundServiceName} background service failed. Next run is scheduled", GetType().Name);
                 }
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "{BackgroundServiceName} background service failed. Next run is scheduled", GetType().Name);
             }
         } while (await PeriodicTimer.WaitForNextTickAsync(cancellationToken));
     }

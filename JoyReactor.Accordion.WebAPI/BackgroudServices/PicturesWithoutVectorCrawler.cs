@@ -5,7 +5,6 @@ using JoyReactor.Accordion.Logic.Media.Images;
 using JoyReactor.Accordion.Logic.Onnx;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using System.Collections.Frozen;
 
 namespace JoyReactor.Accordion.WebAPI.BackgroudServices;
 
@@ -17,13 +16,12 @@ public class PicturesWithoutVectorCrawler(
 {
     protected override bool IsIndefinite => true;
 
-    protected static readonly FrozenSet<ParsedPostAttributePictureType> ImageTypes = new HashSet<ParsedPostAttributePictureType>()
-    {
+    protected static readonly ParsedPostAttributePictureType[] ImageTypes = [
         ParsedPostAttributePictureType.PNG,
         ParsedPostAttributePictureType.JPEG,
         ParsedPostAttributePictureType.BMP,
         ParsedPostAttributePictureType.TIFF,
-    }.ToFrozenSet();
+    ];
 
     protected override async Task RunAsync(CancellationToken cancellationToken)
     {

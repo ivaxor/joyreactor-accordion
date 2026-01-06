@@ -37,9 +37,10 @@ public class CrawlerTaskHandler(
         foreach (var (id, (task, cts)) in completedTasks)
         {
             if (task.IsFaulted)
-                logger.LogError("Crawler task {CrawlerTaskId} failed", id, task.Exception);
+                logger.LogError(task.Exception, "Crawler task {CrawlerTaskId} failed", id);
 
-            TaskWithCancellationTokenSources.TryRemove(id, out var _);
+            if (TaskWithCancellationTokenSources.TryRemove(id, out var _))
+                cts.Dispose();
         }
 
         var newCrawlerTasks = crawlerTasks
@@ -56,7 +57,7 @@ public class CrawlerTaskHandler(
         }
 
         var oldTasks = TaskWithCancellationTokenSources
-            .Where(task => !crawlerTasks.ContainsKey(task.Key))
+            .Where(kvp => !kvp.Value.Cts.IsCancellationRequested && !crawlerTasks.ContainsKey(kvp.Key))
             .ToArray();
         foreach (var (id, (task, cts)) in oldTasks)
         {
@@ -67,14 +68,14 @@ public class CrawlerTaskHandler(
 
     protected async Task CrawlAsync(Guid crawlerTaskId, CancellationToken cancellationToken)
     {
-        await using var serviceScope = serviceScopeFactory.CreateAsyncScope();
-        await using var sqlDatabaseContext = serviceScope.ServiceProvider.GetRequiredService<SqlDatabaseContext>();
-        var postClient = serviceScope.ServiceProvider.GetRequiredService<IPostClient>();
-        var postParser = serviceScope.ServiceProvider.GetRequiredService<IPostParser>();
-
-        var crawlerTask = await sqlDatabaseContext.CrawlerTasks.FirstAsync(c => c.Id == crawlerTaskId, cancellationToken);
-        using (logger.BeginScope(new Dictionary<string, object>() { { "CrawlerTaskId", crawlerTask.Id } }))
+        using (logger.BeginScope(new Dictionary<string, object>() { { "CrawlerTaskId", crawlerTaskId } }))
         {
+            await using var serviceScope = serviceScopeFactory.CreateAsyncScope();
+            await using var sqlDatabaseContext = serviceScope.ServiceProvider.GetRequiredService<SqlDatabaseContext>();
+            var postClient = serviceScope.ServiceProvider.GetRequiredService<IPostClient>();
+            var postParser = serviceScope.ServiceProvider.GetRequiredService<IPostParser>();
+
+            var crawlerTask = await sqlDatabaseContext.CrawlerTasks.FirstAsync(c => c.Id == crawlerTaskId, cancellationToken);
             crawlerTask.PageFrom ??= 1;
             crawlerTask.PageCurrent ??= crawlerTask.PageFrom;
             crawlerTask.StartedAt = DateTime.UtcNow;

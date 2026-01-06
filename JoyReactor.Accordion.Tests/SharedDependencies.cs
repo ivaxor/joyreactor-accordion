@@ -3,6 +3,7 @@ using GraphQL.Client.Serializer.SystemTextJson;
 using JoyReactor.Accordion.Logic.ApiClient;
 using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Media.Images;
+using JoyReactor.Accordion.Logic.Parsers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -17,7 +18,7 @@ public static class SharedDependencies
     public static readonly ApiClient ApiClient;
     public static readonly TagClient TagClient;
     public static readonly PostClient PostClient;
-    public static readonly PostCrawler PostParser;
+    public static readonly PostParser PostParser;
     public static readonly ImageReducer ImageReducer;
     public static readonly ImageDownloader ImageDownloader;
 
@@ -41,13 +42,11 @@ public static class SharedDependencies
             apiClientSettingsOptions,
             NullLogger<ApiClient>.Instance);
 
-        TagClient = new TagClient(
-            ApiClient,
-            NullLogger<TagClient>.Instance);
+        TagClient = new TagClient(ApiClient);
 
         PostClient = new PostClient(ApiClient);
 
-        PostParser = new PostCrawler(SqlDatabaseContext);
+        PostParser = new PostParser(SqlDatabaseContext);
 
         var imageDownloaderHttpClient = new HttpClient();
         var imageSettingsOptions = Options.Create(new ImageSettings()
@@ -66,6 +65,7 @@ public static class SharedDependencies
         ImageDownloader = new ImageDownloader(
             imageDownloaderHttpClient,
             ImageReducer,
-            imageSettingsOptions);
+            imageSettingsOptions,
+            NullLogger<ImageDownloader>.Instance);
     }
 }

@@ -47,9 +47,8 @@ public static class HostApplicationBuilderExtensions
                 npgsqlOptions.MigrationsAssembly(typeof(Program).Assembly.FullName);
             });
 
-#if DEBUG
-            options.EnableSensitiveDataLogging();
-#endif
+            if (builder.Environment.IsDevelopment())
+                options.EnableSensitiveDataLogging();
         });
 
         builder.Services.AddSingleton<IQdrantClient, QdrantClient>(serviceProvider =>
