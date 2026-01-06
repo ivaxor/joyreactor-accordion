@@ -14,6 +14,7 @@ public record SearchDownloadRequest : IValidatableObject
     }.ToFrozenSet();
 
     [Required]
+    [MaxLength(100)]
     public Uri PictureUrl { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)

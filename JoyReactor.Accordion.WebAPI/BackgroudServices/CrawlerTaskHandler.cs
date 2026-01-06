@@ -1,8 +1,6 @@
-﻿
-using JoyReactor.Accordion.Logic.ApiClient;
+﻿using JoyReactor.Accordion.Logic.ApiClient;
 using JoyReactor.Accordion.Logic.ApiClient.Models;
 using JoyReactor.Accordion.Logic.Database.Sql;
-using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using JoyReactor.Accordion.Logic.Extensions;
 using JoyReactor.Accordion.Logic.Parsers;
 using Microsoft.EntityFrameworkCore;
@@ -51,7 +49,7 @@ public class CrawlerTaskHandler(
             logger.LogInformation("Starting {CrawlerTaskId} crawler task.", id);
             var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             var ct = cts.Token;
-            var task = CrawlAsync(crawlerTask.Id, ct);
+            var task = Task.Run(() => CrawlAsync(crawlerTask.Id, ct));
 
             TaskWithCancellationTokenSources.TryAdd(id, new(task, cts));
         }
@@ -75,7 +73,9 @@ public class CrawlerTaskHandler(
             var postClient = serviceScope.ServiceProvider.GetRequiredService<IPostClient>();
             var postParser = serviceScope.ServiceProvider.GetRequiredService<IPostParser>();
 
-            var crawlerTask = await sqlDatabaseContext.CrawlerTasks.FirstAsync(c => c.Id == crawlerTaskId, cancellationToken);
+            var crawlerTask = await sqlDatabaseContext.CrawlerTasks
+                .Include(c => c.Tag)
+                .FirstAsync(c => c.Id == crawlerTaskId, cancellationToken);
             crawlerTask.PageFrom ??= 1;
             crawlerTask.PageCurrent ??= crawlerTask.PageFrom;
             crawlerTask.StartedAt = DateTime.UtcNow;
@@ -84,19 +84,20 @@ public class CrawlerTaskHandler(
             await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
 
             var postPager = (PostPager)null;
-            var isFullPage = false;
+            var lastPage = 0;
+            var isLastPage = false;
             do
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 var tagNumberId = crawlerTask.TagId.ToInt();
                 postPager = await postClient.GetByTagAsync(tagNumberId, crawlerTask.PostLineType, crawlerTask.PageCurrent.Value, cancellationToken);
-                logger.LogInformation("Found {PostCount} posts using {TagNumberId} tag id on {Page} page.", postPager.Posts.Length, tagNumberId, crawlerTask.PageCurrent);
-
+                lastPage = crawlerTask.PageTo ?? postPager.LastPage;
+                isLastPage = crawlerTask.PageCurrent >= lastPage;
                 await postParser.ParseAsync(postPager.Posts, cancellationToken);
+                logger.LogInformation("Found {PostCount} post(s) using \"{TagName}\" tag on {Page}/{LastPage} page.", postPager.Posts.Length, crawlerTask.Tag.Name, crawlerTask.PageCurrent, lastPage);
 
-                isFullPage = postPager.Posts.Length == 10;
-                if (isFullPage)
+                if (!isLastPage)
                     crawlerTask.PageCurrent += 1;
                 else
                 {
@@ -106,7 +107,7 @@ public class CrawlerTaskHandler(
                 crawlerTask.UpdatedAt = DateTime.UtcNow;
                 sqlDatabaseContext.CrawlerTasks.Update(crawlerTask);
                 await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
-            } while (isFullPage && crawlerTask.PageCurrent <= (crawlerTask.PageTo ?? int.MaxValue));
+            } while (!isLastPage);
 
             logger.LogInformation("Crawler task {CrawlerTaskId} finished.", crawlerTask.Id);
         }

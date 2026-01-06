@@ -4,7 +4,7 @@ namespace JoyReactor.Accordion.WebAPI.Models.Requests;
 
 public record SearchTextRequest
 {
-    [Required]    
+    [Required]
     public SearchTextType Type { get; set; }
 
     [Required]

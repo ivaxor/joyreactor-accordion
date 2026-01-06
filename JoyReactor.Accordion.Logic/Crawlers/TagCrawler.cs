@@ -59,7 +59,7 @@ public class TagCrawler(
             .Select(subTag => new ParsedTag(subTag))
             .ToArray();
 
-        logger.LogInformation("Found {TagsCount} sub tags using {TagNumberId} parent tag number id.", parsedSubTags.Count(), parentNumberId);
+        logger.LogInformation("Found {TagsCount} sub tag(s) using {TagNumberId} parent tag number id.", parsedSubTags.Count(), parentNumberId);
         if (parsedSubTags.Length == 0)
             return;
 

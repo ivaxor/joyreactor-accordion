@@ -86,6 +86,7 @@ builder.Services.AddHostedService<TagSubTagsCrawler>();
 builder.Services.AddHostedService<TagInnnerRangeCrawler>();
 builder.Services.AddHostedService<TagOuterRangeCrawler>();
 builder.Services.AddHostedService<PicturesWithoutVectorCrawler>();
+builder.Services.AddHostedService<CrawlerTaskHandler>();
 //builder.Services.AddHostedService<TopWeekPostsCrawler>();
 
 builder.Services.AddControllers();

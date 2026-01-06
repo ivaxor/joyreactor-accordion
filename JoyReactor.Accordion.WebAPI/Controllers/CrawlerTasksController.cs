@@ -1,6 +1,7 @@
-﻿using JoyReactor.Accordion.Logic.ApiClient.Models;
-using JoyReactor.Accordion.Logic.Database.Sql;
+﻿using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
+using JoyReactor.Accordion.WebAPI.Models.Requests;
+using JoyReactor.Accordion.WebAPI.Models.Responses;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,17 +15,24 @@ public class CrawlerTasksController(SqlDatabaseContext sqlDatabaseContext)
     [HttpGet]
     public async Task<IActionResult> ListAsync(CancellationToken cancellationToken = default)
     {
-        var tasks = await sqlDatabaseContext.CrawlerTasks
-            .OrderByDescending(task => task.Id)
+        var crawlerTasks = await sqlDatabaseContext.CrawlerTasks
+            .AsNoTracking()
+            .Include(crawlerTask => crawlerTask.Tag)
+            .OrderByDescending(crawlerTask => crawlerTask.Id)
             .ToArrayAsync(cancellationToken);
 
-        return Ok(tasks);
+        var response = crawlerTasks
+            .Select(crawlerTask => new CrawlerTaskResponse(crawlerTask))
+            .ToArray();
+
+        return Ok(response);
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateAsync([FromBody] CrawlerTaskCreateRequest request, CancellationToken cancellationToken = default)
     {
         var tag = await sqlDatabaseContext.ParsedTags
+            .AsNoTracking()
             .Where(t => t.Name == request.TagName)
             .FirstOrDefaultAsync(cancellationToken);
         if (tag == null)
@@ -33,7 +41,7 @@ public class CrawlerTasksController(SqlDatabaseContext sqlDatabaseContext)
             return BadRequest(ModelState);
         }
 
-        var task = new CrawlerTask()
+        var crawlerTask = new CrawlerTask()
         {
             IsIndefinite = request.IsIndefinite,
             TagId = tag.Id,
@@ -44,31 +52,25 @@ public class CrawlerTasksController(SqlDatabaseContext sqlDatabaseContext)
             UpdatedAt = DateTime.UtcNow,
         };
 
-        await sqlDatabaseContext.CrawlerTasks.AddAsync(task, cancellationToken);
+        await sqlDatabaseContext.CrawlerTasks.AddAsync(crawlerTask, cancellationToken);
         await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
 
-        return Ok(task);
+        var response = new CrawlerTaskResponse(crawlerTask);
+        return Ok(response);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteAsync([FromRoute] Guid id, CancellationToken cancellationToken = default)
     {
-        var task = await sqlDatabaseContext.CrawlerTasks.FirstOrDefaultAsync(task => task.Id == id, cancellationToken);
-        if (task == null)
+        var crawlerTask = await sqlDatabaseContext.CrawlerTasks
+            .AsNoTracking()
+            .FirstOrDefaultAsync(task => task.Id == id, cancellationToken);
+        if (crawlerTask == null)
             return NotFound();
 
-        sqlDatabaseContext.Remove(task);
+        sqlDatabaseContext.CrawlerTasks.Remove(crawlerTask);
         await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
 
         return Ok();
     }
-}
-
-public record CrawlerTaskCreateRequest
-{
-    public bool IsIndefinite { get; set; }
-    public string TagName { get; set; }
-    public PostLineType PostLineType { get; set; }
-    public int? PageFrom { get; set; }
-    public int? PageTo { get; set; }
 }

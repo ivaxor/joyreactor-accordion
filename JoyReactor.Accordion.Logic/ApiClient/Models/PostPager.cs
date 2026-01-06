@@ -10,4 +10,7 @@ public record PostPager : NodeResponseObject
 
     [JsonPropertyName("posts")]
     public Post[] Posts { get; set; }
+
+    [JsonIgnore]
+    public int LastPage => Convert.ToInt32(Math.Ceiling(TotalCount / 10.0));
 }
