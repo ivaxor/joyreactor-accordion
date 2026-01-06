@@ -61,11 +61,14 @@ builder.Services.AddSingleton<IVectorDatabaseContext, VectorDatabaseContext>();
 
 builder.Services.AddHostedService<MainTagsCrawler>();
 builder.Services.AddHostedService<TagSubTagsCrawler>();
-builder.Services.AddHostedService<TagInnnerRangeCrawler>();
-builder.Services.AddHostedService<TagOuterRangeCrawler>();
 builder.Services.AddHostedService<PicturesWithoutVectorCrawler>();
 builder.Services.AddHostedService<CrawlerTaskHandler>();
-//builder.Services.AddHostedService<TopWeekPostsCrawler>();
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddHostedService<TagInnnerRangeCrawler>();
+    builder.Services.AddHostedService<TagOuterRangeCrawler>();
+    //builder.Services.AddHostedService<TopWeekPostsCrawler>();
+}
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
