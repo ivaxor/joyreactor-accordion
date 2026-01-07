@@ -53,10 +53,6 @@ public class ApiClient(
                 return response.Data;
             }, cancellationToken);
         }
-        catch
-        {
-            throw;
-        }
         finally
         {
             Semaphore.Release();
