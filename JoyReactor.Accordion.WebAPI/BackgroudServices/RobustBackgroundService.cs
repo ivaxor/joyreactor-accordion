@@ -10,11 +10,15 @@ public abstract class RobustBackgroundService(
 {
     protected readonly PeriodicTimer PeriodicTimer = new PeriodicTimer(settings.Value.SubsequentRunDelay);
     protected abstract bool IsIndefinite { get; }
+    protected bool IsDisabled => settings.Value.DisabledServiceNames.Contains(GetType().Name, StringComparer.OrdinalIgnoreCase);
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         do
         {
+            if (IsDisabled)
+                return;
+
             using (logger.BeginScope(new Dictionary<string, object>() { { "TraceId", Guid.NewGuid() } }))
             {
                 try

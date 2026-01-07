@@ -41,6 +41,11 @@ public class VectorDatabaseContext(
             .ToArray();
     }
 
+    public async Task<ulong> CountAsync(CancellationToken cancellationToken)
+    {
+        return await qdrantClient.CountAsync(settings.Value.CollectionName, cancellationToken: cancellationToken);
+    }
+
     protected static PointStruct CreatePointStruct(ParsedPostAttributePicture picture, float[] vector)
     {
         return new PointStruct
@@ -60,4 +65,5 @@ public interface IVectorDatabaseContext
     Task UpsertAsync(ParsedPostAttributePicture picture, float[] vector, CancellationToken cancellationToken);
     Task UpsertAsync(IDictionary<ParsedPostAttributePicture, float[]> pictureVectors, CancellationToken cancellationToken);
     Task<PictureScoredPoint[]> SearchAsync(float[] vector, CancellationToken cancellationToken);
+    Task<ulong> CountAsync(CancellationToken cancellationToken);
 }
