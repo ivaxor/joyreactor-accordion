@@ -30,7 +30,7 @@ jobs:
       - name: Build and Push CPU Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./JoyReactor.Accordion.Web
           file: ./JoyReactor.Accordion.Web/Dockerfile
           tags: ghcr.io/${{ github.repository }}-web:latest
           push: ${{ github.event_name != 'pull_request' }}
