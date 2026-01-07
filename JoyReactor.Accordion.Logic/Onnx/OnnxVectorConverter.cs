@@ -1,8 +1,9 @@
 ﻿using Microsoft.Extensions.Options;
 using Microsoft.ML.OnnxRuntime;
-using Microsoft.ML.OnnxRuntime.Tensors;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using System.Buffers;
+using System.Runtime.InteropServices;
 
 namespace JoyReactor.Accordion.Logic.Onnx;
 
@@ -13,40 +14,72 @@ public class OnnxVectorConverter(
 {
     protected static readonly float[] Mean = [0.48145466f, 0.4578275f, 0.40821073f];
     protected static readonly float[] Std = [0.26862954f, 0.26130258f, 0.27577711f];
+    protected static readonly RunOptions RunOptions = new();
 
     public async Task<float[]> ConvertAsync(Image<Rgb24> image)
     {
         var inputSize = settings.Value.InputSize;
-        var outputSize = settings.Value.OutputSize;
+        var inputBufferSize = 3 * inputSize * inputSize;
+        var outputBufferSize = settings.Value.OutputSize;
 
-        var input = ConvertToTensor(image, inputSize);
-        var output = new float[outputSize];
+        var inputBuffer = ArrayPool<float>.Shared.Rent(inputBufferSize);
+        var outputBuffer = ArrayPool<float>.Shared.Rent(outputBufferSize);
 
-        using var inputValue = OrtValue.CreateTensorValueFromMemory(
-            OrtMemoryInfo.DefaultInstance,
-            input.Buffer,
-            [1, 3, inputSize, inputSize]);
+        var inputBufferHandle = (GCHandle)default;
+        var outputBufferHandle = (GCHandle)default;
 
-        using var outputValue = OrtValue.CreateTensorValueFromMemory(
-            OrtMemoryInfo.DefaultInstance,
-            output.AsMemory(),
-            [1, outputSize]);
+        try
+        {
+            inputBufferHandle = GCHandle.Alloc(inputBuffer, GCHandleType.Pinned);
+            outputBufferHandle = GCHandle.Alloc(outputBuffer, GCHandleType.Pinned);
 
-        await inferenceSession.RunAsync(
-            new RunOptions(),
-            [settings.Value.InputName],
-            [inputValue],
-            [settings.Value.OutputName],
-            [outputValue]);
+            FillInputBuffer(image, inputBuffer, inputSize);
 
-        L2Normalize(output);
+            using var inputValue = OrtValue.CreateTensorValueFromMemory(
+                OrtMemoryInfo.DefaultInstance,
+                inputBuffer.AsMemory(0, inputBufferSize),
+                [1, 3, inputSize, inputSize]);
 
-        return output;
+            using var outputValue = OrtValue.CreateTensorValueFromMemory(
+                OrtMemoryInfo.DefaultInstance,
+                outputBuffer.AsMemory(0, outputBufferSize),
+                [1, outputBufferSize]);
+
+            if (settings.Value.UseCpu)
+                inferenceSession.Run(
+                        RunOptions,
+                        [settings.Value.InputName],
+                        [inputValue],
+                        [settings.Value.OutputName],
+                        [outputValue]);
+            else
+                await inferenceSession.RunAsync(
+                    RunOptions,
+                    [settings.Value.InputName],
+                    [inputValue],
+                    [settings.Value.OutputName],
+                    [outputValue]);
+
+            L2Normalize(outputBuffer, outputBufferSize);
+
+            return outputBuffer.AsSpan(0, outputBufferSize).ToArray();
+        }
+        finally
+        {
+            if (inputBufferHandle.IsAllocated)
+                inputBufferHandle.Free();
+
+            if (outputBufferHandle.IsAllocated)
+                outputBufferHandle.Free();
+
+            ArrayPool<float>.Shared.Return(inputBuffer);
+            ArrayPool<float>.Shared.Return(outputBuffer);
+        }
     }
 
-    protected static DenseTensor<float> ConvertToTensor(Image<Rgb24> image, int size)
+    protected static void FillInputBuffer(Image<Rgb24> image, float[] buffer, int size)
     {
-        var tensor = new DenseTensor<float>([1, 3, size, size]);
+        var channelSize = size * size;
         image.ProcessPixelRows(accessor =>
         {
             for (var y = 0; y < size; y++)
@@ -54,29 +87,28 @@ public class OnnxVectorConverter(
                 var row = accessor.GetRowSpan(y);
                 for (var x = 0; x < size; x++)
                 {
-                    tensor[0, 0, y, x] = (row[x].R / 255f - Mean[0]) / Std[0];
-                    tensor[0, 1, y, x] = (row[x].G / 255f - Mean[1]) / Std[1];
-                    tensor[0, 2, y, x] = (row[x].B / 255f - Mean[2]) / Std[2];
+                    int offset = y * size + x;
+                    buffer[offset] = (row[x].R / 255f - Mean[0]) / Std[0];
+                    buffer[offset + channelSize] = (row[x].G / 255f - Mean[1]) / Std[1];
+                    buffer[offset + 2 * channelSize] = (row[x].B / 255f - Mean[2]) / Std[2];
                 }
             }
         });
-
-        return tensor;
     }
 
-    protected static void L2Normalize(float[] vector)
+    protected static void L2Normalize(float[] buffer, int size)
     {
         var sum = 0f;
-        for (var i = 0; i < vector.Length; i++)
-            sum += vector[i] * vector[i];
+        for (var i = 0; i < size; i++)
+            sum += buffer[i] * buffer[i];
 
         var norm = MathF.Sqrt(sum);
         if (norm < 1e-10f)
             return;
 
         var invNorm = 1.0f / norm;
-        for (var i = 0; i < vector.Length; i++)
-            vector[i] *= invNorm;
+        for (var i = 0; i < size; i++)
+            buffer[i] *= invNorm;
     }
 }
 
