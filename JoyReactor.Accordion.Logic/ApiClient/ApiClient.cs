@@ -38,10 +38,9 @@ public class ApiClient(
 
     public async Task<T> SendAsync<T>(GraphQLRequest request, CancellationToken cancellationToken)
     {
-        await Semaphore.WaitAsync(cancellationToken);
-
         try
         {
+            await Semaphore.WaitAsync(cancellationToken);
             await Task.Delay(settings.Value.SubsequentCallDelay);
 
             return await ResiliencePipeline.ExecuteAsync(async ct =>
