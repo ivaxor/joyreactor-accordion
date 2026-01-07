@@ -1,1 +1,50 @@
-/* You can add global styles to this file, and also import other style files */
+$jr-dark: #222222;
+$jr-card-bg: #333333;
+$jr-orange: #ff9d00;
+$jr-orange-hover: #e68e00;
+$jr-border: #444444;
+$jr-text: #cccccc;
+
+$body-bg: $jr-dark;
+$body-color: $jr-text;
+$primary: $jr-orange;
+
+$card-bg: $jr-card-bg;
+$card-border-color: $jr-border;
+$card-border-radius: 4px;
+$card-cap-bg: rgba(0, 0, 0, 0.2);
+
+$btn-border-radius: 3px;
+$btn-font-weight: 600;
+
+@import "../node_modules/bootstrap/scss/bootstrap";
+
+body {
+  font-family: Arial, sans-serif;
+}
+
+.card {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+
+  .card-header {
+    font-weight: bold;
+    color: #fff;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: $jr-dark;
+}
+
+::-webkit-scrollbar-thumb {
+  background: $jr-border;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: $jr-orange;
+}

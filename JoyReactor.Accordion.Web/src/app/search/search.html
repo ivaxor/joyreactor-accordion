@@ -1,0 +1,26 @@
+<div class="card jr-main-card shadow-lg mx-auto p-4">
+    <div class="row align-items-center g-0">
+        <div class="col text-end">
+            <span class="switch-text" [class.active]="!isPicture">Ссылка</span>
+        </div>
+
+        <div class="col-auto px-3">
+            <div class="form-switch d-inline-block p-0 m-0">
+                <input switch class="form-check-input m-0" type="checkbox" role="switch" id="searchTypeSwitch"
+                    [defaultValue]="isPicture" [(ngModel)]="isPicture">
+            </div>
+        </div>
+
+        <div class="col text-start">
+            <span class="switch-text" [class.active]="isPicture">Изображение</span>
+        </div>
+    </div>
+
+    <div class="card-body p-4">
+        @if (isPicture) {
+        <app-search-picture />
+        } @else {
+        <app-search-embedded />
+        }
+    </div>
+</div>
