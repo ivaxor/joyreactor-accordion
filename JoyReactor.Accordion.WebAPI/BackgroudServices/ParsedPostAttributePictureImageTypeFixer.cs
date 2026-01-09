@@ -1,6 +1,5 @@
 ﻿using JoyReactor.Accordion.Logic.ApiClient;
 using JoyReactor.Accordion.Logic.Database.Sql;
-using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using JoyReactor.Accordion.Logic.Extensions;
 using JoyReactor.Accordion.Logic.Parsers;
 using JoyReactor.Accordion.WebAPI.Models;
@@ -26,28 +25,34 @@ public class ParsedPostAttributePictureImageTypeFixer(
 
         var skip = 0;
         var take = 100;
-        var parsedPostAttributePictures = (ParsedPostAttributePicture[])null;
-
+        var postIds = (HashSet<Guid>)null;
         do
         {
-            parsedPostAttributePictures = await sqlDatabaseContext.ParsedPostAttributePictures
+            postIds = await sqlDatabaseContext.ParsedPostAttributePictures
+                .AsNoTracking()
                 .Where(postAttribute => (int)postAttribute.ImageType > 6)
+                .OrderBy(postAttribute => postAttribute.Id)
                 .Skip(skip)
                 .Take(take)
-                .ToArrayAsync(cancellationToken);
-            logger.LogInformation("Fixing {PostAttributeCount} parsed post attribute pictures image types", parsedPostAttributePictures.Length);
-
-            var postIds = parsedPostAttributePictures
-                .Select(postAttribute => postAttribute.PostId.ToInt())
-                .ToHashSet();
+                .Select(postAttribute => postAttribute.PostId)
+                .ToHashSetAsync(cancellationToken);
+            if (postIds.Count == 0)
+            {
+                logger.LogInformation("No parsed post attribute pictures with broken image type found");
+                return;
+            }
+            else
+                logger.LogInformation("Found {PostCount} parsed post with broken attribute pictures image type", postIds.Count);
 
             foreach (var postId in postIds)
             {
-                var post = await postClient.GetAsync(postId, cancellationToken);
+                var postNumberId = postId.ToInt();
+                var post = await postClient.GetAsync(postNumberId, cancellationToken);
                 await postParser.ParseAsync(post, cancellationToken);
+                logger.LogInformation("Fixed broken attribute pictures image type in post {PostNumberId}", postNumberId);
             }
 
             skip += take;
-        } while (parsedPostAttributePictures.Length != 0);
+        } while (postIds.Count != 0);
     }
 }
