@@ -67,6 +67,7 @@ builder.Services.AddHostedService<CrawlerTaskHandler>();
 builder.Services.AddHostedService<TagInnnerRangeCrawler>();
 builder.Services.AddHostedService<TagOuterRangeCrawler>();
 builder.Services.AddHostedService<TopWeekPostsCrawler>();
+builder.Services.AddHostedService<ParsedPostAttributePictureImageTypeFixer>();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
@@ -81,11 +82,8 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 app.UseSerilogRequestLogging();
-
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.All,
-});
+app.UseCors();
+app.UseForwardedHeaders(new ForwardedHeadersOptions { ForwardedHeaders = ForwardedHeaders.All });
 
 if (app.Environment.IsDevelopment())
 {
@@ -97,10 +95,9 @@ else
 {
     //app.UseHttpsRedirection();
     //app.UseHsts();
+    app.UseRateLimiter();
 }
 
-app.UseCors();
-app.UseRateLimiter();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/healthz");
