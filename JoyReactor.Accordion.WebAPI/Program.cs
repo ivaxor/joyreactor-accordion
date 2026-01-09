@@ -7,6 +7,7 @@ using JoyReactor.Accordion.Logic.Parsers;
 using JoyReactor.Accordion.WebAPI.BackgroudServices;
 using JoyReactor.Accordion.WebAPI.Controllers;
 using JoyReactor.Accordion.WebAPI.Extensions;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using Serilog;
@@ -69,17 +70,37 @@ builder.Services.AddHostedService<TopWeekPostsCrawler>();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+builder.Services.AddCors(options =>
+{
+    // TODO: Update with settings for prod
+    options.AddDefaultPolicy(builder => builder
+        .AllowAnyHeader()
+        .AllowAnyOrigin()
+        .AllowAnyMethod());
+});
 
 var app = builder.Build();
 app.UseSerilogRequestLogging();
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.All,
+});
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
+    app.UseHttpsRedirection();
+}
+else
+{
+    //app.UseHttpsRedirection();
+    //app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+app.UseRateLimiter();
+app.UseCors();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/healthz");

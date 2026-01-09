@@ -139,11 +139,13 @@ public static class HostApplicationBuilderExtensions
 
         builder.Services.AddRateLimiter(options =>
         {
+            var settings = builder.Configuration
+                .GetSection(nameof(RateLimiterSettings))
+                .Get<RateLimiterSettings>();
+
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
             {
-                var settings = httpContext.RequestServices.GetRequiredService<IOptions<RateLimiterSettings>>();
-
                 var realIp = httpContext.Request.Headers["X-Real-Ip"].FirstOrDefault();
                 var forwardedFor = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
                 var remoteIp = httpContext.Connection.RemoteIpAddress?.ToString();
@@ -155,9 +157,9 @@ public static class HostApplicationBuilderExtensions
                     _ => new FixedWindowRateLimiterOptions
                     {
                         AutoReplenishment = true,
-                        PermitLimit = settings.Value.PermitLimit,
+                        PermitLimit = settings.PermitLimit,
                         QueueLimit = 0,
-                        Window = settings.Value.Window,
+                        Window = settings.Window,
                     });
             });
         });
