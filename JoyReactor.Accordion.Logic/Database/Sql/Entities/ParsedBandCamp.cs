@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace JoyReactor.Accordion.Logic.Database.Sql.Entities;
 
-public partial record ParsedBandCamp : ISqlEntity, IParsedAttributeEmbeded
+public partial record ParsedBandCamp : ISqlEntity, IParsedAttributeEmbedded
 {
     [GeneratedRegex(@"(?<type>album|track)=(?<id>\d+)", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex UrlPathRegex();
@@ -25,7 +25,7 @@ public partial record ParsedBandCamp : ISqlEntity, IParsedAttributeEmbeded
 
     public string UrlPath { get; set; }
 
-    public virtual ParsedPostAttributeEmbeded PostAttributeEmbeded { get; set; }
+    public virtual ParsedPostAttributeEmbedded PostAttributeEmbedded { get; set; }
 
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
@@ -43,10 +43,10 @@ public class ParsedBandCampEntityTypeConfiguration : IEntityTypeConfiguration<Pa
             .IsRequired(true);
 
         builder
-            .HasOne(e => e.PostAttributeEmbeded)
+            .HasOne(e => e.PostAttributeEmbedded)
             .WithOne(e => e.BandCamp)
             .HasPrincipalKey<ParsedBandCamp>(e => e.Id)
-            .HasForeignKey<ParsedPostAttributeEmbeded>(e => e.BandCampId)
+            .HasForeignKey<ParsedPostAttributeEmbedded>(e => e.BandCampId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired(false);
 

@@ -1,6 +1,6 @@
 ﻿namespace JoyReactor.Accordion.Logic.Database.Sql.Entities;
 
-public interface IParsedAttributeEmbeded
+public interface IParsedAttributeEmbedded
 {
     public Guid Id { get; set; }
 }

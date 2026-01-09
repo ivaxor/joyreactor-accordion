@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace JoyReactor.Accordion.Logic.Database.Sql.Entities;
 
-public record ParsedPostAttributeEmbeded : ISqlEntity, IParsedPostAttribute
+public record ParsedPostAttributeEmbedded : ISqlEntity, IParsedPostAttribute
 {
-    public ParsedPostAttributeEmbeded() { }
+    public ParsedPostAttributeEmbedded() { }
 
-    public ParsedPostAttributeEmbeded(PostAttribute attribute, ParsedPost post, IParsedAttributeEmbeded parsedAttribute)
+    public ParsedPostAttributeEmbedded(PostAttribute attribute, ParsedPost post, IParsedAttributeEmbedded parsedAttribute)
     {
         Id = attribute.NumberId.ToGuid();
         PostId = post.Id;
@@ -63,9 +63,9 @@ public record ParsedPostAttributeEmbeded : ISqlEntity, IParsedPostAttribute
     public DateTime UpdatedAt { get; set; }
 }
 
-public class ParsedPostAttributeEmbededEntityTypeConfiguration : IEntityTypeConfiguration<ParsedPostAttributeEmbeded>
+public class ParsedPostAttributeEmbeddedEntityTypeConfiguration : IEntityTypeConfiguration<ParsedPostAttributeEmbedded>
 {
-    public void Configure(EntityTypeBuilder<ParsedPostAttributeEmbeded> builder)
+    public void Configure(EntityTypeBuilder<ParsedPostAttributeEmbedded> builder)
     {
         builder
             .HasIndex(e => new { e.PostId, e.BandCampId, e.CoubId, e.SoundCloudId, e.VimeoId, e.YouTubeId })
@@ -80,41 +80,41 @@ public class ParsedPostAttributeEmbededEntityTypeConfiguration : IEntityTypeConf
 
         builder
             .HasOne(e => e.BandCamp)
-            .WithOne(e => e.PostAttributeEmbeded)
+            .WithOne(e => e.PostAttributeEmbedded)
             .HasPrincipalKey<ParsedBandCamp>(e => e.Id)
-            .HasForeignKey<ParsedPostAttributeEmbeded>(e => e.BandCampId)
+            .HasForeignKey<ParsedPostAttributeEmbedded>(e => e.BandCampId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired(false);
 
         builder
             .HasOne(e => e.Coub)
-            .WithOne(e => e.PostAttributeEmbeded)
+            .WithOne(e => e.PostAttributeEmbedded)
             .HasPrincipalKey<ParsedCoub>(e => e.Id)
-            .HasForeignKey<ParsedPostAttributeEmbeded>(e => e.CoubId)
+            .HasForeignKey<ParsedPostAttributeEmbedded>(e => e.CoubId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired(false);
 
         builder
             .HasOne(e => e.SoundCloud)
-            .WithOne(e => e.PostAttributeEmbeded)
+            .WithOne(e => e.PostAttributeEmbedded)
             .HasPrincipalKey<ParsedSoundCloud>(e => e.Id)
-            .HasForeignKey<ParsedPostAttributeEmbeded>(e => e.SoundCloudId)
+            .HasForeignKey<ParsedPostAttributeEmbedded>(e => e.SoundCloudId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired(false);
 
         builder
             .HasOne(e => e.Vimeo)
-            .WithOne(e => e.PostAttributeEmbeded)
+            .WithOne(e => e.PostAttributeEmbedded)
             .HasPrincipalKey<ParsedVimeo>(e => e.Id)
-            .HasForeignKey<ParsedPostAttributeEmbeded>(e => e.VimeoId)
+            .HasForeignKey<ParsedPostAttributeEmbedded>(e => e.VimeoId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired(false);
 
         builder
             .HasOne(e => e.YouTube)
-            .WithOne(e => e.PostAttributeEmbeded)
+            .WithOne(e => e.PostAttributeEmbedded)
             .HasPrincipalKey<ParsedYoutube>(e => e.Id)
-            .HasForeignKey<ParsedPostAttributeEmbeded>(e => e.YouTubeId)
+            .HasForeignKey<ParsedPostAttributeEmbedded>(e => e.YouTubeId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired(false);
 

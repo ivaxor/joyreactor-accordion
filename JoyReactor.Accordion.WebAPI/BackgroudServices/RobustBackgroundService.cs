@@ -14,11 +14,11 @@ public abstract class RobustBackgroundService(
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
+        if (IsDisabled)
+            return;
+
         do
         {
-            if (IsDisabled)
-                return;
-
             using (logger.BeginScope(new Dictionary<string, object>() { { "TraceId", Guid.NewGuid() } }))
             {
                 try

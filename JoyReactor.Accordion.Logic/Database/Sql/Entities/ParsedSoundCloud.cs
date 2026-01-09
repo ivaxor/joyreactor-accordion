@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace JoyReactor.Accordion.Logic.Database.Sql.Entities;
 
-public partial record ParsedSoundCloud : ISqlEntity, IParsedAttributeEmbeded
+public partial record ParsedSoundCloud : ISqlEntity, IParsedAttributeEmbedded
 {
     [GeneratedRegex(@"(?<type>tracks|playlists)[\\/]+(?<id>\d+)", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex UrlPathRegex();
@@ -25,7 +25,7 @@ public partial record ParsedSoundCloud : ISqlEntity, IParsedAttributeEmbeded
 
     public string UrlPath { get; set; }
 
-    public virtual ParsedPostAttributeEmbeded PostAttributeEmbeded { get; set; }
+    public virtual ParsedPostAttributeEmbedded PostAttributeEmbedded { get; set; }
 
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
@@ -43,10 +43,10 @@ public class ParsedSoundCloudEntityTypeConfiguration : IEntityTypeConfiguration<
             .IsRequired(true);
 
         builder
-            .HasOne(e => e.PostAttributeEmbeded)
+            .HasOne(e => e.PostAttributeEmbedded)
             .WithOne(e => e.SoundCloud)
             .HasPrincipalKey<ParsedSoundCloud>(e => e.Id)
-            .HasForeignKey<ParsedPostAttributeEmbeded>(e => e.SoundCloudId)
+            .HasForeignKey<ParsedPostAttributeEmbedded>(e => e.SoundCloudId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired(false);
 
