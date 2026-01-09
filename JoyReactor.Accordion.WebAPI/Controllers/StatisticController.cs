@@ -38,7 +38,7 @@ public class StatisticController(
         response.ParsedCoubs = await sqlDatabaseContext.ParsedCoubs.CountAsync(cancellationToken);
         response.ParsedSoundClouds = await sqlDatabaseContext.ParsedSoundClouds.CountAsync(cancellationToken);
         response.ParsedVimeos = await sqlDatabaseContext.ParsedVimeos.CountAsync(cancellationToken);
-        response.ParsedYoutubes = await sqlDatabaseContext.ParsedYoutubes.CountAsync(cancellationToken);
+        response.ParsedYouTubes = await sqlDatabaseContext.ParsedYouTubes.CountAsync(cancellationToken);
 
         return Ok(response);
     }

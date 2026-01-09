@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace JoyReactor.Accordion.Logic.Database.Sql.Entities;
 
-public record ParsedPostAttributePicture : ISqlEntity, IParsedPostAttribute
+public record ParsedPostAttributePicture : ISqlUpdatedAtEntity, IParsedPostAttribute
 {
     public ParsedPostAttributePicture() { }
 

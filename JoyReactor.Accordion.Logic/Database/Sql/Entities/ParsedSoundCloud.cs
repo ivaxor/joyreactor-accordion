@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace JoyReactor.Accordion.Logic.Database.Sql.Entities;
 
-public partial record ParsedSoundCloud : ISqlEntity, IParsedAttributeEmbedded
+public partial record ParsedSoundCloud : ISqlUpdatedAtEntity, IParsedAttributeEmbedded
 {
     [GeneratedRegex(@"(?<type>tracks|playlists)[\\/]+(?<id>\d+)", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex UrlPathRegex();

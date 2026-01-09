@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace JoyReactor.Accordion.Logic.Database.Sql.Entities;
 
-public record ParsedCoub : ISqlEntity, IParsedAttributeEmbedded
+public record ParsedCoub : ISqlUpdatedAtEntity, IParsedAttributeEmbedded
 {
     public ParsedCoub() { }
 

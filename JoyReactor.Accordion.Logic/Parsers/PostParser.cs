@@ -75,7 +75,7 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext) : IPostParser
                 ParsedCoub => sqlDatabaseContext.ParsedCoubs.UpsertRangeAsync(group.Cast<ParsedCoub>(), cancellationToken),
                 ParsedSoundCloud => sqlDatabaseContext.ParsedSoundClouds.UpsertRangeAsync(group.Cast<ParsedSoundCloud>(), cancellationToken),
                 ParsedVimeo => sqlDatabaseContext.ParsedVimeos.UpsertRangeAsync(group.Cast<ParsedVimeo>(), cancellationToken),
-                ParsedYoutube => sqlDatabaseContext.ParsedYoutubes.UpsertRangeAsync(group.Cast<ParsedYoutube>(), cancellationToken),
+                ParsedYouTube => sqlDatabaseContext.ParsedYouTubes.UpsertRangeAsync(group.Cast<ParsedYouTube>(), cancellationToken),
                 _ => throw new NotImplementedException(),
             });
         }
@@ -142,8 +142,8 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext) : IPostParser
                 return parsedVimeo;
 
             case "YOUTUBE":
-                var parsedYouTube = new ParsedYoutube(postAttribute);
-                var existingYouTubeId = await sqlDatabaseContext.ParsedYoutubes
+                var parsedYouTube = new ParsedYouTube(postAttribute);
+                var existingYouTubeId = await sqlDatabaseContext.ParsedYouTubes
                     .Where(youTube => youTube.VideoId == parsedYouTube.VideoId)
                     .Select(youTube => youTube.Id)
                     .FirstOrDefaultAsync(cancellationToken);
@@ -168,7 +168,7 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext) : IPostParser
             ParsedCoub parsedCoub => filteredParsedAttributes.Cast<ParsedCoub>().FirstOrDefault(pa => pa.VideoId == parsedCoub.VideoId, parsedCoub),
             ParsedSoundCloud parsedSoundCloud => filteredParsedAttributes.Cast<ParsedSoundCloud>().FirstOrDefault(pa => pa.UrlPath == parsedSoundCloud.UrlPath, parsedSoundCloud),
             ParsedVimeo parsedVimeo => filteredParsedAttributes.Cast<ParsedVimeo>().FirstOrDefault(pa => pa.VideoId == parsedVimeo.VideoId, parsedVimeo),
-            ParsedYoutube parsedYouTube => filteredParsedAttributes.Cast<ParsedYoutube>().FirstOrDefault(pa => pa.VideoId == parsedYouTube.VideoId, parsedYouTube),
+            ParsedYouTube parsedYouTube => filteredParsedAttributes.Cast<ParsedYouTube>().FirstOrDefault(pa => pa.VideoId == parsedYouTube.VideoId, parsedYouTube),
             _ => throw new NotImplementedException(),
         };
     }

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace JoyReactor.Accordion.Logic.Database.Sql.Entities;
 
-public record CrawlerTask : ISqlEntity
+public record CrawlerTask : ISqlUpdatedAtEntity
 {
     public Guid Id { get; set; }
 
@@ -29,8 +29,6 @@ public class CrawlerTaskEntityTypeConfiguration : IEntityTypeConfiguration<Crawl
 {
     public void Configure(EntityTypeBuilder<CrawlerTask> builder)
     {
-
-
         builder
             .HasOne(e => e.Tag)
             .WithMany(e => e.CrawlerTasks)

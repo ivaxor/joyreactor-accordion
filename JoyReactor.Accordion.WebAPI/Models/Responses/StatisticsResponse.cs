@@ -18,5 +18,5 @@ public record StatisticsResponse
     public int ParsedCoubs { get; set; }
     public int ParsedSoundClouds { get; set; }
     public int ParsedVimeos { get; set; }
-    public int ParsedYoutubes { get; set; }
+    public int ParsedYouTubes { get; set; }
 }

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace JoyReactor.Accordion.Logic.Database.Sql.Entities;
 
-public record EmptyTag : ISqlEntity
+public record EmptyTag : ISqlCreatedAtEntity
 {
     public EmptyTag() { }
     public EmptyTag(int numberId)

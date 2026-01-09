@@ -1,5 +1,4 @@
 ﻿using JoyReactor.Accordion.Logic.ApiClient;
-using JoyReactor.Accordion.Logic.ApiClient.Models;
 using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using JoyReactor.Accordion.Logic.Extensions;
@@ -10,10 +9,10 @@ using Microsoft.Extensions.Options;
 
 namespace JoyReactor.Accordion.WebAPI.BackgroudServices;
 
-public class ParsedPostAttributePicturesFixer(
+public class ParsedPostAttributePictureImageTypeFixer(
     IServiceScopeFactory serviceScopeFactory,
     IOptions<BackgroundServiceSettings> settings,
-    ILogger<ParsedPostAttributePicturesFixer> logger)
+    ILogger<ParsedPostAttributePictureImageTypeFixer> logger)
     : RobustBackgroundService(settings, logger)
 {
     protected override bool IsIndefinite => false;
@@ -36,7 +35,7 @@ public class ParsedPostAttributePicturesFixer(
                 .Skip(skip)
                 .Take(take)
                 .ToArrayAsync(cancellationToken);
-            logger.LogInformation("Fixing {PostAttributeCount} parsed post attribute pictures", parsedPostAttributePictures.Length);
+            logger.LogInformation("Fixing {PostAttributeCount} parsed post attribute pictures image types", parsedPostAttributePictures.Length);
 
             var postIds = parsedPostAttributePictures
                 .Select(postAttribute => postAttribute.PostId.ToInt())

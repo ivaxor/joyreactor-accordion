@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace JoyReactor.Accordion.Logic.Database.Sql.Entities;
 
-public record ParsedVimeo : ISqlEntity, IParsedAttributeEmbedded
+public record ParsedVimeo : ISqlUpdatedAtEntity, IParsedAttributeEmbedded
 {
     public ParsedVimeo() { }
 

@@ -19,7 +19,7 @@ public record PostAttribute : NodeResponseObject
 
     /// <summary>
     /// Possible values:
-    /// Youtube/Vimeo/Coub video id,
+    /// YouTube/Vimeo/Coub video id,
     /// Soundcloud json { url, height },
     /// BandCamp json { url, height, width }
     /// </summary>

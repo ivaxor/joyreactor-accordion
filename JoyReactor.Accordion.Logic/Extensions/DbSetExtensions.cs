@@ -6,16 +6,20 @@ namespace JoyReactor.Accordion.Logic.Extensions;
 public static class DbSetExtensions
 {
     public static async Task UpsertAsync<TEntity>(this DbSet<TEntity> dbSet, TEntity entity, CancellationToken cancellationToken)
-        where TEntity : class, ISqlEntity
+        where TEntity : class, ISqlCreatedAtEntity
     {
         var isEntityExists = await dbSet.AnyAsync(e => e.Id == entity.Id, cancellationToken);
+
         dbSet.Entry(entity).State = isEntityExists
             ? EntityState.Modified
             : EntityState.Added;
+
+        if (isEntityExists)
+            dbSet.Entry(entity).Property(e => e.CreatedAt).IsModified = false;
     }
 
     public static async Task UpsertRangeAsync<TEntity>(this DbSet<TEntity> dbSet, IEnumerable<TEntity> entities, CancellationToken cancellationToken)
-        where TEntity : class, ISqlEntity
+        where TEntity : class, ISqlCreatedAtEntity
     {
         var entityIds = entities
             .Select(entity => entity.Id)
@@ -28,14 +32,18 @@ public static class DbSetExtensions
 
         foreach (var entity in entities)
         {
-            dbSet.Entry(entity).State = existingEntityIds.Contains(entity.Id)
+            var isEntityExists = existingEntityIds.Contains(entity.Id);
+            dbSet.Entry(entity).State = isEntityExists
                 ? EntityState.Modified
                 : EntityState.Added;
+
+            if (isEntityExists)
+                dbSet.Entry(entity).Property(e => e.CreatedAt).IsModified = false;
         }
     }
 
     public static async Task AddIgnoreExistingAsync<TEntity>(this DbSet<TEntity> dbSet, TEntity entity, CancellationToken cancellationToken)
-        where TEntity : class, ISqlEntity
+        where TEntity : class, ISqlCreatedAtEntity
     {
         var isEntityExists = await dbSet.AnyAsync(e => e.Id == entity.Id, cancellationToken);
         if (isEntityExists)
@@ -45,7 +53,7 @@ public static class DbSetExtensions
     }
 
     public static async Task AddRangeIgnoreExistingAsync<TEntity>(this DbSet<TEntity> dbSet, IEnumerable<TEntity> entities, CancellationToken cancellationToken)
-        where TEntity : class, ISqlEntity
+        where TEntity : class, ISqlCreatedAtEntity
     {
         var entityIds = entities
             .Select(entity => entity.Id)

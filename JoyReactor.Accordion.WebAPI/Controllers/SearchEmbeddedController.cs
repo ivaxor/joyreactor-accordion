@@ -20,7 +20,7 @@ public class SearchEmbeddedController(SqlDatabaseContext sqlDatabaseContext)
             SearchEmbeddedType.Coub => (await sqlDatabaseContext.ParsedCoubs.FirstOrDefaultAsync(coub => coub.VideoId == request.Text, cancellationToken))?.Id,
             SearchEmbeddedType.SoundCloud => (await sqlDatabaseContext.ParsedSoundClouds.FirstOrDefaultAsync(soundCloud => soundCloud.UrlPath == request.Text, cancellationToken))?.Id,            
             SearchEmbeddedType.Vimeo => (await sqlDatabaseContext.ParsedVimeos.FirstOrDefaultAsync(vimeo => vimeo.VideoId == request.Text, cancellationToken))?.Id,
-            SearchEmbeddedType.YouTube => (await sqlDatabaseContext.ParsedYoutubes.FirstOrDefaultAsync(youTube => youTube.VideoId == request.Text, cancellationToken))?.Id,
+            SearchEmbeddedType.YouTube => (await sqlDatabaseContext.ParsedYouTubes.FirstOrDefaultAsync(youTube => youTube.VideoId == request.Text, cancellationToken))?.Id,
             _ => throw new NotImplementedException()
         };
         if (entityId == null)

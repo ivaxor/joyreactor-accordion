@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace JoyReactor.Accordion.Logic.Database.Sql.Entities;
 
-public partial record ParsedBandCamp : ISqlEntity, IParsedAttributeEmbedded
+public partial record ParsedBandCamp : ISqlUpdatedAtEntity, IParsedAttributeEmbedded
 {
     [GeneratedRegex(@"(?<type>album|track)=(?<id>\d+)", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex UrlPathRegex();
