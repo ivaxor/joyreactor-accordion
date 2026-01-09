@@ -24,9 +24,9 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext) : IPostParser
             parsedPostAttributes.Add(parsedPostAttribute);
         }
 
-        await sqlDatabaseContext.ParsedPost.AddIgnoreExistingAsync(parsedPost, cancellationToken);
-        await AddRangeIgnoreExistingAsync(parsedAttributeEmbeds, cancellationToken);
-        await AddRangeIgnoreExistingAsync(parsedPostAttributes, cancellationToken);
+        await sqlDatabaseContext.ParsedPost.UpsertAsync(parsedPost, cancellationToken);
+        await UpsertAsync(parsedAttributeEmbeds, cancellationToken);
+        await UpsertAsync(parsedPostAttributes, cancellationToken);
 
         await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
     }
@@ -58,37 +58,37 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext) : IPostParser
             }
         }
 
-        await sqlDatabaseContext.ParsedPost.AddRangeIgnoreExistingAsync(parsedPosts, cancellationToken);
-        await AddRangeIgnoreExistingAsync(parsedAttributeEmbeds, cancellationToken);
-        await AddRangeIgnoreExistingAsync(parsedPostAttributes, cancellationToken);
+        await sqlDatabaseContext.ParsedPost.UpsertRangeAsync(parsedPosts, cancellationToken);
+        await UpsertAsync(parsedAttributeEmbeds, cancellationToken);
+        await UpsertAsync(parsedPostAttributes, cancellationToken);
 
         await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
     }
 
-    protected async Task AddRangeIgnoreExistingAsync(IEnumerable<IParsedAttributeEmbedded> parsedAttributeEmbeds, CancellationToken cancellationToken)
+    protected async Task UpsertAsync(IEnumerable<IParsedAttributeEmbedded> parsedAttributeEmbeds, CancellationToken cancellationToken)
     {
         foreach (var group in parsedAttributeEmbeds.GroupBy(attribute => attribute.GetType()))
         {
             await (group.First() switch
             {
-                ParsedBandCamp => sqlDatabaseContext.ParsedBandCamps.AddRangeIgnoreExistingAsync(group.Cast<ParsedBandCamp>(), cancellationToken),
-                ParsedCoub => sqlDatabaseContext.ParsedCoubs.AddRangeIgnoreExistingAsync(group.Cast<ParsedCoub>(), cancellationToken),
-                ParsedSoundCloud => sqlDatabaseContext.ParsedSoundClouds.AddRangeIgnoreExistingAsync(group.Cast<ParsedSoundCloud>(), cancellationToken),
-                ParsedVimeo => sqlDatabaseContext.ParsedVimeos.AddRangeIgnoreExistingAsync(group.Cast<ParsedVimeo>(), cancellationToken),
-                ParsedYoutube => sqlDatabaseContext.ParsedYoutubes.AddRangeIgnoreExistingAsync(group.Cast<ParsedYoutube>(), cancellationToken),
+                ParsedBandCamp => sqlDatabaseContext.ParsedBandCamps.UpsertRangeAsync(group.Cast<ParsedBandCamp>(), cancellationToken),
+                ParsedCoub => sqlDatabaseContext.ParsedCoubs.UpsertRangeAsync(group.Cast<ParsedCoub>(), cancellationToken),
+                ParsedSoundCloud => sqlDatabaseContext.ParsedSoundClouds.UpsertRangeAsync(group.Cast<ParsedSoundCloud>(), cancellationToken),
+                ParsedVimeo => sqlDatabaseContext.ParsedVimeos.UpsertRangeAsync(group.Cast<ParsedVimeo>(), cancellationToken),
+                ParsedYoutube => sqlDatabaseContext.ParsedYoutubes.UpsertRangeAsync(group.Cast<ParsedYoutube>(), cancellationToken),
                 _ => throw new NotImplementedException(),
             });
         }
     }
 
-    protected async Task AddRangeIgnoreExistingAsync(IEnumerable<IParsedPostAttribute> parsedPostAttributes, CancellationToken cancellationToken)
+    protected async Task UpsertAsync(IEnumerable<IParsedPostAttribute> parsedPostAttributes, CancellationToken cancellationToken)
     {
         foreach (var group in parsedPostAttributes.GroupBy(postAttribute => postAttribute.GetType()))
         {
             await (group.First() switch
             {
-                ParsedPostAttributePicture => sqlDatabaseContext.ParsedPostAttributePictures.AddRangeIgnoreExistingAsync(group.Cast<ParsedPostAttributePicture>(), cancellationToken),
-                ParsedPostAttributeEmbedded => sqlDatabaseContext.ParsedPostAttributeEmbeds.AddRangeIgnoreExistingAsync(group.Cast<ParsedPostAttributeEmbedded>(), cancellationToken),
+                ParsedPostAttributePicture => sqlDatabaseContext.ParsedPostAttributePictures.UpsertRangeAsync(group.Cast<ParsedPostAttributePicture>(), cancellationToken),
+                ParsedPostAttributeEmbedded => sqlDatabaseContext.ParsedPostAttributeEmbeds.UpsertRangeAsync(group.Cast<ParsedPostAttributeEmbedded>(), cancellationToken),
                 _ => throw new NotImplementedException(),
             });
         }
