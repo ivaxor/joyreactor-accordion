@@ -2,7 +2,7 @@
 
 namespace JoyReactor.Accordion.WebAPI.Models.Requests;
 
-public record SearchEmbededRequest
+public record SearchEmbeddedRequest
 {
     [Required]
     public SearchEmbeddedType Type { get; set; }

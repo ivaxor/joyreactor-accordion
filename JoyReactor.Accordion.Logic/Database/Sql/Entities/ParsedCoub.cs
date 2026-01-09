@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace JoyReactor.Accordion.Logic.Database.Sql.Entities;
 
-public record ParsedCoub : ISqlEntity, IParsedAttributeEmbeded
+public record ParsedCoub : ISqlEntity, IParsedAttributeEmbedded
 {
     public ParsedCoub() { }
 
@@ -20,7 +20,7 @@ public record ParsedCoub : ISqlEntity, IParsedAttributeEmbeded
 
     public string VideoId { get; set; }
 
-    public virtual ParsedPostAttributeEmbeded PostAttributeEmbeded { get; set; }
+    public virtual ParsedPostAttributeEmbedded PostAttributeEmbedded { get; set; }
 
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
@@ -38,10 +38,10 @@ public class ParsedCoubEntityTypeConfiguration : IEntityTypeConfiguration<Parsed
             .IsRequired(true);
 
         builder
-            .HasOne(e => e.PostAttributeEmbeded)
+            .HasOne(e => e.PostAttributeEmbedded)
             .WithOne(e => e.Coub)
             .HasPrincipalKey<ParsedCoub>(e => e.Id)
-            .HasForeignKey<ParsedPostAttributeEmbeded>(e => e.CoubId)
+            .HasForeignKey<ParsedPostAttributeEmbedded>(e => e.CoubId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired(false);
 

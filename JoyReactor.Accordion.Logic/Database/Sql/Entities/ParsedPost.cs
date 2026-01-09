@@ -24,7 +24,7 @@ public record ParsedPost : ISqlEntity
     public int ContentVersion { get; set; }
 
     public virtual IEnumerable<ParsedPostAttributePicture>? AttributePictures { get; set; }
-    public virtual IEnumerable<ParsedPostAttributeEmbeded>? AttributeEmbeds { get; set; }
+    public virtual IEnumerable<ParsedPostAttributeEmbedded>? AttributeEmbeds { get; set; }
 
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

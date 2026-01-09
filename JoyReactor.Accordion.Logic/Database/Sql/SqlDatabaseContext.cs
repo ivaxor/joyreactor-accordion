@@ -14,7 +14,7 @@ public partial class SqlDatabaseContext : DbContext
 
     public DbSet<ParsedPost> ParsedPost { get; set; }
 
-    public DbSet<ParsedPostAttributeEmbeded> ParsedPostAttributeEmbeds { get; set; }
+    public DbSet<ParsedPostAttributeEmbedded> ParsedPostAttributeEmbeds { get; set; }
     public DbSet<ParsedPostAttributePicture> ParsedPostAttributePictures { get; set; }
 
     public DbSet<ParsedBandCamp> ParsedBandCamps { get; set; }

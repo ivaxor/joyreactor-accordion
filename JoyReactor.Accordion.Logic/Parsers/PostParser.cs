@@ -3,6 +3,7 @@ using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using JoyReactor.Accordion.Logic.Extensions;
 using Microsoft.EntityFrameworkCore;
+using System.Threading;
 
 namespace JoyReactor.Accordion.Logic.Parsers;
 
@@ -11,16 +12,16 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext) : IPostParser
     public async Task ParseAsync(Post post, CancellationToken cancellationToken)
     {
         var parsedPostAttributes = new List<IParsedPostAttribute>();
-        var parsedAttributeEmbeds = new List<IParsedAttributeEmbeded>();
+        var parsedAttributeEmbeds = new List<IParsedAttributeEmbedded>();
 
         var parsedPost = new ParsedPost(post);
         foreach (var postAttribute in post.Attributes)
         {
-            var parsedAttributeEmbeded = await CreateAttributeAsync(postAttribute, cancellationToken);
-            if (parsedAttributeEmbeded != null)
-                parsedAttributeEmbeds.Add(parsedAttributeEmbeded);
+            var parsedAttributeEmbedded = await CreateAttributeAsync(postAttribute, cancellationToken);
+            if (parsedAttributeEmbedded != null)
+                parsedAttributeEmbeds.Add(parsedAttributeEmbedded);
 
-            var parsedPostAttribute = CreatePostAttribute(postAttribute, parsedPost, parsedAttributeEmbeded);
+            var parsedPostAttribute = CreatePostAttribute(postAttribute, parsedPost, parsedAttributeEmbedded);
             parsedPostAttributes.Add(parsedPostAttribute);
         }
 
@@ -38,7 +39,7 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext) : IPostParser
 
         var parsedPosts = new List<ParsedPost>(posts.Count());
         var parsedPostAttributes = new List<IParsedPostAttribute>();
-        var parsedAttributeEmbeds = new List<IParsedAttributeEmbeded>();
+        var parsedAttributeEmbeds = new List<IParsedAttributeEmbedded>();
         foreach (var post in posts)
         {
             var parsedPost = new ParsedPost(post);
@@ -46,11 +47,14 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext) : IPostParser
 
             foreach (var postAttribute in post.Attributes)
             {
-                var parsedAttributeEmbeded = await CreateAttributeAsync(postAttribute, cancellationToken);
-                if (parsedAttributeEmbeded != null)
-                    parsedAttributeEmbeds.Add(parsedAttributeEmbeded);
+                var parsedAttributeEmbedded = await CreateAttributeAsync(postAttribute, cancellationToken);                
+                if (parsedAttributeEmbedded != null)
+                {
+                    parsedAttributeEmbedded = TryToGetExistring(parsedAttributeEmbeds, parsedAttributeEmbedded);
+                    parsedAttributeEmbeds.Add(parsedAttributeEmbedded);
+                }                    
 
-                var parsedPostAttribute = CreatePostAttribute(postAttribute, parsedPost, parsedAttributeEmbeded);
+                var parsedPostAttribute = CreatePostAttribute(postAttribute, parsedPost, parsedAttributeEmbedded);
                 parsedPostAttributes.Add(parsedPostAttribute);
             }
         }
@@ -62,7 +66,7 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext) : IPostParser
         await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
     }
 
-    protected async Task AddRangeIgnoreExistingAsync(IEnumerable<IParsedAttributeEmbeded> parsedAttributeEmbeds, CancellationToken cancellationToken)
+    protected async Task AddRangeIgnoreExistingAsync(IEnumerable<IParsedAttributeEmbedded> parsedAttributeEmbeds, CancellationToken cancellationToken)
     {
         foreach (var group in parsedAttributeEmbeds.GroupBy(attribute => attribute.GetType()))
         {
@@ -85,13 +89,13 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext) : IPostParser
             await (group.First() switch
             {
                 ParsedPostAttributePicture => sqlDatabaseContext.ParsedPostAttributePictures.AddRangeIgnoreExistingAsync(group.Cast<ParsedPostAttributePicture>(), cancellationToken),
-                ParsedPostAttributeEmbeded => sqlDatabaseContext.ParsedPostAttributeEmbeds.AddRangeIgnoreExistingAsync(group.Cast<ParsedPostAttributeEmbeded>(), cancellationToken),
+                ParsedPostAttributeEmbedded => sqlDatabaseContext.ParsedPostAttributeEmbeds.AddRangeIgnoreExistingAsync(group.Cast<ParsedPostAttributeEmbedded>(), cancellationToken),
                 _ => throw new NotImplementedException(),
             });
         }
     }
 
-    protected async Task<IParsedAttributeEmbeded> CreateAttributeAsync(PostAttribute postAttribute, CancellationToken cancellationToken)
+    protected async Task<IParsedAttributeEmbedded> CreateAttributeAsync(PostAttribute postAttribute, CancellationToken cancellationToken)
     {
         switch (postAttribute.Type)
         {
@@ -153,12 +157,29 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext) : IPostParser
         }
     }
 
-    protected static IParsedPostAttribute CreatePostAttribute(PostAttribute postAttribute, ParsedPost post, IParsedAttributeEmbeded parsedAttribute)
+    protected static IParsedAttributeEmbedded TryToGetExistring(IEnumerable<IParsedAttributeEmbedded> parsedAttributes, IParsedAttributeEmbedded parsedAttribute)
+    {
+        var filteredParsedAttributes = parsedAttributes.Where(pa => pa.GetType() == parsedAttribute.GetType());
+        if (!filteredParsedAttributes.Any())
+            return parsedAttribute;
+
+        return parsedAttribute switch
+        {
+            ParsedBandCamp parsedBandCamp => filteredParsedAttributes.Cast<ParsedBandCamp>().FirstOrDefault(pa => pa.UrlPath == parsedBandCamp.UrlPath, parsedBandCamp),
+            ParsedCoub parsedCoub => filteredParsedAttributes.Cast<ParsedCoub>().FirstOrDefault(pa => pa.VideoId == parsedCoub.VideoId, parsedCoub),
+            ParsedSoundCloud parsedSoundCloud => filteredParsedAttributes.Cast<ParsedSoundCloud>().FirstOrDefault(pa => pa.UrlPath == parsedSoundCloud.UrlPath, parsedSoundCloud),
+            ParsedVimeo parsedVimeo => filteredParsedAttributes.Cast<ParsedVimeo>().FirstOrDefault(pa => pa.VideoId == parsedVimeo.VideoId, parsedVimeo),
+            ParsedYoutube parsedYouTube => filteredParsedAttributes.Cast<ParsedYoutube>().FirstOrDefault(pa => pa.VideoId == parsedYouTube.VideoId, parsedYouTube),
+            _ => throw new NotImplementedException(),
+        };
+    }
+
+    protected static IParsedPostAttribute CreatePostAttribute(PostAttribute postAttribute, ParsedPost post, IParsedAttributeEmbedded parsedAttribute)
     {
         return postAttribute.Type switch
         {
             "PICTURE" => new ParsedPostAttributePicture(postAttribute, post),
-            "BANDCAMP" or "COUB" or "SOUNDCLOUD" or "VIMEO" or "YOUTUBE" => new ParsedPostAttributeEmbeded(postAttribute, post, parsedAttribute),
+            "BANDCAMP" or "COUB" or "SOUNDCLOUD" or "VIMEO" or "YOUTUBE" => new ParsedPostAttributeEmbedded(postAttribute, post, parsedAttribute),
             _ => throw new NotImplementedException(),
         };
     }

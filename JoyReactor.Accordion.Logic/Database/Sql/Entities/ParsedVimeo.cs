@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace JoyReactor.Accordion.Logic.Database.Sql.Entities;
 
-public record ParsedVimeo : ISqlEntity, IParsedAttributeEmbeded
+public record ParsedVimeo : ISqlEntity, IParsedAttributeEmbedded
 {
     public ParsedVimeo() { }
 
@@ -20,7 +20,7 @@ public record ParsedVimeo : ISqlEntity, IParsedAttributeEmbeded
 
     public string VideoId { get; set; }
 
-    public virtual ParsedPostAttributeEmbeded PostAttributeEmbeded { get; set; }
+    public virtual ParsedPostAttributeEmbedded PostAttributeEmbedded { get; set; }
 
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
@@ -38,10 +38,10 @@ public class ParsedVimeoEntityTypeConfiguration : IEntityTypeConfiguration<Parse
             .IsRequired(true);
 
         builder
-            .HasOne(e => e.PostAttributeEmbeded)
+            .HasOne(e => e.PostAttributeEmbedded)
             .WithOne(e => e.Vimeo)
             .HasPrincipalKey<ParsedVimeo>(e => e.Id)
-            .HasForeignKey<ParsedPostAttributeEmbeded>(e => e.VimeoId)
+            .HasForeignKey<ParsedPostAttributeEmbedded>(e => e.VimeoId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired(false);
 

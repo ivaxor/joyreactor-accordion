@@ -10,7 +10,7 @@ namespace JoyReactor.Accordion.WebAPI.Controllers;
 [ApiController]
 public class StatisticController(
     SqlDatabaseContext sqlDatabaseContext,
-    VectorDatabaseContext vectorDatabaseContext)
+    IVectorDatabaseContext vectorDatabaseContext)
     : ControllerBase
 {
     [HttpGet]
@@ -18,7 +18,7 @@ public class StatisticController(
     public async Task<IActionResult> GetAsync(CancellationToken cancellationToken = default)
     {
         var response = new StatisticsResponse();
-        response.Vectors = Convert.ToInt32(vectorDatabaseContext.CountAsync(cancellationToken));
+        response.Vectors = Convert.ToInt32(await vectorDatabaseContext.CountAsync(cancellationToken));
 
         response.ParsedTags = await sqlDatabaseContext.ParsedTags.CountAsync(cancellationToken);
         response.EmptyTags = await sqlDatabaseContext.EmptyTags.CountAsync(cancellationToken);

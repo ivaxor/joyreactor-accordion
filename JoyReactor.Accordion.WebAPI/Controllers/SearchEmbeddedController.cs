@@ -12,7 +12,7 @@ public class SearchEmbeddedController(SqlDatabaseContext sqlDatabaseContext)
     : ControllerBase
 {
     [HttpPost]
-    public async Task<IActionResult> SearchAsync([FromBody] SearchEmbededRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> SearchAsync([FromBody] SearchEmbeddedRequest request, CancellationToken cancellationToken)
     {
         var entityId = request.Type switch
         {
