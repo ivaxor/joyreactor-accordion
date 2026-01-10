@@ -9,7 +9,7 @@ using System.Collections.Frozen;
 
 namespace JoyReactor.Accordion.WebAPI.Controllers;
 
-[Route("api/search/pictures")]
+[Route("search/pictures")]
 [ApiController]
 public class SearchMediaController(
     HttpClient httpClient,
@@ -27,16 +27,19 @@ public class SearchMediaController(
         "image/gif",
         "image/tiff",
         "image/bmp",
-        "image/mp4",
-        "image/webm",
+        //"image/mp4",
+        //"image/webm",
     }.ToFrozenSet();
     protected static readonly FrozenSet<string> AllowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "png",
         "jpeg",
         "jpg",
+        "gif",
         "tiff",
         "bmp",
+        //"mp4",
+        //"webm",
     }.ToFrozenSet();
 
     [HttpPost("download")]

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JoyReactor.Accordion.WebAPI.Controllers;
 
-[Route("api/search/embedded")]
+[Route("search/embedded")]
 [ApiController]
 public class SearchEmbeddedController(SqlDatabaseContext sqlDatabaseContext)
     : ControllerBase

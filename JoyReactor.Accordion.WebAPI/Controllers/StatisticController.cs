@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JoyReactor.Accordion.WebAPI.Controllers;
 
-[Route("api/statistics")]
+[Route("statistics")]
 [ApiController]
 public class StatisticController(
     SqlDatabaseContext sqlDatabaseContext,

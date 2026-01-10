@@ -35,17 +35,17 @@ public class ParsedPostAttributePictureImageTypeFixer(
                 .ToHashSetAsync(cancellationToken);
             if (postIds.Count == 0)
             {
-                logger.LogInformation("No parsed post attribute pictures with broken image type found");
+                logger.LogInformation("No parsed post attribute pictures with broken image type found.");
                 return;
             }
-            logger.LogInformation("Found {PostCount} parsed post with broken attribute pictures image type", postIds.Count);
+            logger.LogInformation("Found {PostCount} parsed post with broken attribute pictures image type.", postIds.Count);
 
             foreach (var postId in postIds)
             {
                 var postNumberId = postId.ToInt();
                 var post = await postClient.GetAsync(postNumberId, cancellationToken);
                 await postParser.ParseAsync(post, cancellationToken);
-                logger.LogInformation("Fixed broken attribute pictures image type in post {PostNumberId}", postNumberId);
+                logger.LogInformation("Fixed broken attribute pictures image type in post {PostNumberId}.", postNumberId);
             }
         } while (postIds.Count != 0);
     }

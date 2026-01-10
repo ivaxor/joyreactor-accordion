@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JoyReactor.Accordion.WebAPI.Controllers;
 
-[Route("api/crawlerTasks")]
+[Route("crawlerTasks")]
 [ApiController]
 public class CrawlerTaskController(SqlDatabaseContext sqlDatabaseContext)
     : ControllerBase
