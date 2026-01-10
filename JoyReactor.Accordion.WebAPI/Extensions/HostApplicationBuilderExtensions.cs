@@ -7,7 +7,7 @@ using GraphQL.Client.Serializer.SystemTextJson;
 using JoyReactor.Accordion.Logic.ApiClient;
 using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Vector;
-using JoyReactor.Accordion.Logic.Media.Images;
+using JoyReactor.Accordion.Logic.Media;
 using JoyReactor.Accordion.Logic.Onnx;
 using JoyReactor.Accordion.WebAPI.HealthChecks;
 using JoyReactor.Accordion.WebAPI.Models;
@@ -51,7 +51,7 @@ public static class HostApplicationBuilderExtensions
     public static void AddOptionsFromConfiguration(this IHostApplicationBuilder builder)
     {
         builder.Services.Configure<ApiClientSettings>(builder.Configuration.GetSection(nameof(ApiClientSettings)));
-        builder.Services.Configure<ImageSettings>(builder.Configuration.GetSection(nameof(ImageSettings)));
+        builder.Services.Configure<MediaSettings>(builder.Configuration.GetSection(nameof(MediaSettings)));
         builder.Services.Configure<OnnxSettings>(builder.Configuration.GetSection(nameof(OnnxSettings)));
         builder.Services.Configure<PostgreSqlSettings>(builder.Configuration.GetSection(nameof(PostgreSqlSettings)));
         builder.Services.Configure<QdrantSettings>(builder.Configuration.GetSection(nameof(QdrantSettings)));

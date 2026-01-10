@@ -1,6 +1,6 @@
-﻿namespace JoyReactor.Accordion.Logic.Media.Images;
+﻿namespace JoyReactor.Accordion.Logic.Media;
 
-public record ImageSettings
+public record MediaSettings
 {
     public string[] CdnDomainNames { get; set; }
     public int MaxRetryAttempts { get; set; }

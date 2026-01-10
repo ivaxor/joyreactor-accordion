@@ -8,6 +8,7 @@
   </PropertyGroup>
 	
   <ItemGroup>
+    <PackageReference Include="FFMpegCore" Version="5.4.0" />
     <PackageReference Include="GraphQL.Client" Version="6.1.0" />
     <PackageReference Include="GraphQL.Client.Serializer.SystemTextJson" Version="6.1.0" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.Abstractions" Version="10.0.1" />

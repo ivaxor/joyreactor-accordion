@@ -2,7 +2,7 @@
 using GraphQL.Client.Serializer.SystemTextJson;
 using JoyReactor.Accordion.Logic.ApiClient;
 using JoyReactor.Accordion.Logic.Database.Sql;
-using JoyReactor.Accordion.Logic.Media.Images;
+using JoyReactor.Accordion.Logic.Media;
 using JoyReactor.Accordion.Logic.Parsers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -19,8 +19,8 @@ public static class SharedDependencies
     public static readonly TagClient TagClient;
     public static readonly PostClient PostClient;
     public static readonly PostParser PostParser;
-    public static readonly ImageReducer ImageReducer;
-    public static readonly ImageDownloader ImageDownloader;
+    public static readonly MediaReducer MediaReducer;
+    public static readonly MediaDownloader MediaDownloader;
 
     static SharedDependencies()
     {
@@ -48,8 +48,8 @@ public static class SharedDependencies
 
         PostParser = new PostParser(SqlDatabaseContext);
 
-        var imageDownloaderHttpClient = new HttpClient();
-        var imageSettingsOptions = Options.Create(new ImageSettings()
+        var mediaDownloaderHttpClient = new HttpClient();
+        var mediaSettingsOptions = Options.Create(new MediaSettings()
         {
             CdnDomainNames = [
                 "https://img0.joyreactor.cc",
@@ -58,14 +58,17 @@ public static class SharedDependencies
                 "https://img10.joyreactor.cc",
             ],
             ResizedSize = 224,
+            MaxRetryAttempts = 10,
+            RetryDelay = TimeSpan.FromMinutes(2.5),
+            ConcurrentDownloads = 10,
         });
 
-        ImageReducer = new ImageReducer(imageSettingsOptions);
+        MediaReducer = new MediaReducer(mediaSettingsOptions);
 
-        ImageDownloader = new ImageDownloader(
-            imageDownloaderHttpClient,
-            ImageReducer,
-            imageSettingsOptions,
-            NullLogger<ImageDownloader>.Instance);
+        MediaDownloader = new MediaDownloader(
+            mediaDownloaderHttpClient,
+            MediaReducer,
+            mediaSettingsOptions,
+            NullLogger<MediaDownloader>.Instance);
     }
 }

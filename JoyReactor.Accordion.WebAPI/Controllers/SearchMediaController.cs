@@ -1,19 +1,19 @@
 ﻿using JoyReactor.Accordion.Logic.Database.Vector;
 using JoyReactor.Accordion.Logic.Database.Vector.Entities;
-using JoyReactor.Accordion.Logic.Media.Images;
+using JoyReactor.Accordion.Logic.Media;
 using JoyReactor.Accordion.Logic.Onnx;
 using JoyReactor.Accordion.WebAPI.Models.Requests;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
-using System.Collections.Frozen; 
+using System.Collections.Frozen;
 
 namespace JoyReactor.Accordion.WebAPI.Controllers;
 
 [Route("api/search/pictures")]
 [ApiController]
-public class SearchPictureController(
+public class SearchMediaController(
     HttpClient httpClient,
-    IImageReducer imageReducer,
+    IMediaReducer mediaReducer,
     IOnnxVectorConverter onnxVectorConverter,
     IVectorDatabaseContext vectorDatabaseContext)
     : ControllerBase
@@ -24,8 +24,11 @@ public class SearchPictureController(
         "application/octet-stream",
         "image/png",
         "image/jpeg",
+        "image/gif",
         "image/tiff",
         "image/bmp",
+        "image/mp4",
+        "image/webm",
     }.ToFrozenSet();
     protected static readonly FrozenSet<string> AllowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
@@ -65,7 +68,7 @@ public class SearchPictureController(
         }
 
         await using var stream = await downloadResponse.Content.ReadAsStreamAsync(cancellationToken);
-        var results = await SearchAsync(stream, cancellationToken);
+        var results = await SearchAsync(mediaType, stream, cancellationToken);
         return Ok(results);
     }
 
@@ -87,17 +90,17 @@ public class SearchPictureController(
         }
 
         await using var stream = request.Picture.OpenReadStream();
-        var results = await SearchAsync(stream, cancellationToken);
+        var results = await SearchAsync(request.Picture.ContentType, stream, cancellationToken);
         return Ok(results);
     }
 
-    protected async Task<PictureScoredPoint[]> SearchAsync(Stream stream, CancellationToken cancellationToken)
+    protected async Task<PictureScoredPoint[]> SearchAsync(string mimeType, Stream stream, CancellationToken cancellationToken)
     {
         await using var boundedStream = new FileBufferingReadStream(stream, FileSizeLimit);
         await boundedStream.DrainAsync(cancellationToken);
         boundedStream.Position = 0;
 
-        using var processedImage = await imageReducer.ReduceAsync(boundedStream, cancellationToken);
+        using var processedImage = await mediaReducer.ReduceAsync(mimeType, boundedStream, cancellationToken);
         var vector = await onnxVectorConverter.ConvertAsync(processedImage);
         var results = await vectorDatabaseContext.SearchAsync(vector, cancellationToken);
 

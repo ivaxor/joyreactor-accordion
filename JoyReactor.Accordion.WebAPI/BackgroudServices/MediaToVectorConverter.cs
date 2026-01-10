@@ -1,7 +1,7 @@
 ﻿using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using JoyReactor.Accordion.Logic.Database.Vector;
-using JoyReactor.Accordion.Logic.Media.Images;
+using JoyReactor.Accordion.Logic.Media;
 using JoyReactor.Accordion.Logic.Onnx;
 using JoyReactor.Accordion.WebAPI.Models;
 using Microsoft.EntityFrameworkCore;
@@ -12,11 +12,11 @@ using System.Collections.Concurrent;
 
 namespace JoyReactor.Accordion.WebAPI.BackgroudServices;
 
-public class PicturesWithoutVectorCrawler(
+public class MediaToVectorConverter(
     IServiceScopeFactory serviceScopeFactory,
-    IOptions<ImageSettings> imageSettings,
+    IOptions<MediaSettings> mediaSettings,
     IOptions<BackgroundServiceSettings> settings,
-    ILogger<PicturesWithoutVectorCrawler> logger)
+    ILogger<MediaToVectorConverter> logger)
     : RobustBackgroundService(settings, logger)
 {
     protected override bool IsIndefinite => true;
@@ -26,6 +26,8 @@ public class PicturesWithoutVectorCrawler(
         ParsedPostAttributePictureType.JPEG,
         ParsedPostAttributePictureType.BMP,
         ParsedPostAttributePictureType.TIFF,
+        //ParsedPostAttributePictureType.MP4,
+        //ParsedPostAttributePictureType.WEBM,
     ];
 
     protected override async Task RunAsync(CancellationToken cancellationToken)
@@ -35,33 +37,35 @@ public class PicturesWithoutVectorCrawler(
         {
             await using var serviceScope = serviceScopeFactory.CreateAsyncScope();
             await using var sqlDatabaseContext = serviceScope.ServiceProvider.GetRequiredService<SqlDatabaseContext>();
-            var imageDownloader = serviceScope.ServiceProvider.GetRequiredService<IImageDownloader>();
+            var mediaDownloader = serviceScope.ServiceProvider.GetRequiredService<IMediaDownloader>();
             var onnxVectorConverter = serviceScope.ServiceProvider.GetRequiredService<IOnnxVectorConverter>();
             var vectorDatabaseContext = serviceScope.ServiceProvider.GetRequiredService<IVectorDatabaseContext>();
 
             unprocessedPictures = await sqlDatabaseContext.ParsedPostAttributePictures
                 .Where(picture => picture.IsVectorCreated == false && ImageTypes.Contains(picture.ImageType))
                 .OrderByDescending(picture => picture.Id)
-                .Take(100)
+                .Take(mediaSettings.Value.ConcurrentDownloads * 10)
                 .ToArrayAsync(cancellationToken);
 
             if (unprocessedPictures.Length == 0)
             {
-                logger.LogInformation("No pictures without vector found. Will try again later.");
+                logger.LogInformation("No post attribute pictures without vector found. Will try again later.");
                 return;
             }
-            logger.LogInformation("Starting crawling {PicturesCount} pictures without vectors.", unprocessedPictures.Length);
+            logger.LogInformation("Starting crawling {PicturesCount} post attribute pictures without vectors.", unprocessedPictures.Length);
 
             var pictureVectors = new ConcurrentDictionary<ParsedPostAttributePicture, float[]>();
-            foreach (var pictures in unprocessedPictures.Chunk(imageSettings.Value.ConcurrentDownloads))
+            foreach (var pictures in unprocessedPictures.Chunk(mediaSettings.Value.ConcurrentDownloads))
             {
                 var pictureImages = new ConcurrentDictionary<ParsedPostAttributePicture, Image<Rgb24>>();
-                await Task.WhenAll(pictures.Select(picture => DownloadImageAsync(imageDownloader, pictureImages, picture, cancellationToken)));
+                await Task.WhenAll(pictures.Select(picture => DownloadAsync(mediaDownloader, pictureImages, picture, cancellationToken)));
 
                 foreach (var (picture, image) in pictureImages)
                 {
                     await CreateVectorAsync(onnxVectorConverter, pictureVectors, picture, image);
                 }
+
+                logger.LogInformation("Chuck of {PicturesCount} picture post attributes were converted to vectors.", pictures.Length);
             }
 
             await vectorDatabaseContext.UpsertAsync(pictureVectors, cancellationToken);
@@ -70,20 +74,20 @@ public class PicturesWithoutVectorCrawler(
         } while (unprocessedPictures.Length != 0);
     }
 
-    protected async Task DownloadImageAsync(
-        IImageDownloader imageDownloader,
+    protected async Task DownloadAsync(
+        IMediaDownloader mediaDownloader,
         IDictionary<ParsedPostAttributePicture, Image<Rgb24>> pictureImages,
         ParsedPostAttributePicture picture,
         CancellationToken cancellationToken)
     {
         try
         {
-            var image = await imageDownloader.DownloadAsync(picture, cancellationToken);
+            var image = await mediaDownloader.DownloadAsync(picture, cancellationToken);
             pictureImages.TryAdd(picture, image);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to download {PictureAttributeId} picture", picture.AttributeId);
+            logger.LogError(ex, "Failed to download {PictureAttributeId} post attribute picture", picture.AttributeId);
         }
     }
 
@@ -104,7 +108,7 @@ public class PicturesWithoutVectorCrawler(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to create vector for {PictureAttributeId} picture", picture.AttributeId);
+            logger.LogError(ex, "Failed to create vector for {PictureAttributeId} post attribute picture", picture.AttributeId);
         }
         finally
         {

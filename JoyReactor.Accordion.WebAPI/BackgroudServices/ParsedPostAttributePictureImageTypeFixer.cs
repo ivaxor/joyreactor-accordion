@@ -23,8 +23,6 @@ public class ParsedPostAttributePictureImageTypeFixer(
         var postClient = serviceScope.ServiceProvider.GetService<IPostClient>();
         var postParser = serviceScope.ServiceProvider.GetService<IPostParser>();
 
-        var skip = 0;
-        var take = 100;
         var postIds = (HashSet<Guid>)null;
         do
         {
@@ -32,8 +30,7 @@ public class ParsedPostAttributePictureImageTypeFixer(
                 .AsNoTracking()
                 .Where(postAttribute => (int)postAttribute.ImageType > 6)
                 .OrderBy(postAttribute => postAttribute.Id)
-                .Skip(skip)
-                .Take(take)
+                .Take(100)
                 .Select(postAttribute => postAttribute.PostId)
                 .ToHashSetAsync(cancellationToken);
             if (postIds.Count == 0)
@@ -50,8 +47,6 @@ public class ParsedPostAttributePictureImageTypeFixer(
                 await postParser.ParseAsync(post, cancellationToken);
                 logger.LogInformation("Fixed broken attribute pictures image type in post {PostNumberId}", postNumberId);
             }
-
-            skip += take;
         } while (postIds.Count != 0);
     }
 }

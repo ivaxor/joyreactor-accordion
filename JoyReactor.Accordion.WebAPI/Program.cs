@@ -1,7 +1,7 @@
 ﻿using JoyReactor.Accordion.Logic.ApiClient;
 using JoyReactor.Accordion.Logic.Crawlers;
 using JoyReactor.Accordion.Logic.Database.Vector;
-using JoyReactor.Accordion.Logic.Media.Images;
+using JoyReactor.Accordion.Logic.Media;
 using JoyReactor.Accordion.Logic.Onnx;
 using JoyReactor.Accordion.Logic.Parsers;
 using JoyReactor.Accordion.WebAPI.BackgroudServices;
@@ -35,7 +35,7 @@ var socketsHttpHandler = new SocketsHttpHandler()
 
 builder.Services.AddHttpClient();
 builder.Services
-    .AddHttpClient<IImageDownloader, ImageDownloader>(httpClient =>
+    .AddHttpClient<IMediaDownloader, MediaDownloader>(httpClient =>
     {
         httpClient.Timeout = TimeSpan.FromSeconds(10);
         httpClient.DefaultRequestHeaders.Add("Referer", "https://joyreactor.cc");
@@ -43,7 +43,7 @@ builder.Services
     })
     .ConfigurePrimaryHttpMessageHandler(() => socketsHttpHandler);
 builder.Services
-    .AddHttpClient<SearchPictureController>(httpClient =>
+    .AddHttpClient<SearchMediaController>(httpClient =>
     {
         httpClient.Timeout = TimeSpan.FromSeconds(10);
         httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
@@ -55,8 +55,8 @@ builder.Services.AddSingleton<ITagClient, TagClient>();
 builder.Services.AddScoped<ITagCrawler, TagCrawler>();
 builder.Services.AddSingleton<IPostClient, PostClient>();
 builder.Services.AddScoped<IPostParser, PostParser>();
-builder.Services.AddSingleton<IImageReducer, ImageReducer>();
-builder.Services.AddSingleton<IImageDownloader, ImageDownloader>();
+builder.Services.AddSingleton<IMediaReducer, MediaReducer>();
+builder.Services.AddSingleton<IMediaDownloader, MediaDownloader>();
 builder.Services.AddSingleton<IOnnxVectorConverter, OnnxVectorConverter>();
 builder.Services.AddSingleton<IVectorDatabaseContext, VectorDatabaseContext>();
 
@@ -64,10 +64,8 @@ builder.Services.AddHostedService<MainTagsCrawler>();
 builder.Services.AddHostedService<TagInnnerRangeCrawler>();
 builder.Services.AddHostedService<TagOuterRangeCrawler>();
 builder.Services.AddHostedService<TagSubTagsCrawler>();
-builder.Services.AddHostedService<PicturesWithoutVectorCrawler>();
-builder.Services.AddHostedService<GifWithoutVectorCrawler>();
+builder.Services.AddHostedService<MediaToVectorConverter>();
 builder.Services.AddHostedService<CrawlerTaskHandler>();
-builder.Services.AddHostedService<TopWeekPostsCrawler>();
 builder.Services.AddHostedService<ParsedPostAttributePictureImageTypeFixer>();
 
 builder.Services.AddControllers();

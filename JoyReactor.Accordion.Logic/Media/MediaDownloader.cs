@@ -9,14 +9,14 @@ using SixLabors.ImageSharp.PixelFormats;
 using System.Collections.Frozen;
 using System.Net;
 
-namespace JoyReactor.Accordion.Logic.Media.Images;
+namespace JoyReactor.Accordion.Logic.Media;
 
-public class ImageDownloader(
+public class MediaDownloader(
     HttpClient httpClient,
-    IImageReducer imageReducer,
-    IOptions<ImageSettings> settings,
-    ILogger<ImageDownloader> logger)
-    : IImageDownloader
+    IMediaReducer mediaReducer,
+    IOptions<MediaSettings> settings,
+    ILogger<MediaDownloader> logger)
+    : IMediaDownloader
 {
     protected readonly ResiliencePipeline ResiliencePipeline = new ResiliencePipelineBuilder()
         .AddRetry(new RetryStrategyOptions
@@ -30,20 +30,22 @@ public class ImageDownloader(
             UseJitter = true,
             OnRetry = args =>
             {
-                logger.LogWarning("Failed to send HTTP request to CDN. Attempt: {Attempt}/{MaxAttempts}. Message: {Message}. ", args.AttemptNumber, settings.Value.MaxRetryAttempts, args.Outcome.Exception?.Message);
+                logger.LogWarning("Failed to send HTTP request to CDN. Attempt: {Attempt}/{MaxAttempts}. Message: {Message}.", args.AttemptNumber, settings.Value.MaxRetryAttempts, args.Outcome.Exception?.Message);
                 return default;
             },
         })
         .AddTimeout(TimeSpan.FromSeconds(10))
         .Build();
 
-    protected static readonly ParsedPostAttributePictureType[] PictureTypes = [
+    protected static readonly FrozenSet<ParsedPostAttributePictureType> PictureTypes = new HashSet<ParsedPostAttributePictureType>() {
         ParsedPostAttributePictureType.PNG,
         ParsedPostAttributePictureType.JPEG,
         ParsedPostAttributePictureType.GIF,
         ParsedPostAttributePictureType.BMP,
         ParsedPostAttributePictureType.TIFF,
-    ];
+        //ParsedPostAttributePictureType.MP4,
+        //ParsedPostAttributePictureType.WEBM,
+    }.ToFrozenSet();
 
     protected static readonly FrozenDictionary<ParsedPostAttributePictureType, string> PictureTypeToExtensions = PictureTypes
         .ToDictionary(type => type, type => Enum.GetName(type).ToLowerInvariant())
@@ -56,12 +58,14 @@ public class ImageDownloader(
         "image/gif",
         "image/bmp",
         "image/tiff",
+        //"image/mp4",
+        //"image/webm",
     }.ToFrozenSet();
 
     public async Task<Image<Rgb24>> DownloadAsync(ParsedPostAttributePicture picture, CancellationToken cancellationToken)
     {
         if (!PictureTypes.Contains(picture.ImageType))
-            throw new ArgumentOutOfRangeException(nameof(picture), "Unsupported picture type");
+            throw new ArgumentOutOfRangeException(nameof(picture), "Unsupported media type");
 
         var path = $"pics/post/picture-{picture.AttributeId}.{PictureTypeToExtensions[picture.ImageType]}";
         foreach (var cdnDomainName in settings.Value.CdnDomainNames)
@@ -82,7 +86,7 @@ public class ImageDownloader(
                     return null;
 
                 await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-                return await imageReducer.ReduceAsync(stream, cancellationToken);
+                return await mediaReducer.ReduceAsync(picture, stream, cancellationToken);
             }, cancellationToken);
 
             if (image == null)
@@ -91,11 +95,11 @@ public class ImageDownloader(
             return image;
         }
 
-        throw new FileNotFoundException("Failed to find picture on all CDN hosts");
+        throw new FileNotFoundException("Failed to download media from all CDNs");
     }
 }
 
-public interface IImageDownloader
+public interface IMediaDownloader
 {
     Task<Image<Rgb24>> DownloadAsync(ParsedPostAttributePicture picture, CancellationToken cancellationToken);
 }
