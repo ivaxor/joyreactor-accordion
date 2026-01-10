@@ -71,6 +71,8 @@ public class MediaToVectorConverter(
             await vectorDatabaseContext.UpsertAsync(pictureVectors, cancellationToken);
             sqlDatabaseContext.ParsedPostAttributePictures.UpdateRange(pictureVectors.Keys);
             await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation("{PicturesCount} picture post attributes were converted to vectors.", pictureVectors.Count);
         } while (unprocessedPictures.Length != 0);
     }
 
