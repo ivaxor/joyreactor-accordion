@@ -45,13 +45,12 @@ public class PicturesWithoutVectorCrawler(
                 .Take(100)
                 .ToArrayAsync(cancellationToken);
 
-            if (unprocessedPictures.Length != 0)
-                logger.LogInformation("Starting crawling {PicturesCount} pictures without vectors.", unprocessedPictures.Length);
-            else
+            if (unprocessedPictures.Length == 0)
             {
                 logger.LogInformation("No pictures without vector found. Will try again later.");
                 return;
             }
+            logger.LogInformation("Starting crawling {PicturesCount} pictures without vectors.", unprocessedPictures.Length);
 
             var pictureVectors = new ConcurrentDictionary<ParsedPostAttributePicture, float[]>();
             foreach (var pictures in unprocessedPictures.Chunk(imageSettings.Value.ConcurrentDownloads))

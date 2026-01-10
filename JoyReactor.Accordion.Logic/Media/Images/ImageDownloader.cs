@@ -37,14 +37,15 @@ public class ImageDownloader(
         .AddTimeout(TimeSpan.FromSeconds(10))
         .Build();
 
-    protected static readonly ParsedPostAttributePictureType[] ImageTypes = [
+    protected static readonly ParsedPostAttributePictureType[] PictureTypes = [
         ParsedPostAttributePictureType.PNG,
         ParsedPostAttributePictureType.JPEG,
+        ParsedPostAttributePictureType.GIF,
         ParsedPostAttributePictureType.BMP,
         ParsedPostAttributePictureType.TIFF,
     ];
 
-    protected static readonly FrozenDictionary<ParsedPostAttributePictureType, string> ImageTypeToExtensions = ImageTypes
+    protected static readonly FrozenDictionary<ParsedPostAttributePictureType, string> PictureTypeToExtensions = PictureTypes
         .ToDictionary(type => type, type => Enum.GetName(type).ToLowerInvariant())
         .ToFrozenDictionary();
 
@@ -52,17 +53,17 @@ public class ImageDownloader(
     {
         "image/png",
         "image/jpeg",
-        "image/tiff",
+        "image/gif",
         "image/bmp",
+        "image/tiff",
     }.ToFrozenSet();
 
     public async Task<Image<Rgb24>> DownloadAsync(ParsedPostAttributePicture picture, CancellationToken cancellationToken)
     {
-        if (!ImageTypes.Contains(picture.ImageType))
+        if (!PictureTypes.Contains(picture.ImageType))
             throw new ArgumentOutOfRangeException(nameof(picture), "Unsupported picture type");
 
-        var path = $"pics/post/picture-{picture.AttributeId}.{ImageTypeToExtensions[picture.ImageType]}";
-
+        var path = $"pics/post/picture-{picture.AttributeId}.{PictureTypeToExtensions[picture.ImageType]}";
         foreach (var cdnDomainName in settings.Value.CdnDomainNames)
         {
             var url = $"{cdnDomainName}/{path}";

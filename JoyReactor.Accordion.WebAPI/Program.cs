@@ -61,11 +61,12 @@ builder.Services.AddSingleton<IOnnxVectorConverter, OnnxVectorConverter>();
 builder.Services.AddSingleton<IVectorDatabaseContext, VectorDatabaseContext>();
 
 builder.Services.AddHostedService<MainTagsCrawler>();
-builder.Services.AddHostedService<TagSubTagsCrawler>();
-builder.Services.AddHostedService<PicturesWithoutVectorCrawler>();
-builder.Services.AddHostedService<CrawlerTaskHandler>();
 builder.Services.AddHostedService<TagInnnerRangeCrawler>();
 builder.Services.AddHostedService<TagOuterRangeCrawler>();
+builder.Services.AddHostedService<TagSubTagsCrawler>();
+builder.Services.AddHostedService<PicturesWithoutVectorCrawler>();
+builder.Services.AddHostedService<GifWithoutVectorCrawler>();
+builder.Services.AddHostedService<CrawlerTaskHandler>();
 builder.Services.AddHostedService<TopWeekPostsCrawler>();
 builder.Services.AddHostedService<ParsedPostAttributePictureImageTypeFixer>();
 

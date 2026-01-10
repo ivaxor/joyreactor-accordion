@@ -18,8 +18,14 @@ public class ImageReducer(IOptions<ImageSettings> settings)
     public async Task<Image<Rgb24>> ReduceAsync(Stream stream, CancellationToken cancellationToken)
     {
         var image = await Image.LoadAsync<Rgb24>(stream, cancellationToken);
-        image.Mutate(x => x.Resize(ResizeOptions));
+        if (image.Frames.Count > 1)
+        {
+            var frame = image.Frames.ExportFrame(Convert.ToInt32(Math.Round(image.Frames.Count / 2.0)));
+            image.Dispose();
+            image = frame;
+        }
 
+        image.Mutate(x => x.Resize(ResizeOptions));
         return image;
     }
 }

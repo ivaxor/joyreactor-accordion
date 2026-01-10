@@ -41,8 +41,7 @@ public class ParsedPostAttributePictureImageTypeFixer(
                 logger.LogInformation("No parsed post attribute pictures with broken image type found");
                 return;
             }
-            else
-                logger.LogInformation("Found {PostCount} parsed post with broken attribute pictures image type", postIds.Count);
+            logger.LogInformation("Found {PostCount} parsed post with broken attribute pictures image type", postIds.Count);
 
             foreach (var postId in postIds)
             {
