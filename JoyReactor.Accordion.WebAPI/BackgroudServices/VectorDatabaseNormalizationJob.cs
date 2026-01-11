@@ -36,7 +36,7 @@ public class VectorDatabaseNormalizationJob(
                     }
                 },
                 offset: scrollOffset,
-                vectorsSelector: false,
+                vectorsSelector: true,
                 payloadSelector: true,
                 cancellationToken: cancellationToken);
             scrollOffset = scrollResponse.NextPageOffset;
@@ -63,6 +63,7 @@ public class VectorDatabaseNormalizationJob(
 
                 var pointStruct = new PointStruct();
                 pointStruct.Id = scrollPoint.Id;
+                pointStruct.Vectors = new Vectors() { Vector = new Vector() { Data = { scrollPoint.Vectors.Vector.Data } } };
                 pointStruct.Payload.Add(scrollPoint.Payload);
                 updatedPoints.Add(pointStruct);
             }
