@@ -34,6 +34,8 @@ public class MediaToVectorConverter(
     protected override async Task RunAsync(CancellationToken cancellationToken)
     {
         var unprocessedPictures = (ParsedPostAttributePicture[])null;
+        var failedPictureAttributeIds = new HashSet<Guid>();
+
         do
         {
             await using var serviceScope = serviceScopeFactory.CreateAsyncScope();
@@ -43,7 +45,9 @@ public class MediaToVectorConverter(
             var vectorDatabaseContext = serviceScope.ServiceProvider.GetRequiredService<IVectorDatabaseContext>();
 
             unprocessedPictures = await sqlDatabaseContext.ParsedPostAttributePictures
-                .Where(picture => picture.IsVectorCreated == false && ImageTypes.Contains(picture.ImageType))
+                .Where(picture => picture.IsVectorCreated == false)
+                .Where(picture => ImageTypes.Contains(picture.ImageType))
+                .Where(picture => !failedPictureAttributeIds.Contains(picture.Id))
                 .OrderByDescending(picture => picture.Id)
                 .Take(mediaSettings.Value.ConcurrentDownloads * 10)
                 .ToArrayAsync(cancellationToken);
@@ -59,47 +63,58 @@ public class MediaToVectorConverter(
             foreach (var pictures in unprocessedPictures.Chunk(mediaSettings.Value.ConcurrentDownloads))
             {
                 var pictureImages = new ConcurrentDictionary<ParsedPostAttributePicture, Image<Rgb24>>();
-                await Task.WhenAll(pictures.Select(picture => DownloadAsync(mediaDownloader, pictureImages, picture, cancellationToken)));
+                await Task.WhenAll(pictures.Select(picture => DownloadAsync(mediaDownloader, failedPictureAttributeIds, pictureImages, picture, cancellationToken)));
 
                 foreach (var (picture, image) in pictureImages)
                 {
-                    await CreateVectorAsync(onnxVectorConverter, pictureVectors, picture, image);
+                    await CreateVectorAsync(onnxVectorConverter, failedPictureAttributeIds, pictureVectors, picture, image);
                 }
 
-                logger.LogInformation("Chuck of {PicturesCount} picture post attributes were converted to vectors.", pictures.Length);
+                logger.LogInformation("Chunk of {PicturesCount} picture post attributes were converted to vectors.", pictures.Length);
             }
 
             await vectorDatabaseContext.UpsertAsync(pictureVectors, cancellationToken);
             sqlDatabaseContext.ParsedPostAttributePictures.UpdateRange(pictureVectors.Keys);
             await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
 
-            logger.LogInformation("{PicturesCount} picture post attributes were converted to vectors.", pictureVectors.Count);
+            logger.LogInformation("{PicturesCount} picture post attributes were converted and saved as vectors.", pictureVectors.Count);
         } while (unprocessedPictures.Length != 0);
     }
 
     protected async Task DownloadAsync(
         IMediaDownloader mediaDownloader,
+        ISet<Guid> failedPictureAttributeIds,
         IDictionary<ParsedPostAttributePicture, Image<Rgb24>> pictureImages,
         ParsedPostAttributePicture picture,
         CancellationToken cancellationToken)
     {
+        if (failedPictureAttributeIds.Contains(picture.Id))
+            return;
+
         try
         {
             var image = await mediaDownloader.DownloadAsync(picture, cancellationToken);
             pictureImages.TryAdd(picture, image);
+
+            // TODO: Try to download mp4/webm if download failed and type is GIF
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to download {PictureAttributeId} post attribute picture", picture.AttributeId);
+            failedPictureAttributeIds.Add(picture.Id);
+            logger.LogError(ex, "Failed to download {PictureAttributeId} post attribute picture. Adding it to temporary ignore list.", picture.AttributeId);
         }
     }
 
     protected async Task CreateVectorAsync(
         IOnnxVectorConverter onnxVectorConverter,
+        ISet<Guid> failedPictureAttributeIds,
         IDictionary<ParsedPostAttributePicture, float[]> pictureVectors,
         ParsedPostAttributePicture picture,
         Image<Rgb24> image)
     {
+        if (failedPictureAttributeIds.Contains(picture.Id))
+            return;
+
         try
         {
             var vector = await onnxVectorConverter.ConvertAsync(image);
@@ -111,7 +126,8 @@ public class MediaToVectorConverter(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to create vector for {PictureAttributeId} post attribute picture", picture.AttributeId);
+            failedPictureAttributeIds.Add(picture.Id);
+            logger.LogError(ex, "Failed to create vector for {PictureAttributeId} post attribute picture. Adding it to temporary ignore list.", picture.AttributeId);
         }
         finally
         {

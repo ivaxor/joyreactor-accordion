@@ -34,7 +34,7 @@ public class MediaDownloader(
                 return default;
             },
         })
-        .AddTimeout(TimeSpan.FromSeconds(10))
+        .AddTimeout(TimeSpan.FromSeconds(100))
         .Build();
 
     protected static readonly FrozenSet<ParsedPostAttributePictureType> PictureTypes = new HashSet<ParsedPostAttributePictureType>() {
@@ -72,23 +72,7 @@ public class MediaDownloader(
         {
             var url = $"{cdnDomainName}/{path}";
 
-            var image = await ResiliencePipeline.ExecuteAsync(async ct =>
-            {
-                using var request = new HttpRequestMessage(HttpMethod.Get, url);
-                using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-                if (response.StatusCode == HttpStatusCode.NotFound)
-                    return null;
-
-                response.EnsureSuccessStatusCode();
-
-                var mediaType = response.Content.Headers.ContentType?.MediaType;
-                if (mediaType == null || !AllowedMimeTypes.Contains(mediaType))
-                    return null;
-
-                await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-                return await mediaReducer.ReduceAsync(picture, stream, cancellationToken);
-            }, cancellationToken);
-
+            var image = await ResiliencePipeline.ExecuteAsync(async ct => await DownloadAsync(url, picture, ct), cancellationToken);
             if (image == null)
                 continue;
 
@@ -96,6 +80,23 @@ public class MediaDownloader(
         }
 
         throw new FileNotFoundException("Failed to download media from all CDNs");
+    }
+
+    protected async Task<Image<Rgb24>> DownloadAsync(string url, ParsedPostAttributePicture picture, CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NotFound)
+            return null;
+
+        response.EnsureSuccessStatusCode();
+
+        var mediaType = response.Content.Headers.ContentType?.MediaType;
+        if (mediaType == null || !AllowedMimeTypes.Contains(mediaType))
+            return null;
+
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        return await mediaReducer.ReduceAsync(picture, stream, cancellationToken);
     }
 }
 

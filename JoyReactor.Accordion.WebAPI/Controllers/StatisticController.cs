@@ -22,7 +22,7 @@ public class StatisticController(
 
         response.ParsedTags = await sqlDatabaseContext.ParsedTags.CountAsync(cancellationToken);
         response.EmptyTags = await sqlDatabaseContext.EmptyTags.CountAsync(cancellationToken);
-        response.ParsedPosts = await sqlDatabaseContext.ParsedPost.CountAsync(cancellationToken);
+        response.ParsedPosts = await sqlDatabaseContext.ParsedPosts.CountAsync(cancellationToken);
 
         response.ParsedPostAttributePictures = await sqlDatabaseContext.ParsedPostAttributePictures.CountAsync(cancellationToken);
         response.ParsedPostAttributePicturesWithVector = await sqlDatabaseContext.ParsedPostAttributePictures

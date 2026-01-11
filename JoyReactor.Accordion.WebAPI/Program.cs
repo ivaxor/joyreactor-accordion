@@ -26,29 +26,19 @@ builder.AddRateLimiter();
 builder.AddHealthChecks();
 
 var userAgent = $"JoyReactor.Accordion/{Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3)} (Bot; +https://github.com/ivaxor/joyreactor-accordion)";
-var socketsHttpHandler = new SocketsHttpHandler()
-{
-    PooledConnectionLifetime = TimeSpan.FromMinutes(5),
-    AllowAutoRedirect = true,
-    MaxAutomaticRedirections = 3,
-};
 
 builder.Services.AddHttpClient();
 builder.Services
     .AddHttpClient<IMediaDownloader, MediaDownloader>(httpClient =>
     {
-        httpClient.Timeout = TimeSpan.FromSeconds(10);
         httpClient.DefaultRequestHeaders.Add("Referer", "https://joyreactor.cc");
         httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
-    })
-    .ConfigurePrimaryHttpMessageHandler(() => socketsHttpHandler);
+    });
 builder.Services
     .AddHttpClient<SearchMediaController>(httpClient =>
     {
-        httpClient.Timeout = TimeSpan.FromSeconds(10);
         httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
-    })
-    .ConfigurePrimaryHttpMessageHandler(() => socketsHttpHandler);
+    });
 
 builder.Services.AddSingleton<IApiClient, ApiClient>();
 builder.Services.AddSingleton<ITagClient, TagClient>();
@@ -56,7 +46,6 @@ builder.Services.AddScoped<ITagCrawler, TagCrawler>();
 builder.Services.AddSingleton<IPostClient, PostClient>();
 builder.Services.AddScoped<IPostParser, PostParser>();
 builder.Services.AddSingleton<IMediaReducer, MediaReducer>();
-builder.Services.AddSingleton<IMediaDownloader, MediaDownloader>();
 builder.Services.AddSingleton<IOnnxVectorConverter, OnnxVectorConverter>();
 builder.Services.AddSingleton<IVectorDatabaseContext, VectorDatabaseContext>();
 

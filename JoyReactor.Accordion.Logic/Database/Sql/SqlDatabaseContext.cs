@@ -12,7 +12,7 @@ public partial class SqlDatabaseContext : DbContext
 
     public DbSet<CrawlerTask> CrawlerTasks { get; set; }
 
-    public DbSet<ParsedPost> ParsedPost { get; set; }
+    public DbSet<ParsedPost> ParsedPosts { get; set; }
 
     public DbSet<ParsedPostAttributeEmbedded> ParsedPostAttributeEmbeds { get; set; }
     public DbSet<ParsedPostAttributePicture> ParsedPostAttributePictures { get; set; }

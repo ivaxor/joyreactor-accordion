@@ -24,7 +24,7 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext) : IPostParser
             parsedPostAttributes.Add(parsedPostAttribute);
         }
 
-        await sqlDatabaseContext.ParsedPost.UpsertAsync(parsedPost, cancellationToken);
+        await sqlDatabaseContext.ParsedPosts.UpsertAsync(parsedPost, cancellationToken);
         await UpsertAsync(parsedAttributeEmbeds, cancellationToken);
         await UpsertAsync(parsedPostAttributes, cancellationToken);
 
@@ -58,7 +58,7 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext) : IPostParser
             }
         }
 
-        await sqlDatabaseContext.ParsedPost.UpsertRangeAsync(parsedPosts, cancellationToken);
+        await sqlDatabaseContext.ParsedPosts.UpsertRangeAsync(parsedPosts, cancellationToken);
         await UpsertAsync(parsedAttributeEmbeds, cancellationToken);
         await UpsertAsync(parsedPostAttributes, cancellationToken);
 
