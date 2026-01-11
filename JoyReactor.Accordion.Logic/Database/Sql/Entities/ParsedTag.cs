@@ -27,11 +27,11 @@ public record ParsedTag : ISqlUpdatedAtEntity
 
     public Guid? MainTagId { get; set; }
     public virtual ParsedTag? MainTag { get; set; }
-    public virtual IEnumerable<ParsedTag>? Synonyms { get; set; }
+    public virtual ICollection<ParsedTag>? Synonyms { get; set; }
 
     public Guid? ParentId { get; set; }
     public virtual ParsedTag? Parent { get; set; }
-    public virtual IEnumerable<ParsedTag>? SubTags { get; set; }
+    public virtual ICollection<ParsedTag>? SubTags { get; set; }
 
     public int NumberId { get; set; }
     public string Name { get; set; }
@@ -39,7 +39,7 @@ public record ParsedTag : ISqlUpdatedAtEntity
     public int SubscriberCount { get; set; }
     public int SubTagsCount { get; set; }
 
-    public virtual IEnumerable<CrawlerTask>? CrawlerTasks { get; set; }
+    public virtual ICollection<CrawlerTask>? CrawlerTasks { get; set; }
 
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
@@ -54,14 +54,14 @@ public class ParsedTagEntityTypeConfiguration : IEntityTypeConfiguration<ParsedT
             .WithMany(e => e.Synonyms)
             .HasPrincipalKey(e => e.Id)
             .HasForeignKey(e => e.MainTagId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder
             .HasOne(e => e.Parent)
             .WithMany(e => e.SubTags)
             .HasPrincipalKey(e => e.Id)
             .HasForeignKey(e => e.ParentId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder
             .HasIndex(e => e.NumberId)

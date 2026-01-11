@@ -47,7 +47,7 @@ public class ParsedBandCampEntityTypeConfiguration : IEntityTypeConfiguration<Pa
             .WithOne(e => e.BandCamp)
             .HasPrincipalKey<ParsedBandCamp>(e => e.Id)
             .HasForeignKey<ParsedPostAttributeEmbedded>(e => e.BandCampId)
-            .OnDelete(DeleteBehavior.Cascade)
+            .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);
 
         builder

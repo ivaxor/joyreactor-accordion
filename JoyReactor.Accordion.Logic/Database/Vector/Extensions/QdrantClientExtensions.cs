@@ -9,14 +9,14 @@ namespace JoyReactor.Accordion.Logic.Database.Vector.Extensions;
 
 public static class QdrantClientExtensions
 {
-    public static async Task UpsertAsync(
+    public static Task UpsertAsync(
         this IQdrantClient qdrantClient,
         string collectionName,
         ParsedPostAttributePicture picture, float[] vector,
         CancellationToken cancellationToken)
     {
         var point = CreatePointStruct(picture, vector);
-        await qdrantClient.UpsertAsync(collectionName, [point], cancellationToken: cancellationToken);
+        return qdrantClient.UpsertAsync(collectionName, [point], cancellationToken: cancellationToken);
     }
 
     public static async Task UpsertAsync(
@@ -32,7 +32,7 @@ public static class QdrantClientExtensions
         await qdrantClient.UpsertAsync(collectionName, points, cancellationToken: cancellationToken);
     }
 
-    public static async Task<IReadOnlyList<ScoredPoint>> SearchRawAsync(
+    public static Task<IReadOnlyList<ScoredPoint>> SearchRawAsync(
         this IQdrantClient qdrantClient,
         string collectionName,
         int limit,
@@ -40,7 +40,7 @@ public static class QdrantClientExtensions
         float[] vector,
         CancellationToken cancellationToken)
     {
-        return await qdrantClient.SearchAsync(
+        return qdrantClient.SearchAsync(
             collectionName,
             vector,
             limit: Convert.ToUInt64(limit),
@@ -63,15 +63,15 @@ public static class QdrantClientExtensions
             .ToArray();
     }
 
-    public static async Task<ulong> CountAsync(
+    public static Task<ulong> CountAsync(
         this IQdrantClient qdrantClient,
         string collectionName,
         CancellationToken cancellationToken)
     {
-        return await qdrantClient.CountAsync(collectionName, cancellationToken: cancellationToken);
+        return qdrantClient.CountAsync(collectionName, cancellationToken: cancellationToken);
     }
 
-    public static async Task<ScrollResponse> ScrollAsync(
+    public static Task<ScrollResponse> ScrollAsync(
         this IQdrantClient qdrantClient,
         string collectionName,
         int limit,
@@ -79,7 +79,7 @@ public static class QdrantClientExtensions
         bool includeVectors,
         bool includePayload, CancellationToken cancellationToken)
     {
-        return await qdrantClient.ScrollAsync(
+        return qdrantClient.ScrollAsync(
             collectionName: collectionName,
             limit: Convert.ToUInt32(limit),
             offset: offset,

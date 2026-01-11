@@ -5,17 +5,10 @@ namespace JoyReactor.Accordion.Logic.Database.Sql.Extensions;
 
 public static class DbSetExtensions
 {
-    public static async Task UpsertAsync<TEntity>(this DbSet<TEntity> dbSet, TEntity entity, CancellationToken cancellationToken)
+    public static Task UpsertAsync<TEntity>(this DbSet<TEntity> dbSet, TEntity entity, CancellationToken cancellationToken)
         where TEntity : class, ISqlCreatedAtEntity
     {
-        var isEntityExists = await dbSet.AnyAsync(e => e.Id == entity.Id, cancellationToken);
-
-        dbSet.Entry(entity).State = isEntityExists
-            ? EntityState.Modified
-            : EntityState.Added;
-
-        if (isEntityExists)
-            dbSet.Entry(entity).Property(e => e.CreatedAt).IsModified = false;
+        return dbSet.UpsertRangeAsync([entity], cancellationToken);
     }
 
     public static async Task UpsertRangeAsync<TEntity>(this DbSet<TEntity> dbSet, IEnumerable<TEntity> entities, CancellationToken cancellationToken)
@@ -42,14 +35,10 @@ public static class DbSetExtensions
         }
     }
 
-    public static async Task AddIgnoreExistingAsync<TEntity>(this DbSet<TEntity> dbSet, TEntity entity, CancellationToken cancellationToken)
+    public static Task AddIgnoreExistingAsync<TEntity>(this DbSet<TEntity> dbSet, TEntity entity, CancellationToken cancellationToken)
         where TEntity : class, ISqlCreatedAtEntity
     {
-        var isEntityExists = await dbSet.AnyAsync(e => e.Id == entity.Id, cancellationToken);
-        if (isEntityExists)
-            return;
-
-        await dbSet.AddAsync(entity, cancellationToken);
+        return dbSet.AddRangeIgnoreExistingAsync([entity], cancellationToken);
     }
 
     public static async Task AddRangeIgnoreExistingAsync<TEntity>(this DbSet<TEntity> dbSet, IEnumerable<TEntity> entities, CancellationToken cancellationToken)

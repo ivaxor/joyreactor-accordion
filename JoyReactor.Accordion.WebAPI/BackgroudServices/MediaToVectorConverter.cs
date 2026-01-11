@@ -25,15 +25,15 @@ public class MediaToVectorConverter(
     protected override bool IsIndefinite => true;
 
     protected static readonly ParsedPostAttributePictureType[] ImageTypes = [
-        /*
         ParsedPostAttributePictureType.PNG,
         ParsedPostAttributePictureType.JPEG,
         ParsedPostAttributePictureType.GIF,
         ParsedPostAttributePictureType.BMP,
         ParsedPostAttributePictureType.TIFF,
-        */
+        /*
         ParsedPostAttributePictureType.MP4,
         ParsedPostAttributePictureType.WEBM,
+        */
     ];
 
     protected override async Task RunAsync(CancellationToken cancellationToken)
@@ -53,7 +53,7 @@ public class MediaToVectorConverter(
                 .Where(picture => picture.IsVectorCreated == false)
                 .Where(picture => ImageTypes.Contains(picture.ImageType))
                 .Where(picture => !failedPictureAttributeIds.Contains(picture.Id))
-                .OrderByDescending(picture => picture.Id)
+                .OrderBy(picture => picture.Id)
                 .Take(mediaSettings.Value.ConcurrentDownloads * 10)
                 .ToArrayAsync(cancellationToken);
 

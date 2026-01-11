@@ -82,7 +82,7 @@ public class ParsedPostAttributeEmbeddedEntityTypeConfiguration : IEntityTypeCon
             .WithOne(e => e.PostAttributeEmbedded)
             .HasPrincipalKey<ParsedBandCamp>(e => e.Id)
             .HasForeignKey<ParsedPostAttributeEmbedded>(e => e.BandCampId)
-            .OnDelete(DeleteBehavior.Cascade)
+            .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);
 
         builder
@@ -93,7 +93,7 @@ public class ParsedPostAttributeEmbeddedEntityTypeConfiguration : IEntityTypeCon
             .WithOne(e => e.PostAttributeEmbedded)
             .HasPrincipalKey<ParsedCoub>(e => e.Id)
             .HasForeignKey<ParsedPostAttributeEmbedded>(e => e.CoubId)
-            .OnDelete(DeleteBehavior.Cascade)
+            .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);
 
         builder
@@ -104,7 +104,7 @@ public class ParsedPostAttributeEmbeddedEntityTypeConfiguration : IEntityTypeCon
             .WithOne(e => e.PostAttributeEmbedded)
             .HasPrincipalKey<ParsedSoundCloud>(e => e.Id)
             .HasForeignKey<ParsedPostAttributeEmbedded>(e => e.SoundCloudId)
-            .OnDelete(DeleteBehavior.Cascade)
+            .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);
 
         builder
@@ -115,7 +115,7 @@ public class ParsedPostAttributeEmbeddedEntityTypeConfiguration : IEntityTypeCon
             .WithOne(e => e.PostAttributeEmbedded)
             .HasPrincipalKey<ParsedVimeo>(e => e.Id)
             .HasForeignKey<ParsedPostAttributeEmbedded>(e => e.VimeoId)
-            .OnDelete(DeleteBehavior.Cascade)
+            .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);
 
         builder
@@ -126,7 +126,7 @@ public class ParsedPostAttributeEmbeddedEntityTypeConfiguration : IEntityTypeCon
             .WithOne(e => e.PostAttributeEmbedded)
             .HasPrincipalKey<ParsedYouTube>(e => e.Id)
             .HasForeignKey<ParsedPostAttributeEmbedded>(e => e.YouTubeId)
-            .OnDelete(DeleteBehavior.Cascade)
+            .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);
 
         builder

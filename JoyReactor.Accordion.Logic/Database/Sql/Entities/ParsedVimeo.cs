@@ -42,7 +42,7 @@ public class ParsedVimeoEntityTypeConfiguration : IEntityTypeConfiguration<Parse
             .WithOne(e => e.Vimeo)
             .HasPrincipalKey<ParsedVimeo>(e => e.Id)
             .HasForeignKey<ParsedPostAttributeEmbedded>(e => e.VimeoId)
-            .OnDelete(DeleteBehavior.Cascade)
+            .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);
 
         builder

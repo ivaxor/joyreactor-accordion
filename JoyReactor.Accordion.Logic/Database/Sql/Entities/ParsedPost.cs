@@ -23,8 +23,8 @@ public record ParsedPost : ISqlUpdatedAtEntity
     public int NumberId { get; set; }
     public int ContentVersion { get; set; }
 
-    public virtual IEnumerable<ParsedPostAttributePicture>? AttributePictures { get; set; }
-    public virtual IEnumerable<ParsedPostAttributeEmbedded>? AttributeEmbeds { get; set; }
+    public virtual ICollection<ParsedPostAttributePicture>? AttributePictures { get; set; }
+    public virtual ICollection<ParsedPostAttributeEmbedded>? AttributeEmbeds { get; set; }
 
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
@@ -44,6 +44,22 @@ public class ParsedPostEntityTypeConfiguration : IEntityTypeConfiguration<Parsed
         builder
             .Property(e => e.ContentVersion)
             .IsRequired(true);
+
+        builder
+            .HasMany(e => e.AttributePictures)
+            .WithOne(e => e.Post)
+            .HasPrincipalKey(e => e.Id)
+            .HasForeignKey(e => e.PostId)
+            .IsRequired(true)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder
+            .HasMany(e => e.AttributeEmbeds)
+            .WithOne(e => e.Post)
+            .HasPrincipalKey(e => e.Id)
+            .HasForeignKey(e => e.PostId)
+            .IsRequired(true)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder
             .Property(e => e.CreatedAt)

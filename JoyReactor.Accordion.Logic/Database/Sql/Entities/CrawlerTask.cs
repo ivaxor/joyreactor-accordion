@@ -34,7 +34,7 @@ public class CrawlerTaskEntityTypeConfiguration : IEntityTypeConfiguration<Crawl
             .WithMany(e => e.CrawlerTasks)
             .HasPrincipalKey(e => e.Id)
             .HasForeignKey(e => e.TagId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder
             .Property(e => e.PostLineType)

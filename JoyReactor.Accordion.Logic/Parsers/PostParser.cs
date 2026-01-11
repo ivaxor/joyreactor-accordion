@@ -3,32 +3,18 @@ using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using JoyReactor.Accordion.Logic.Database.Sql.Extensions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace JoyReactor.Accordion.Logic.Parsers;
 
-public class PostParser(SqlDatabaseContext sqlDatabaseContext) : IPostParser
+public class PostParser(
+    SqlDatabaseContext sqlDatabaseContext,
+    ILogger<PostParser> logger)
+    : IPostParser
 {
-    public async Task ParseAsync(Post post, CancellationToken cancellationToken)
+    public Task ParseAsync(Post post, CancellationToken cancellationToken)
     {
-        var parsedPostAttributes = new List<IParsedPostAttribute>();
-        var parsedAttributeEmbeds = new List<IParsedAttributeEmbedded>();
-
-        var parsedPost = new ParsedPost(post);
-        foreach (var postAttribute in post.Attributes)
-        {
-            var parsedAttributeEmbedded = await CreateAttributeAsync(postAttribute, cancellationToken);
-            if (parsedAttributeEmbedded != null)
-                parsedAttributeEmbeds.Add(parsedAttributeEmbedded);
-
-            var parsedPostAttribute = CreatePostAttribute(postAttribute, parsedPost, parsedAttributeEmbedded);
-            parsedPostAttributes.Add(parsedPostAttribute);
-        }
-
-        await sqlDatabaseContext.ParsedPosts.UpsertAsync(parsedPost, cancellationToken);
-        await UpsertAsync(parsedAttributeEmbeds, cancellationToken);
-        await UpsertAsync(parsedPostAttributes, cancellationToken);
-
-        await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
+        return ParseAsync([post], cancellationToken);
     }
 
     public async Task ParseAsync(IEnumerable<Post> posts, CancellationToken cancellationToken)
@@ -36,36 +22,69 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext) : IPostParser
         if (posts.Count() == 0)
             return;
 
-        var parsedPosts = new List<ParsedPost>(posts.Count());
-        var parsedPostAttributes = new List<IParsedPostAttribute>();
-        var parsedAttributeEmbeds = new List<IParsedAttributeEmbedded>();
-        foreach (var post in posts)
+        await using var transaction = await sqlDatabaseContext.Database.BeginTransactionAsync(cancellationToken);
+        try
         {
-            var parsedPost = new ParsedPost(post);
-            parsedPosts.Add(parsedPost);
-
-            foreach (var postAttribute in post.Attributes)
+            var postNumberIds = posts.Select(p => p.NumberId).ToArray();
+            var existingPostContentVersions = await sqlDatabaseContext.ParsedPosts
+                .AsNoTracking()
+                .Where(post => postNumberIds.Contains(post.NumberId))
+                .ToDictionaryAsync(post => post.NumberId, post => post.ContentVersion, cancellationToken);
+            foreach (var post in posts)
             {
-                var parsedAttributeEmbedded = await CreateAttributeAsync(postAttribute, cancellationToken);                
-                if (parsedAttributeEmbedded != null)
+                if (existingPostContentVersions.TryGetValue(post.NumberId, out var contentVersion))
                 {
-                    parsedAttributeEmbedded = TryToGetExistring(parsedAttributeEmbeds, parsedAttributeEmbedded);
-                    parsedAttributeEmbeds.Add(parsedAttributeEmbedded);
-                }                    
-
-                var parsedPostAttribute = CreatePostAttribute(postAttribute, parsedPost, parsedAttributeEmbedded);
-                parsedPostAttributes.Add(parsedPostAttribute);
+                    if (post.ContentVersion == contentVersion)
+                    {
+                        logger.LogInformation("Post {PostNumberId} content version change didn't changed. Skipping post.", post.NumberId);
+                        continue;
+                    }
+                    else
+                    {
+                        logger.LogInformation("Post {PostNubmerId} content version changed. Deleting old post information.", post.NumberId);
+                        await sqlDatabaseContext.ParsedPosts.Where(p => p.NumberId == post.NumberId).ExecuteDeleteAsync(cancellationToken);
+                    }
+                }
             }
+            await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
+
+            var parsedPosts = new List<ParsedPost>(posts.Count());
+            var parsedPostAttributes = new List<IParsedPostAttribute>();
+            var parsedAttributeEmbeds = new List<IParsedAttributeEmbedded>();
+            foreach (var post in posts)
+            {
+                var parsedPost = new ParsedPost(post);
+                parsedPosts.Add(parsedPost);
+
+                foreach (var postAttribute in post.Attributes)
+                {
+                    var parsedAttributeEmbedded = await CreateAttributeAsync(postAttribute, cancellationToken);
+                    if (parsedAttributeEmbedded != null)
+                    {
+                        parsedAttributeEmbedded = TryToGetExistring(parsedAttributeEmbeds, parsedAttributeEmbedded);
+                        parsedAttributeEmbeds.Add(parsedAttributeEmbedded);
+                    }
+
+                    var parsedPostAttribute = CreatePostAttribute(postAttribute, parsedPost, parsedAttributeEmbedded);
+                    parsedPostAttributes.Add(parsedPostAttribute);
+                }
+            }
+
+            await sqlDatabaseContext.ParsedPosts.AddRangeAsync(parsedPosts, cancellationToken);
+            await AddRangeAsync(parsedPostAttributes, cancellationToken);
+            await UpsertRangeAsync(parsedAttributeEmbeds, cancellationToken);
+
+            await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
         }
-
-        await sqlDatabaseContext.ParsedPosts.UpsertRangeAsync(parsedPosts, cancellationToken);
-        await UpsertAsync(parsedAttributeEmbeds, cancellationToken);
-        await UpsertAsync(parsedPostAttributes, cancellationToken);
-
-        await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
     }
 
-    protected async Task UpsertAsync(IEnumerable<IParsedAttributeEmbedded> parsedAttributeEmbeds, CancellationToken cancellationToken)
+    protected async Task UpsertRangeAsync(IEnumerable<IParsedAttributeEmbedded> parsedAttributeEmbeds, CancellationToken cancellationToken)
     {
         foreach (var group in parsedAttributeEmbeds.GroupBy(attribute => attribute.GetType()))
         {
@@ -81,14 +100,14 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext) : IPostParser
         }
     }
 
-    protected async Task UpsertAsync(IEnumerable<IParsedPostAttribute> parsedPostAttributes, CancellationToken cancellationToken)
+    protected async Task AddRangeAsync(IEnumerable<IParsedPostAttribute> parsedPostAttributes, CancellationToken cancellationToken)
     {
         foreach (var group in parsedPostAttributes.GroupBy(postAttribute => postAttribute.GetType()))
         {
             await (group.First() switch
             {
-                ParsedPostAttributePicture => sqlDatabaseContext.ParsedPostAttributePictures.UpsertRangeAsync(group.Cast<ParsedPostAttributePicture>(), cancellationToken),
-                ParsedPostAttributeEmbedded => sqlDatabaseContext.ParsedPostAttributeEmbeds.UpsertRangeAsync(group.Cast<ParsedPostAttributeEmbedded>(), cancellationToken),
+                ParsedPostAttributePicture => sqlDatabaseContext.ParsedPostAttributePictures.AddRangeAsync(group.Cast<ParsedPostAttributePicture>(), cancellationToken),
+                ParsedPostAttributeEmbedded => sqlDatabaseContext.ParsedPostAttributeEmbeds.AddRangeAsync(group.Cast<ParsedPostAttributeEmbedded>(), cancellationToken),
                 _ => throw new NotImplementedException(),
             });
         }

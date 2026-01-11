@@ -46,7 +46,9 @@ public static class SharedDependencies
 
         PostClient = new PostClient(ApiClient);
 
-        PostParser = new PostParser(SqlDatabaseContext);
+        PostParser = new PostParser(
+            SqlDatabaseContext,
+            NullLogger<PostParser>.Instance);
 
         var mediaDownloaderHttpClient = new HttpClient();
         var mediaSettingsOptions = Options.Create(new MediaSettings()

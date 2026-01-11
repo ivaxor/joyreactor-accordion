@@ -42,7 +42,7 @@ public class ParsedYouTubeEntityTypeConfiguration : IEntityTypeConfiguration<Par
             .WithOne(e => e.YouTube)
             .HasPrincipalKey<ParsedYouTube>(e => e.Id)
             .HasForeignKey<ParsedPostAttributeEmbedded>(e => e.YouTubeId)
-            .OnDelete(DeleteBehavior.Cascade)
+            .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);
 
         builder
