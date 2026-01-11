@@ -18,10 +18,6 @@ public class TagInnnerRangeCrawler(
 
     protected override async Task RunAsync(CancellationToken cancellationToken)
     {
-        await using var serviceScope = serviceScopeFactory.CreateAsyncScope();
-        await using var sqlDatabaseContext = serviceScope.ServiceProvider.GetRequiredService<SqlDatabaseContext>();
-        var tagCrawler = serviceScope.ServiceProvider.GetRequiredService<ITagCrawler>();
-
         var take = 100;
         var skip = 0;
 
@@ -30,6 +26,10 @@ public class TagInnnerRangeCrawler(
         var tagEndNumberId = 0;
         do
         {
+            await using var serviceScope = serviceScopeFactory.CreateAsyncScope();
+            await using var sqlDatabaseContext = serviceScope.ServiceProvider.GetRequiredService<SqlDatabaseContext>();
+            var tagCrawler = serviceScope.ServiceProvider.GetRequiredService<ITagCrawler>();
+
             tagNumberIds = await sqlDatabaseContext.ParsedTags
                 .AsNoTracking()
                 .OrderBy(tag => tag.NumberId)

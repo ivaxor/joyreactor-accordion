@@ -18,14 +18,14 @@ public class ParsedPostAttributePictureImageTypeFixer(
 
     protected override async Task RunAsync(CancellationToken cancellationToken)
     {
-        await using var serviceScope = serviceScopeFactory.CreateAsyncScope();
-        using var sqlDatabaseContext = serviceScope.ServiceProvider.GetService<SqlDatabaseContext>();
-        var postClient = serviceScope.ServiceProvider.GetService<IPostClient>();
-        var postParser = serviceScope.ServiceProvider.GetService<IPostParser>();
-
         var postIds = (HashSet<Guid>)null;
         do
         {
+            await using var serviceScope = serviceScopeFactory.CreateAsyncScope();
+            using var sqlDatabaseContext = serviceScope.ServiceProvider.GetService<SqlDatabaseContext>();
+            var postClient = serviceScope.ServiceProvider.GetService<IPostClient>();
+            var postParser = serviceScope.ServiceProvider.GetService<IPostParser>();
+
             postIds = await sqlDatabaseContext.ParsedPostAttributePictures
                 .AsNoTracking()
                 .Where(postAttribute => (int)postAttribute.ImageType > 6)
