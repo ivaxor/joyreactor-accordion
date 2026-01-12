@@ -53,7 +53,8 @@ public class MediaToVectorConverter(
                 .Where(picture => picture.IsVectorCreated == false)
                 .Where(picture => ImageTypes.Contains(picture.ImageType))
                 .Where(picture => !failedPictureAttributeIds.Contains(picture.Id))
-                .OrderBy(picture => picture.Id)
+                .Include(picture => picture.Post)
+                .OrderBy(picture => picture.AttributeId)
                 .Take(mediaSettings.Value.ConcurrentDownloads * 10)
                 .ToArrayAsync(cancellationToken);
 

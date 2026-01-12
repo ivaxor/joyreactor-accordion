@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using System.Net.Mime;
 
 namespace JoyReactor.Accordion.Logic.Media;
 
@@ -42,15 +43,15 @@ public class MediaReducer(IOptions<MediaSettings> settings)
     {
         switch (mimeType)
         {
-            case "image/png":
-            case "image/jpeg":
-            case "image/gif":
-            case "image/tiff":
-            case "image/bmp":
+            case MediaTypeNames.Image.Png:
+            case MediaTypeNames.Image.Jpeg:
+            case MediaTypeNames.Image.Gif:
+            case MediaTypeNames.Image.Bmp:
+            case MediaTypeNames.Image.Tiff:
                 return ReducePictureAsync(stream, cancellationToken);
 
-            case "image/mp4":
-            case "image/webm":
+            case "video/mp4":
+            case "video/webm":
                 return ReduceVideoAsync(stream, cancellationToken);
 
             default:
@@ -86,30 +87,37 @@ public class MediaReducer(IOptions<MediaSettings> settings)
 
     protected async Task<Image<Rgb24>> ReduceVideoAsync(Stream stream, CancellationToken cancellationToken)
     {
-        await using var inputStream = new MemoryStream();
-        await stream.CopyToAsync(inputStream, cancellationToken);
-        inputStream.Position = 0;
+        try
+        {
+            await using var inputStream = new MemoryStream();
+            await stream.CopyToAsync(inputStream, cancellationToken);
+            inputStream.Position = 0;
 
-        var mediaAnalysis = await FFProbe.AnalyseAsync(inputStream, cancellationToken: cancellationToken);
-        var seekTo = mediaAnalysis.Duration.TotalSeconds > 0
-            ? TimeSpan.FromTicks(Convert.ToInt32(Math.Round(mediaAnalysis.Duration.Ticks / 2.0)))
-            : TimeSpan.Zero;
-        inputStream.Position = 0;
+            var mediaAnalysis = await FFProbe.AnalyseAsync(inputStream, cancellationToken: cancellationToken);
+            var seekTo = mediaAnalysis.Duration.TotalSeconds > 0
+                ? TimeSpan.FromTicks(Convert.ToInt32(Math.Round(mediaAnalysis.Duration.Ticks / 2.0)))
+                : TimeSpan.Zero;
+            inputStream.Position = 0;
 
-        await using var outputStream = new MemoryStream();
-        await FFMpegArguments
-            .FromPipeInput(new StreamPipeSource(inputStream))
-            .OutputToPipe(new StreamPipeSink(outputStream), options => options
-                .Seek(seekTo)
-                .WithFrameOutputCount(1)
-                .WithVideoCodec("mjpeg")
-                .ForceFormat("image2"))
-            .ProcessAsynchronously();
-        outputStream.Position = 0;
+            await using var outputStream = new MemoryStream();
+            await FFMpegArguments
+                .FromPipeInput(new StreamPipeSource(inputStream))
+                .OutputToPipe(new StreamPipeSink(outputStream), options => options
+                    .Seek(seekTo)
+                    .WithFrameOutputCount(1)
+                    .WithVideoCodec("mjpeg")
+                    .ForceFormat("image2"))
+                .ProcessAsynchronously();
+            outputStream.Position = 0;
 
-        var image = await Image.LoadAsync<Rgb24>(outputStream, cancellationToken);
-        image.Mutate(x => x.Resize(ResizeOptions));
-        return image;
+            var image = await Image.LoadAsync<Rgb24>(outputStream, cancellationToken);
+            image.Mutate(x => x.Resize(ResizeOptions));
+            return image;
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
     }
 }
 

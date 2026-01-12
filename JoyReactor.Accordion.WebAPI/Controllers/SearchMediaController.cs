@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 using Qdrant.Client;
 using System.Collections.Frozen;
+using System.Net.Mime;
 
 namespace JoyReactor.Accordion.WebAPI.Controllers;
 
@@ -25,14 +26,14 @@ public class SearchMediaController(
     protected const int FileSizeLimit = 5 * 1024 * 1024;
     protected static readonly FrozenSet<string> AllowedMimeTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
-        "application/octet-stream",
-        "image/png",
-        "image/jpeg",
-        "image/gif",
-        "image/tiff",
-        "image/bmp",
-        //"image/mp4",
-        //"image/webm",
+        //MediaTypeNames.Application.Octet,
+        MediaTypeNames.Image.Png,
+        MediaTypeNames.Image.Jpeg,
+        MediaTypeNames.Image.Gif,
+        MediaTypeNames.Image.Bmp,
+        MediaTypeNames.Image.Tiff,
+        //"video/mp4",
+        //"video/webm",
     }.ToFrozenSet();
     protected static readonly FrozenSet<string> AllowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {

@@ -47,7 +47,7 @@ public class PostParser(
             {
                 if (existingPostContentVersions.TryGetValue(post.NumberId, out var contentVersion) && post.ContentVersion == contentVersion)
                 {
-                    logger.LogInformation("Post {PostNumberId} content version change didn't changed. Skipping post.", post.NumberId);
+                    logger.LogDebug("Post {PostNumberId} content version change didn't changed. Skipping post.", post.NumberId);
                     continue;
                 }
 

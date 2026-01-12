@@ -95,8 +95,9 @@ public class CrawlerTaskHandler(
                 postPager = await postClient.GetByTagAsync(tagNumberId, crawlerTask.PostLineType, crawlerTask.PageCurrent.Value, cancellationToken);
                 lastPage = crawlerTask.PageTo ?? postPager.LastPage;
                 isLastPage = crawlerTask.PageCurrent >= lastPage;
-                await postParser.ParseAsync(postPager.Posts, cancellationToken);
+
                 logger.LogInformation("Found {PostCount} post(s) using \"{TagName}\" tag on {Page}/{LastPage} page.", postPager.Posts.Length, crawlerTask.Tag.Name, crawlerTask.PageCurrent, lastPage);
+                await postParser.ParseAsync(postPager.Posts, cancellationToken);
 
                 if (!isLastPage)
                     crawlerTask.PageCurrent += 1;

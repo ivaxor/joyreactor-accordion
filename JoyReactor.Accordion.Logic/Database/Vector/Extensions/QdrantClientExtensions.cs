@@ -95,9 +95,10 @@ public static class QdrantClientExtensions
             Id = Guid.NewGuid(),
             Vectors = vector,
             Payload = {
+                ["contentVersion"] = new Value() { IntegerValue = picture.Post.ContentVersion },
                 ["postId"] = new Value() { IntegerValue =  picture.PostId.ToInt() },
                 ["postAttributeId"] = new Value() { IntegerValue = picture.AttributeId },
-                ["createdAt"] = new Value() { StringValue = picture.CreatedAt.ToString("o", CultureInfo.InvariantCulture) },
+                ["createdAt"] = new Value() { StringValue = picture.CreatedAt.ToString("O", CultureInfo.InvariantCulture) },
             },
         };
     }

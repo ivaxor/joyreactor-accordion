@@ -29,7 +29,7 @@ public class ParsedPostAttributePictureImageTypeFixer(
             postIds = await sqlDatabaseContext.ParsedPostAttributePictures
                 .AsNoTracking()
                 .Where(postAttribute => (int)postAttribute.ImageType > 6)
-                .OrderBy(postAttribute => postAttribute.Id)
+                .OrderBy(postAttribute => postAttribute.AttributeId)
                 .Take(100)
                 .Select(postAttribute => postAttribute.PostId)
                 .ToHashSetAsync(cancellationToken);

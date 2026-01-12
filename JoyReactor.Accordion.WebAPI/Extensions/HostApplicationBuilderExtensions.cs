@@ -17,6 +17,7 @@ using Microsoft.ML.OnnxRuntime;
 using Qdrant.Client;
 using Qdrant.Client.Grpc;
 using Serilog;
+using System.Threading;
 using System.Threading.RateLimiting;
 
 namespace JoyReactor.Accordion.WebAPI.Extensions;
@@ -91,21 +92,36 @@ public static class HostApplicationBuilderExtensions
             if (!isCollectionExists)
             {
                 client.CreateCollectionAsync(
-                    settings.Value.CollectionName,
-                    new VectorParams
+                    collectionName: settings.Value.CollectionName,
+                    vectorsConfig: new VectorParams
                     {
                         Size = settings.Value.CollectionVectorSize,
                         Distance = Distance.Cosine,
                         Datatype = Datatype.Float32,
+                        OnDisk = true,
                     },
+                    onDiskPayload: true,
                     quantizationConfig: new QuantizationConfig
                     {
                         Scalar = new ScalarQuantization
                         {
                             Type = QuantizationType.Int8,
-                            AlwaysRam = true,
-                        }
+                            AlwaysRam = false,
+                        },
+                    },
+                    hnswConfig: new HnswConfigDiff()
+                    {
+                        OnDisk = false,
                     }).GetAwaiter().GetResult();
+
+                /*
+                client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "contentVersion", schemaType: PayloadSchemaType.Integer).GetAwaiter().GetResult();
+                client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "postId", schemaType: PayloadSchemaType.Integer).GetAwaiter().GetResult();
+                client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "postAttributeId", schemaType: PayloadSchemaType.Integer).GetAwaiter().GetResult();
+                client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "commentId", schemaType: PayloadSchemaType.Integer).GetAwaiter().GetResult();
+                client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "commentAttributeId", schemaType: PayloadSchemaType.Integer).GetAwaiter().GetResult();
+                client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "createdAt", schemaType: PayloadSchemaType.Datetime).GetAwaiter().GetResult();
+                */
             }
 
             return client;

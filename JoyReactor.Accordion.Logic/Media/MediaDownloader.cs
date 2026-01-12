@@ -8,6 +8,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using System.Collections.Frozen;
 using System.Net;
+using System.Net.Mime;
 
 namespace JoyReactor.Accordion.Logic.Media;
 
@@ -53,13 +54,13 @@ public class MediaDownloader(
 
     protected static readonly FrozenSet<string> AllowedMimeTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
-        "image/png",
-        "image/jpeg",
-        "image/gif",
-        "image/bmp",
-        "image/tiff",
-        "image/mp4",
-        "image/webm",
+        MediaTypeNames.Image.Png,
+        MediaTypeNames.Image.Jpeg,
+        MediaTypeNames.Image.Gif,
+        MediaTypeNames.Image.Bmp,
+        MediaTypeNames.Image.Tiff,
+        "video/mp4",
+        "video/webm",
     }.ToFrozenSet();
 
     public async Task<Image<Rgb24>> DownloadAsync(ParsedPostAttributePicture picture, CancellationToken cancellationToken)
@@ -87,13 +88,19 @@ public class MediaDownloader(
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            logger.LogWarning("Media not found at {Url}.", url);
             return null;
+        }
 
         response.EnsureSuccessStatusCode();
 
-        var mediaType = response.Content.Headers.ContentType?.MediaType;
-        if (mediaType == null || !AllowedMimeTypes.Contains(mediaType))
+        var mimeType = response.Content.Headers.ContentType?.MediaType;
+        if (!AllowedMimeTypes.Contains(mimeType))
+        {
+            logger.LogWarning("Unsupported {MimeType} MIME type received for {Url}.", mimeType, url);
             return null;
+        }
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         return await mediaReducer.ReduceAsync(picture, stream, cancellationToken);
