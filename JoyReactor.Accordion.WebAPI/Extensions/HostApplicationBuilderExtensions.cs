@@ -9,6 +9,7 @@ using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Vector;
 using JoyReactor.Accordion.Logic.Media;
 using JoyReactor.Accordion.Logic.Onnx;
+using JoyReactor.Accordion.WebAPI.Auth;
 using JoyReactor.Accordion.WebAPI.HealthChecks;
 using JoyReactor.Accordion.WebAPI.Models;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +18,6 @@ using Microsoft.ML.OnnxRuntime;
 using Qdrant.Client;
 using Qdrant.Client.Grpc;
 using Serilog;
-using System.Threading;
 using System.Threading.RateLimiting;
 
 namespace JoyReactor.Accordion.WebAPI.Extensions;
@@ -51,6 +51,7 @@ public static class HostApplicationBuilderExtensions
 
     public static void AddOptionsFromConfiguration(this IHostApplicationBuilder builder)
     {
+        builder.Services.Configure<AuthSettings>(builder.Configuration.GetSection(nameof(AuthSettings)));
         builder.Services.Configure<ApiClientSettings>(builder.Configuration.GetSection(nameof(ApiClientSettings)));
         builder.Services.Configure<MediaSettings>(builder.Configuration.GetSection(nameof(MediaSettings)));
         builder.Services.Configure<OnnxSettings>(builder.Configuration.GetSection(nameof(OnnxSettings)));

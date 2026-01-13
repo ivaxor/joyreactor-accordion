@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authentication;
+using System.Collections.Frozen;
 
 namespace JoyReactor.Accordion.WebAPI.Auth;
 
 public class ApiKeyAuthenticationSchemeOptions : AuthenticationSchemeOptions
 {
-    public string[] ApiKeys { get; set; }
+    public FrozenSet<string> ApiKeys { get; set; }
 }

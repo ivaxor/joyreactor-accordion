@@ -14,10 +14,11 @@ public class ApiKeyAuthenticationSchemeHandler(
     private const string HeaderName = "X-API-Key";
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        var apiKey = Context.Request.Headers[HeaderName];
-        var isApiKeyValid = Options.ApiKeys.Contains(apiKey);
-        if (!isApiKeyValid)
-            return Task.FromResult(AuthenticateResult.Fail($"Invalid {HeaderName} value"));
+        if (!Context.Request.Headers.TryGetValue(HeaderName, out var apiKey))
+            return Task.FromResult(AuthenticateResult.NoResult());
+
+        if (!Options.ApiKeys.Contains(apiKey.FirstOrDefault()))
+            return Task.FromResult(AuthenticateResult.Fail("Invalid API key"));
 
         var identity = new ClaimsIdentity(Enumerable.Empty<Claim>(), Scheme.Name);
         var principal = new ClaimsPrincipal(identity);

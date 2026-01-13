@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using Serilog;
+using System.Collections.Frozen;
 using System.Reflection;
 using System.Text;
 
@@ -59,7 +60,12 @@ builder.Services.AddHostedService<VectorNormalizator>();
 builder.Services.AddHostedService<VectorPostDuplicateRemover>();
 
 builder.Services.AddAuthentication()
-    .AddScheme<ApiKeyAuthenticationSchemeOptions, ApiKeyAuthenticationSchemeHandler>("ApiKeyAuthenticationScheme", options => { options.ApiKeys = []; });
+    .AddScheme<ApiKeyAuthenticationSchemeOptions, ApiKeyAuthenticationSchemeHandler>("ApiKeyAuthenticationScheme", options =>
+    {
+        var authSettings = builder.Configuration.GetSection(nameof(AuthSettings)).Get<AuthSettings>();
+        options.ApiKeys = authSettings.ApiKeys.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
+    });
+builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddCors(options =>
@@ -89,6 +95,7 @@ else
     app.UseRateLimiter();
 }
 
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/healthz");
