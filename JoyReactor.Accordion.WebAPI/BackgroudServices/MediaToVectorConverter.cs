@@ -76,7 +76,7 @@ public class MediaToVectorConverter(
                     await CreateVectorAsync(onnxVectorConverter, failedPictureAttributeIds, pictureVectors, picture, image);
                 }
 
-                logger.LogInformation("Chunk of {PicturesCount} picture post attribute(s) were converted to vectors.", pictures.Length);
+                logger.LogDebug("Chunk of {PicturesCount} picture post attribute(s) were converted to vectors.", pictures.Length);
             }
 
             await qdrantClient.UpsertAsync(qdrantSettings.Value.CollectionName, pictureVectors, cancellationToken);

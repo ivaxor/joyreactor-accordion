@@ -57,13 +57,16 @@ public class PostParser(
                 foreach (var postAttribute in post.Attributes)
                 {
                     var parsedAttributeEmbedded = await CreateAttributeAsync(postAttribute, cancellationToken);
-                    if (parsedAttributeEmbedded != null)
-                    {
-                        parsedAttributeEmbedded = TryToGetExistring(parsedAttributeEmbeds, parsedAttributeEmbedded);
+                    var existingDatabaseParsedAttributeEmbedded = await GetExistingDatabaseAttributeAsync(parsedAttributeEmbedded, cancellationToken);
+                    var existingLocalParsedAttributeEmbedded = GetExistingLocalAttribute(parsedAttributeEmbeds, parsedAttributeEmbedded);
+                    if (parsedAttributeEmbedded != null && existingDatabaseParsedAttributeEmbedded == null && existingLocalParsedAttributeEmbedded == null)
                         parsedAttributeEmbeds.Add(parsedAttributeEmbedded);
-                    }
 
-                    var parsedPostAttribute = CreatePostAttribute(postAttribute, parsedPost, parsedAttributeEmbedded);
+                    var existingParsedAttributeEmbedded = existingLocalParsedAttributeEmbedded
+                        ?? existingDatabaseParsedAttributeEmbedded
+                        ?? parsedAttributeEmbedded;
+
+                    var parsedPostAttribute = CreatePostAttribute(postAttribute, parsedPost, existingParsedAttributeEmbedded);
                     parsedPostAttributes.Add(parsedPostAttribute);
                 }
             }
@@ -111,81 +114,44 @@ public class PostParser(
         }
     }
 
-    protected async Task<IParsedAttributeEmbedded> CreateAttributeAsync(PostAttribute postAttribute, CancellationToken cancellationToken)
+    protected async Task<IParsedAttributeEmbedded?> CreateAttributeAsync(PostAttribute postAttribute, CancellationToken cancellationToken)
     {
-        switch (postAttribute.Type)
+        return postAttribute.Type switch
         {
-            case "PICTURE":
-                return null;
-
-            case "BANDCAMP":
-                var parsedBandCamp = new ParsedBandCamp(postAttribute);
-                var existingBandCampId = await sqlDatabaseContext.ParsedBandCamps
-                    .Where(bandCamp => bandCamp.UrlPath == parsedBandCamp.UrlPath)
-                    .Select(bandCamp => bandCamp.Id)
-                    .FirstOrDefaultAsync(cancellationToken);
-                if (existingBandCampId != default)
-                    parsedBandCamp.Id = existingBandCampId;
-                return parsedBandCamp;
-
-            case "COUB":
-                var parsedCoub = new ParsedCoub(postAttribute);
-                var existingCoubId = await sqlDatabaseContext.ParsedCoubs
-                    .Where(coub => coub.VideoId == parsedCoub.VideoId)
-                    .Select(coub => coub.Id)
-                    .FirstOrDefaultAsync(cancellationToken);
-                if (existingCoubId != default)
-                    parsedCoub.Id = existingCoubId;
-                return parsedCoub;
-
-            case "SOUNDCLOUD":
-                var parsedSoundCloud = new ParsedSoundCloud(postAttribute);
-                var existingSoundCloudId = await sqlDatabaseContext.ParsedSoundClouds
-                    .Where(soundCloud => soundCloud.UrlPath == parsedSoundCloud.UrlPath)
-                    .Select(soundCloud => soundCloud.Id)
-                    .FirstOrDefaultAsync(cancellationToken);
-                if (existingSoundCloudId != default)
-                    parsedSoundCloud.Id = existingSoundCloudId;
-                return parsedSoundCloud;
-
-            case "VIMEO":
-                var parsedVimeo = new ParsedVimeo(postAttribute);
-                var existingVimeoId = await sqlDatabaseContext.ParsedVimeos
-                    .Where(vimeo => vimeo.VideoId == parsedVimeo.VideoId)
-                    .Select(vimeo => vimeo.Id)
-                    .FirstOrDefaultAsync(cancellationToken);
-                if (existingVimeoId != default)
-                    parsedVimeo.Id = existingVimeoId;
-                return parsedVimeo;
-
-            case "YOUTUBE":
-                var parsedYouTube = new ParsedYouTube(postAttribute);
-                var existingYouTubeId = await sqlDatabaseContext.ParsedYouTubes
-                    .Where(youTube => youTube.VideoId == parsedYouTube.VideoId)
-                    .Select(youTube => youTube.Id)
-                    .FirstOrDefaultAsync(cancellationToken);
-                if (existingYouTubeId != default)
-                    parsedYouTube.Id = existingYouTubeId;
-                return parsedYouTube;
-
-            default:
-                throw new NotImplementedException();
-        }
+            "PICTURE" => null,
+            "BANDCAMP" => new ParsedBandCamp(postAttribute),
+            "COUB" => new ParsedCoub(postAttribute),
+            "SOUNDCLOUD" => new ParsedSoundCloud(postAttribute),
+            "VIMEO" => new ParsedVimeo(postAttribute),
+            "YOUTUBE" => new ParsedYouTube(postAttribute),
+            _ => throw new NotImplementedException(),
+        };
     }
 
-    protected static IParsedAttributeEmbedded TryToGetExistring(IEnumerable<IParsedAttributeEmbedded> parsedAttributes, IParsedAttributeEmbedded parsedAttribute)
+    protected async Task<IParsedAttributeEmbedded?> GetExistingDatabaseAttributeAsync(IParsedAttributeEmbedded? parsedAttribute, CancellationToken cancellationToken)
     {
-        var filteredParsedAttributes = parsedAttributes.Where(pa => pa.GetType() == parsedAttribute.GetType());
-        if (!filteredParsedAttributes.Any())
-            return parsedAttribute;
-
         return parsedAttribute switch
         {
-            ParsedBandCamp parsedBandCamp => filteredParsedAttributes.Cast<ParsedBandCamp>().FirstOrDefault(pa => pa.UrlPath == parsedBandCamp.UrlPath, parsedBandCamp),
-            ParsedCoub parsedCoub => filteredParsedAttributes.Cast<ParsedCoub>().FirstOrDefault(pa => pa.VideoId == parsedCoub.VideoId, parsedCoub),
-            ParsedSoundCloud parsedSoundCloud => filteredParsedAttributes.Cast<ParsedSoundCloud>().FirstOrDefault(pa => pa.UrlPath == parsedSoundCloud.UrlPath, parsedSoundCloud),
-            ParsedVimeo parsedVimeo => filteredParsedAttributes.Cast<ParsedVimeo>().FirstOrDefault(pa => pa.VideoId == parsedVimeo.VideoId, parsedVimeo),
-            ParsedYouTube parsedYouTube => filteredParsedAttributes.Cast<ParsedYouTube>().FirstOrDefault(pa => pa.VideoId == parsedYouTube.VideoId, parsedYouTube),
+            null => null,
+            ParsedBandCamp parsedBandCamp => await sqlDatabaseContext.ParsedBandCamps.Where(bandCamp => bandCamp.UrlPath == parsedBandCamp.UrlPath).FirstOrDefaultAsync(cancellationToken),
+            ParsedCoub parsedCoub => await sqlDatabaseContext.ParsedCoubs.Where(coub => coub.VideoId == parsedCoub.VideoId).FirstOrDefaultAsync(cancellationToken),
+            ParsedSoundCloud parsedSoundCloud => await sqlDatabaseContext.ParsedSoundClouds.Where(soundCloud => soundCloud.UrlPath == parsedSoundCloud.UrlPath).FirstOrDefaultAsync(cancellationToken),
+            ParsedVimeo parsedVimeo => await sqlDatabaseContext.ParsedVimeos.Where(vimeo => vimeo.VideoId == parsedVimeo.VideoId).FirstOrDefaultAsync(cancellationToken),
+            ParsedYouTube parsedYouTube => await sqlDatabaseContext.ParsedYouTubes.Where(youTube => youTube.VideoId == parsedYouTube.VideoId).FirstOrDefaultAsync(cancellationToken),
+            _ => throw new NotImplementedException(),
+        };
+    }
+
+    protected static IParsedAttributeEmbedded? GetExistingLocalAttribute(IEnumerable<IParsedAttributeEmbedded> parsedAttributes, IParsedAttributeEmbedded? parsedAttribute)
+    {
+        return parsedAttribute switch
+        {
+            null => null,
+            ParsedBandCamp parsedBandCamp => parsedAttributes.Where(pa => pa is ParsedBandCamp).Cast<ParsedBandCamp>().SingleOrDefault(pa => pa.UrlPath == parsedBandCamp.UrlPath),
+            ParsedCoub parsedCoub => parsedAttributes.Where(pa => pa is ParsedCoub).Cast<ParsedCoub>().SingleOrDefault(pa => pa.VideoId == parsedCoub.VideoId),
+            ParsedSoundCloud parsedSoundCloud => parsedAttributes.Where(pa => pa is ParsedSoundCloud).Cast<ParsedSoundCloud>().SingleOrDefault(pa => pa.UrlPath == parsedSoundCloud.UrlPath),
+            ParsedVimeo parsedVimeo => parsedAttributes.Where(pa => pa is ParsedVimeo).Cast<ParsedVimeo>().SingleOrDefault(pa => pa.VideoId == parsedVimeo.VideoId),
+            ParsedYouTube parsedYouTube => parsedAttributes.Where(pa => pa is ParsedYouTube).Cast<ParsedYouTube>().SingleOrDefault(pa => pa.VideoId == parsedYouTube.VideoId),
             _ => throw new NotImplementedException(),
         };
     }
