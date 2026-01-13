@@ -2,6 +2,7 @@
 using JoyReactor.Accordion.Logic.Database.Vector;
 using JoyReactor.Accordion.Logic.Database.Vector.Extensions;
 using JoyReactor.Accordion.WebAPI.Models.Responses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -19,6 +20,7 @@ public class StatisticController(
 {
     [HttpGet]
     [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
+    [AllowAnonymous]
     public async Task<IActionResult> GetAsync(CancellationToken cancellationToken = default)
     {
         var response = new StatisticsResponse();

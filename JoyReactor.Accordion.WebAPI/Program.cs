@@ -3,6 +3,7 @@ using JoyReactor.Accordion.Logic.Crawlers;
 using JoyReactor.Accordion.Logic.Media;
 using JoyReactor.Accordion.Logic.Onnx;
 using JoyReactor.Accordion.Logic.Parsers;
+using JoyReactor.Accordion.WebAPI.Auth;
 using JoyReactor.Accordion.WebAPI.BackgroudServices;
 using JoyReactor.Accordion.WebAPI.Controllers;
 using JoyReactor.Accordion.WebAPI.Extensions;
@@ -57,6 +58,8 @@ builder.Services.AddHostedService<ParsedPostAttributePictureImageTypeFixer>();
 builder.Services.AddHostedService<VectorNormalizator>();
 builder.Services.AddHostedService<VectorPostDuplicateRemover>();
 
+builder.Services.AddAuthentication()
+    .AddScheme<ApiKeyAuthenticationSchemeOptions, ApiKeyAuthenticationSchemeHandler>("ApiKeyAuthenticationScheme", options => { options.ApiKeys = []; });
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddCors(options =>

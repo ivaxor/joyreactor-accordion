@@ -1,6 +1,7 @@
 ﻿using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.WebAPI.Models.Requests;
 using JoyReactor.Accordion.WebAPI.Models.Responses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +13,7 @@ public class SearchEmbeddedController(SqlDatabaseContext sqlDatabaseContext)
     : ControllerBase
 {
     [HttpPost]
+    [AllowAnonymous]
     public async Task<IActionResult> SearchAsync([FromBody] SearchEmbeddedRequest request, CancellationToken cancellationToken)
     {
         var entityId = request.Type switch

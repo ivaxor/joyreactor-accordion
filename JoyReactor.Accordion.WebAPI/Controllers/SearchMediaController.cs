@@ -4,6 +4,7 @@ using JoyReactor.Accordion.Logic.Database.Vector.Extensions;
 using JoyReactor.Accordion.Logic.Media;
 using JoyReactor.Accordion.Logic.Onnx;
 using JoyReactor.Accordion.WebAPI.Models.Requests;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
@@ -48,6 +49,7 @@ public class SearchMediaController(
     }.ToFrozenSet();
 
     [HttpPost("download")]
+    [AllowAnonymous]
     public async Task<IActionResult> SearchAsync([FromBody] SearchDownloadRequest request, CancellationToken cancellationToken = default)
     {
         using var downloadRequest = new HttpRequestMessage(HttpMethod.Get, request.PictureUrl);
@@ -82,6 +84,7 @@ public class SearchMediaController(
 
     [RequestSizeLimit(FileSizeLimit)]
     [HttpPost("upload")]
+    [AllowAnonymous]
     public async Task<IActionResult> SearchAsync([FromForm] SearchUploadRequest request, CancellationToken cancellationToken = default)
     {
         if (!AllowedMimeTypes.Contains(request.Picture.ContentType))

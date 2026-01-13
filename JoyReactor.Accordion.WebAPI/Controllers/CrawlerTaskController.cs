@@ -2,6 +2,7 @@
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using JoyReactor.Accordion.WebAPI.Models.Requests;
 using JoyReactor.Accordion.WebAPI.Models.Responses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,6 +14,7 @@ public class CrawlerTaskController(SqlDatabaseContext sqlDatabaseContext)
     : ControllerBase
 {
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> ListAsync(CancellationToken cancellationToken = default)
     {
         var crawlerTasks = await sqlDatabaseContext.CrawlerTasks
@@ -29,6 +31,7 @@ public class CrawlerTaskController(SqlDatabaseContext sqlDatabaseContext)
     }
 
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> CreateAsync([FromBody] CrawlerTaskCreateRequest request, CancellationToken cancellationToken = default)
     {
         var tag = await sqlDatabaseContext.ParsedTags
@@ -60,6 +63,7 @@ public class CrawlerTaskController(SqlDatabaseContext sqlDatabaseContext)
     }
 
     [HttpDelete("{id}")]
+    [Authorize]
     public async Task<IActionResult> DeleteAsync([FromRoute] Guid id, CancellationToken cancellationToken = default)
     {
         var crawlerTask = await sqlDatabaseContext.CrawlerTasks
