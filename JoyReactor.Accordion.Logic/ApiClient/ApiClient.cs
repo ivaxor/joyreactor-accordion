@@ -29,7 +29,7 @@ public class ApiClient(
             UseJitter = true,
             OnRetry = args =>
             {
-                logger.LogWarning("Failed to send GraphQL request to API. Attempt: {Attempt}/{MaxAttempts}. Message: {ExceptionMessage}.", args.AttemptNumber, settings.Value.MaxRetryAttempts, args.Outcome.Exception?.Message);
+                logger.LogWarning("Failed to send GraphQL request to API. Attempt: {Attempt}/{MaxAttempts}. Message: {ExceptionMessage}.", args.AttemptNumber + 1, settings.Value.MaxRetryAttempts, args.Outcome.Exception?.Message);
                 return default;
             }
         })

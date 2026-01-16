@@ -31,7 +31,7 @@ public class MediaDownloader(
             UseJitter = true,
             OnRetry = args =>
             {
-                logger.LogWarning("Failed to send HTTP request to CDN. Attempt: {Attempt}/{MaxAttempts}. Message: {Message}.", args.AttemptNumber, settings.Value.MaxRetryAttempts, args.Outcome.Exception?.Message);
+                logger.LogWarning("Failed to send HTTP request to CDN. Attempt: {Attempt}/{MaxAttempts}. Message: {Message}.", args.AttemptNumber + 1, settings.Value.MaxRetryAttempts, args.Outcome.Exception?.Message);
                 return default;
             },
         })
