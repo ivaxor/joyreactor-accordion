@@ -138,6 +138,12 @@ public class MediaToVectorConverter(
                 picture.UpdatedAt = DateTime.UtcNow;
             }
         }
+        catch (UnknownImageFormatException ex)
+        {
+            picture.UnsupportedContent = true;
+            picture.UpdatedAt = DateTime.UtcNow;
+            logger.LogError(ex, "Failed to create vector for {PictureAttributeId} post attribute picture due to unknown image format.", picture.AttributeId);
+        }
         catch (NotSupportedException ex)
         {
             picture.UnsupportedContent = true;
