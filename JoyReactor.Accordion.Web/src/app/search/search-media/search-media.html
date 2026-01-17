@@ -1,6 +1,10 @@
-<div (click)="fileInput.click()" (drop)="onFileDrop($event)" class="mt-2 d-flex flex-column align-items-center justify-content-center form-control min-vh-30">
-  <input #fileInput type="file" (change)="onFileChange($event)" class="d-none" [accept]="allowedTypes">
-  @if (file) {
+<div (click)="fileInput.click()" (drop)="onFileDrop($event)" class="mt-2 min-vh-30 d-flex flex-column align-items-center justify-content-center form-control">
+  <input #fileInput type="file" (change)="onFileChange($event)" class="d-none" [accept]="allowedTypes" [disabled]="searching">
+  @if(searching) {
+  <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+    <span class="visually-hidden">Поиск...</span>
+  </div>
+  } @else if (file) {
   <span class="fw-bold">{{file.name}}</span>
   <span class="small">{{file.size | bytes}}</span>
   } @else {
@@ -11,7 +15,7 @@
 </div>
 
 <div class="mt-2">
-  <input [(ngModel)]="url" (change)="onUrlChange($event)" type="text" maxlength="500" class="form-control" placeholder="Или вставьте прямую ссылку..." />
+  <input [(ngModel)]="url" (change)="onUrlChange($event)" [disabled]="searching" type="url" maxlength="500" class="form-control" placeholder="Или вставьте прямую ссылку..." />
 </div>
 
 <div class="mt-2 d-flex justify-content-end">

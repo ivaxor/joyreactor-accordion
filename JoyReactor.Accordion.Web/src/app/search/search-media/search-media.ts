@@ -22,6 +22,7 @@ export class SearchMedia {
   isDragging: boolean = false;
   file: File | null = null;
   url: string = '';
+  searching: boolean = false;
 
   onFileChange(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -51,6 +52,9 @@ export class SearchMedia {
   }
 
   isSearchDisabled(): boolean {
+    if (this.searching)
+      return true;
+
     if (this.file)
       return false;
 
@@ -74,15 +78,23 @@ export class SearchMedia {
 
   search(): void {
     if (this.file) {
+      this.searching = true;
       const file = this.file;
       this.searchService.searchUpload(file)
-        .pipe(tap(results => this.searchMediaHistoryService.addUpload(file, results)))
-        .subscribe(results => console.log(results), e => console.error(e));
-    } else {
+        .pipe(
+          tap(results => this.searchMediaHistoryService.addUpload(file, results)),
+          tap(() => this.file = null),
+          tap(() => this.searching = false))
+        .subscribe();
+    } else if (this.url) {
+      this.searching = true;
       const url = this.url;
       this.searchService.searchDownload(this.url)
-        .pipe(tap(results => this.searchMediaHistoryService.addDownload(url, results)))
-        .subscribe(results => console.log(results), e => console.error(e));
+        .pipe(
+          tap(results => this.searchMediaHistoryService.addDownload(url, results)),
+          tap(() => this.url = ''),
+          tap(() => this.searching = false))
+        .subscribe();
     }
   }
 }

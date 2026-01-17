@@ -4,16 +4,22 @@
   </div>
 
   <div class="col text-end">
-    <button class="btn btn-danger">
+    <button [disabled]="historyRecords.length === 0" class="btn btn-danger">
       <i (click)="onTrashClick()" class="bi bi-trash"></i>
     </button>
   </div>
 </div>
 
 <div class="row">
+  @if(historyRecords.length === 0) {
+  <div class="col text-center">
+    Пусто...
+  </div>
+  } @else {
   @for (historyRecord of historyRecords; track $index) {
   <div class="col-6 col-md-4 col-lg-2 g-3">
     <app-search-media-history-info [historyRecord]="historyRecord" />
   </div>
+  }
   }
 </div>
