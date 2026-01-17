@@ -7,5 +7,5 @@ public record SearchUploadRequest
 {
     [Required]
     [FromForm]
-    public IFormFile Picture { get; set; }
+    public IFormFile Media { get; set; }
 }

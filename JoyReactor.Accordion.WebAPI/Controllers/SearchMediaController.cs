@@ -14,7 +14,7 @@ using System.Net.Mime;
 
 namespace JoyReactor.Accordion.WebAPI.Controllers;
 
-[Route("search/pictures")]
+[Route("search/media")]
 [ApiController]
 public class SearchMediaController(
     HttpClient httpClient,
@@ -52,28 +52,33 @@ public class SearchMediaController(
     [AllowAnonymous]
     public async Task<IActionResult> SearchAsync([FromBody] SearchDownloadRequest request, CancellationToken cancellationToken = default)
     {
-        using var downloadRequest = new HttpRequestMessage(HttpMethod.Get, request.PictureUrl);
-        var pictureUri = new Uri(request.PictureUrl);
-        if (pictureUri.Host.EndsWith("joyreactor.cc", StringComparison.OrdinalIgnoreCase))
+        using var downloadRequest = new HttpRequestMessage(HttpMethod.Get, request.MediaUrl);
+        var pictureUri = new Uri(request.MediaUrl);
+
+        if (pictureUri.Host.EndsWith("reactor.cc", StringComparison.OrdinalIgnoreCase))
+            downloadRequest.Headers.Add("Referer", "https://reactor.cc");
+        else if (pictureUri.Host.EndsWith("joyreactor.cc", StringComparison.OrdinalIgnoreCase))
             downloadRequest.Headers.Add("Referer", "https://joyreactor.cc");
+        else if (pictureUri.Host.EndsWith("joyreactor.com", StringComparison.OrdinalIgnoreCase))
+            downloadRequest.Headers.Add("Referer", "https://joyreactor.com");
 
         var downloadResponse = await httpClient.SendAsync(downloadRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         if (!downloadResponse.IsSuccessStatusCode)
         {
-            ModelState.AddModelError(nameof(request.PictureUrl), "Failed to download file using provided url");
+            ModelState.AddModelError(nameof(request.MediaUrl), "Failed to download file using provided url");
             return BadRequest(ModelState);
         }
 
         if (downloadResponse.Content.Headers.ContentLength >= FileSizeLimit)
         {
-            ModelState.AddModelError(nameof(request.PictureUrl), $"Picture size is too big. Max size is {FileSizeLimit} bytes");
+            ModelState.AddModelError(nameof(request.MediaUrl), $"Media size is too big. Max size is {FileSizeLimit} bytes");
             return BadRequest(ModelState);
         }
 
         var mediaType = downloadResponse.Content.Headers.ContentType?.MediaType;
         if (mediaType == null || !AllowedMimeTypes.Contains(mediaType))
         {
-            ModelState.AddModelError(nameof(request.PictureUrl), "Picture media type is not allowed");
+            ModelState.AddModelError(nameof(request.MediaUrl), "Media type is not allowed");
             return BadRequest(ModelState);
         }
 
@@ -87,21 +92,21 @@ public class SearchMediaController(
     [AllowAnonymous]
     public async Task<IActionResult> SearchAsync([FromForm] SearchUploadRequest request, CancellationToken cancellationToken = default)
     {
-        if (!AllowedMimeTypes.Contains(request.Picture.ContentType))
+        if (!AllowedMimeTypes.Contains(request.Media.ContentType))
         {
-            ModelState.AddModelError(nameof(request.Picture), "Picture media type is not allowed");
+            ModelState.AddModelError(nameof(request.Media), "Media type is not allowed");
             return BadRequest(ModelState);
         }
 
-        var pictureExtension = Path.GetExtension(request.Picture.FileName).TrimStart('.');
-        if (!AllowedExtensions.Contains(pictureExtension))
+        var mediaExtension = Path.GetExtension(request.Media.FileName).TrimStart('.');
+        if (!AllowedExtensions.Contains(mediaExtension))
         {
-            ModelState.AddModelError(nameof(request.Picture), "Picture extension type is not allowed");
+            ModelState.AddModelError(nameof(request.Media), "Media extension type is not allowed");
             return BadRequest(ModelState);
         }
 
-        await using var stream = request.Picture.OpenReadStream();
-        var results = await SearchAsync(request.Picture.ContentType, stream, cancellationToken);
+        await using var stream = request.Media.OpenReadStream();
+        var results = await SearchAsync(request.Media.ContentType, stream, cancellationToken);
         return Ok(results);
     }
 
