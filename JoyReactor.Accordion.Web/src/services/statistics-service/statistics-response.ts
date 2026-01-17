@@ -4,6 +4,8 @@ export interface StatisticsResponse {
   emptyTags: number,
   parsedPosts: number,
   parsedPostAttributePictures: number,
+  parsedPostAttributePicturesNoContent: number,
+  parsedPostAttributePicturesUnsupportedContent: number,
   parsedPostAttributePicturesWithoutVector: number,
   parsedPostAttributePicturesWithVector: number,
   parsedPostAttributeEmbeds: number,

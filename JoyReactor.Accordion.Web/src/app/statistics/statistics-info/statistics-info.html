@@ -50,6 +50,22 @@
       </div>
 
       <div class="row">
+        <label for="parsedPostAttributePicturesNoContent" class="col-8 col-sm-5 col-form-label">Без контента</label>
+        <div class="col-4 col-sm-7 placeholder-glow">
+          @if (statistics) { <input readonly [value]="statistics.parsedPostAttributePicturesNoContent" id="parsedPostAttributePicturesNoContent" class="form-control-plaintext"> }
+          @else {<span class="placeholder col-3"></span> }
+        </div>
+      </div>
+
+      <div class="row">
+        <label for="parsedPostAttributePicturesUnsupportedContent" class="col-8 col-sm-5 col-form-label">Неподдерживаемый контент</label>
+        <div class="col-4 col-sm-7 placeholder-glow">
+          @if (statistics) { <input readonly [value]="statistics.parsedPostAttributePicturesUnsupportedContent" id="parsedPostAttributePicturesUnsupportedContent" class="form-control-plaintext"> }
+          @else {<span class="placeholder col-3"></span> }
+        </div>
+      </div>
+
+      <div class="row">
         <label for="parsedPostAttributePicturesWithVector" class="col-8 col-sm-5 col-form-label">С векторами</label>
         <div class="col-4 col-sm-7 placeholder-glow">
           @if (statistics) { <input readonly [value]="statistics.parsedPostAttributePicturesWithVector" id="parsedPostAttributePicturesWithVector" class="form-control-plaintext"> }
