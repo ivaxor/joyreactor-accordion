@@ -1,3 +1,3 @@
 export interface SearchDownloadRequest {
-  pictureUrl: string;
+  mediaUrl: string;
 }

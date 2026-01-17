@@ -12,8 +12,16 @@ export class SearchService {
   private configService = inject(ConfigService);
   private http = inject(HttpClient);
 
-  searchMediaByUrl(url: string): Observable<SearchResponse[]> {
-    const request: SearchDownloadRequest = { pictureUrl: url };
-    return this.http.post<SearchResponse[]>(`${this.configService.config!.apiRoot}/search/pictures/download`, request);
+  searchUpload(file: File): Observable<SearchResponse[]> {
+    const url = `${this.configService.config!.apiRoot}/search/media/upload`;
+    const request = new FormData();
+    request.append('media', file, file.name);
+    return this.http.post<SearchResponse[]>(url, request);
+  }
+
+  searchDownload(mediaUrl: string): Observable<SearchResponse[]> {
+    const url = `${this.configService.config!.apiRoot}/search/media/download`;
+    const request: SearchDownloadRequest = { mediaUrl };
+    return this.http.post<SearchResponse[]>(url, request);
   }
 }

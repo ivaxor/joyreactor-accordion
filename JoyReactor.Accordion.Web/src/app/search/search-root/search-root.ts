@@ -1,15 +1,15 @@
 import { Component } from '@angular/core';
 import { SearchEmbedded } from '../search-embedded/search-embedded';
-import { SearchPicture } from '../search-picture/search-picture';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { SearchMedia } from "../search-media/search-media";
 
 @Component({
   selector: 'app-search-root',
-  imports: [SearchEmbedded, SearchPicture, CommonModule, FormsModule],
+  imports: [SearchEmbedded, CommonModule, FormsModule, SearchMedia],
   templateUrl: './search-root.html',
   styleUrl: './search-root.scss',
 })
 export class SearchRoot {
-  isPicture: boolean = true;
+  isMedia: boolean = true;
 }
