@@ -1,0 +1,32 @@
+<div class="position-relative">
+  @if(historyRecord.url) {
+  <a [href]="historyRecord.url" target="_blank">
+    <img [src]="historyRecord.url" class="img-fluid" />
+  </a>
+  } @else if (historyRecord.fileName) {
+  <div class="ratio ratio-1x1">
+    <div class="placeholder w-100 h-100 p-1 rounded d-flex align-items-center justify-content-center text-center" style="cursor: default;">
+      <span class="w-100 text-danger small">{{historyRecord.fileName}}</span>
+    </div>
+  </div>
+  }
+
+  <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-info" [class.bg-info]="historyRecord.results.length === 0" [class.bg-danger]="historyRecord.results.length > 0">
+    @if(historyRecord.url) { <i class="bi bi-link-45deg"></i> }
+    @else if(historyRecord.fileName) {<i class="bi bi-file-earmark-image"></i>}
+
+    {{historyRecord.createdAt | date:'short'}}
+  </span>
+
+  @if (historyRecord.results.length > 0) {
+  <div class="row mt-1">
+    @for (result of historyRecord.results; track $index) {
+    <div class="col-4">
+      <a [href]="getPostUrl(result)" target="_blank">
+        <img [src]="getImageUrl(result)" class="img-fluid" />
+      </a>
+    </div>
+    }
+  </div>
+  }
+</div>
