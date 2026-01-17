@@ -24,7 +24,7 @@ public class MediaToVectorConverter(
 {
     protected override bool IsIndefinite => true;
 
-    protected static readonly ParsedPostAttributePictureType[] ImageTypes = [
+    protected static readonly ParsedPostAttributePictureType[] SupportedImageTypes = [
         ParsedPostAttributePictureType.PNG,
         ParsedPostAttributePictureType.JPEG,
         ParsedPostAttributePictureType.GIF,
@@ -50,8 +50,8 @@ public class MediaToVectorConverter(
             var qdrantClient = serviceScope.ServiceProvider.GetRequiredService<IQdrantClient>();
 
             unprocessedPictures = await sqlDatabaseContext.ParsedPostAttributePictures
-                .Where(picture => picture.IsVectorCreated == false)
-                .Where(picture => ImageTypes.Contains(picture.ImageType))
+                .Where(picture => picture.NoContent == false && picture.UnsupportedContent == false && picture.IsVectorCreated == false)
+                .Where(picture => SupportedImageTypes.Contains(picture.ImageType))
                 .Where(picture => !failedPictureAttributeIds.Contains(picture.Id))
                 .Include(picture => picture.Post)
                 .OrderBy(picture => picture.AttributeId)
@@ -79,8 +79,11 @@ public class MediaToVectorConverter(
                 logger.LogDebug("Chunk of {PicturesCount} picture post attribute(s) were converted to vectors.", pictures.Length);
             }
 
+            var failedPictureVectors = unprocessedPictures.Where(picture => picture.NoContent || picture.UnsupportedContent).ToArray();
+
             await qdrantClient.UpsertAsync(qdrantSettings.Value.CollectionName, pictureVectors, cancellationToken);
             sqlDatabaseContext.ParsedPostAttributePictures.UpdateRange(pictureVectors.Keys);
+            sqlDatabaseContext.ParsedPostAttributePictures.UpdateRange(failedPictureVectors);
             await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("{PicturesCount} picture post attribute(s) were converted and saved as vectors.", pictureVectors.Count);
@@ -101,8 +104,13 @@ public class MediaToVectorConverter(
         {
             var image = await mediaDownloader.DownloadAsync(picture, cancellationToken);
             pictureImages.TryAdd(picture, image);
-
+        }
+        catch (FileNotFoundException ex)
+        {
             // TODO: Try to download mp4/webm if download failed and type is GIF
+            picture.NoContent = true;
+            picture.UpdatedAt = DateTime.Now;
+            logger.LogError(ex, "Failed to download {PictureAttributeId} post attribute picture due to no content.", picture.AttributeId);
         }
         catch (Exception ex)
         {
@@ -129,6 +137,12 @@ public class MediaToVectorConverter(
                 picture.IsVectorCreated = true;
                 picture.UpdatedAt = DateTime.UtcNow;
             }
+        }
+        catch (NotSupportedException ex)
+        {
+            picture.UnsupportedContent = true;
+            picture.UpdatedAt = DateTime.UtcNow;
+            logger.LogError(ex, "Failed to create vector for {PictureAttributeId} post attribute picture due to unsupported content.", picture.AttributeId);
         }
         catch (Exception ex)
         {

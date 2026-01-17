@@ -38,6 +38,8 @@ public record ParsedPostAttributePicture : ISqlUpdatedAtEntity, IParsedPostAttri
     public Guid PostId { get; set; }
     public virtual ParsedPost Post { get; set; }
 
+    public bool NoContent { get; set; }
+    public bool UnsupportedContent { get; set; }
     public bool IsVectorCreated { get; set; }
 
     public DateTime CreatedAt { get; set; }
@@ -74,9 +76,24 @@ public class ParsedPostAttributePictureEntityTypeConfiguration : IEntityTypeConf
             .OnDelete(DeleteBehavior.Cascade);
 
         builder
+            .HasIndex(e => e.NoContent);
+        builder
+            .Property(e => e.NoContent)
+            .HasDefaultValue(false)
+            .IsRequired(true);
+
+        builder
+            .HasIndex(e => e.UnsupportedContent);
+        builder
+            .Property(e => e.UnsupportedContent)
+            .HasDefaultValue(false)
+            .IsRequired(true);
+
+        builder
             .HasIndex(e => e.IsVectorCreated);
         builder
             .Property(e => e.IsVectorCreated)
+            .HasDefaultValue(false)
             .IsRequired(true);
 
         builder

@@ -29,14 +29,14 @@
 
   <ItemGroup>
 	<PackageReference Include="Elastic.Serilog.Sinks" Version="9.0.0" />
-	<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Condition="'$(Configuration)' == 'Debug'" Version="10.0.1">
+	<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Condition="'$(Configuration)' == 'Debug'" Version="10.0.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.2" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0" />
-    <PackageReference Include="Scalar.AspNetCore" Version="2.12.4" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.12.11" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
   </ItemGroup>

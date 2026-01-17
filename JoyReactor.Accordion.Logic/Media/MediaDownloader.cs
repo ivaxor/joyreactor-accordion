@@ -87,13 +87,20 @@ public class MediaDownloader(
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        if (response.StatusCode == HttpStatusCode.NotFound)
-        {
-            logger.LogWarning("Media not found at {Url}.", url);
-            return null;
-        }
 
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            switch (response.StatusCode)
+            {
+                case HttpStatusCode.NotFound:
+                    logger.LogWarning("Media not found at {Url}. Status code: {StatusCode}", url, response.StatusCode);
+                    return null;
+
+                default:
+                    response.EnsureSuccessStatusCode();
+                    return null;
+            }
+        }
 
         var mimeType = response.Content.Headers.ContentType?.MediaType;
         if (!AllowedMimeTypes.Contains(mimeType))
