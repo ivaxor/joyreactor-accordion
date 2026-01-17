@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { BytesPipe } from '../../../pipes/bytes-pipe';
 import { SearchService } from '../../../services/search-service/search-service';
 import { isIP } from 'is-ip';
+import { SearchMediaHistoryService } from '../../../services/search-media-history-service/search-media-history-service';
+import { tap } from 'rxjs';
 
 @Component({
   selector: 'app-search-media',
@@ -13,6 +15,7 @@ import { isIP } from 'is-ip';
 })
 export class SearchMedia {
   private searchService = inject(SearchService);
+  private searchMediaHistoryService = inject(SearchMediaHistoryService);
   @Output() onFileSelected = new EventEmitter<File>();
 
   allowedTypes: string[] = ['image/png', 'image/jpeg', 'image/gif', 'image/bmp', 'image/tiff', 'video/mp4', 'video/webm'];
@@ -71,9 +74,15 @@ export class SearchMedia {
 
   search(): void {
     if (this.file) {
-      this.searchService.searchUpload(this.file).subscribe(v => console.log(v), e => console.error(e));
+      const file = this.file;
+      this.searchService.searchUpload(file)
+        .pipe(tap(results => this.searchMediaHistoryService.addUpload(file, results)))
+        .subscribe(results => console.log(results), e => console.error(e));
     } else {
-      this.searchService.searchDownload(this.url).subscribe(v => console.log(v), e => console.error(e));
+      const url = this.url;
+      this.searchService.searchDownload(this.url)
+        .pipe(tap(results => this.searchMediaHistoryService.addDownload(url, results)))
+        .subscribe(results => console.log(results), e => console.error(e));
     }
   }
 }

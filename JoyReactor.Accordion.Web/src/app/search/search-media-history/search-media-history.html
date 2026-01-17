@@ -1,0 +1,35 @@
+<div class="row">
+  @for (historyRecord of historyRecords; track $index) {
+  <div class="col-6 col-md-4 col-lg-2 g-3">
+
+    <div class="position-relative">
+      @if(historyRecord.url) {
+      <a [href]="historyRecord.url" target="_blank">
+        <img [src]="historyRecord.url" class="img-fluid" />
+      </a>
+      } @else if (historyRecord.results.length > 0 && historyRecord.results[0].postId) {
+      <a [href]="`https://joyreactor.cc/post/${historyRecord.results[0].postId}`">
+        <img [src]="`https://img0.joyreactor.cc/pics/post/picture-${historyRecord.results[0].postAttributeId}.jpeg`" class="img-fluid" />
+      </a>
+      } @else {
+      <div class="ratio ratio-1x1">
+        <div class="placeholder w-100 h-100 p-1 rounded d-flex align-items-center justify-content-center text-center" style="cursor: default;">
+          <span class="w-100 text-danger small">{{historyRecord.fileName}}</span>
+        </div>
+      </div>
+      }
+
+      <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-info">
+        @if(historyRecord.url) { <i class="bi bi-link-45deg"></i> }
+        @else {<i class="bi bi-file-earmark-image"></i>}
+      </span>
+
+      @if (historyRecord.results.length > 0) {
+      <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+        {{historyRecord.results.length}}
+      </span>
+      }
+    </div>
+  </div>
+  }
+</div>
