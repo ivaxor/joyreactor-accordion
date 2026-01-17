@@ -9,6 +9,8 @@ public record StatisticsResponse
     public int ParsedPosts { get; set; }
 
     public int ParsedPostAttributePictures { get; set; }
+    public int ParsedPostAttributePicturesNoContent { get; set; }
+    public int ParsedPostAttributePicturesUnsupported { get; set; }
     public int ParsedPostAttributePicturesWithoutVector { get; set; }
     public int ParsedPostAttributePicturesWithVector { get; set; }
 

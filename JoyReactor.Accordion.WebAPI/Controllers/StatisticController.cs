@@ -45,6 +45,12 @@ public class StatisticController(
         statitics.ParsedPosts = await sqlDatabaseContext.ParsedPosts.CountAsync(cancellationToken);
 
         statitics.ParsedPostAttributePictures = await sqlDatabaseContext.ParsedPostAttributePictures.CountAsync(cancellationToken);
+        statitics.ParsedPostAttributePicturesNoContent = await sqlDatabaseContext.ParsedPostAttributePictures
+            .Where(postAttribute => postAttribute.NoContent == true)
+            .CountAsync(cancellationToken);
+        statitics.ParsedPostAttributePicturesUnsupported = await sqlDatabaseContext.ParsedPostAttributePictures
+            .Where(postAttribute => postAttribute.UnsupportedContent == true)
+            .CountAsync(cancellationToken);
         statitics.ParsedPostAttributePicturesWithVector = await sqlDatabaseContext.ParsedPostAttributePictures
             .Where(postAttribute => postAttribute.IsVectorCreated == true)
             .CountAsync(cancellationToken);
