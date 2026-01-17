@@ -9,11 +9,15 @@ namespace JoyReactor.Accordion.WebAPI.Controllers;
 
 [Route("search/embedded")]
 [ApiController]
+[ProducesResponseType(StatusCodes.Status429TooManyRequests)]
 public class SearchEmbeddedController(SqlDatabaseContext sqlDatabaseContext)
     : ControllerBase
 {
     [HttpPost]
     [AllowAnonymous]
+    [ProducesResponseType<SearchEmbeddedResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SearchAsync([FromBody] SearchEmbeddedRequest request, CancellationToken cancellationToken)
     {
         var entityId = request.Type switch
@@ -41,6 +45,7 @@ public class SearchEmbeddedController(SqlDatabaseContext sqlDatabaseContext)
 
         var postIds = await query.Select(postAttribute => postAttribute.PostId).ToArrayAsync(cancellationToken);
 
-        return Ok(new SearchEmbeddedResponse(postIds));
+        var response = new SearchEmbeddedResponse(postIds);
+        return Ok(response);
     }
 }

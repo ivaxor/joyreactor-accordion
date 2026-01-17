@@ -13,6 +13,7 @@ namespace JoyReactor.Accordion.WebAPI.Controllers;
 
 [Route("statistics")]
 [ApiController]
+[ProducesResponseType(StatusCodes.Status429TooManyRequests)]
 public class StatisticController(
     IMemoryCache memoryCache,
     SqlDatabaseContext sqlDatabaseContext,
@@ -23,6 +24,7 @@ public class StatisticController(
     [HttpGet]
     [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
     [AllowAnonymous]
+    [ProducesResponseType<StatisticsResponse>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAsync(CancellationToken cancellationToken = default)
     {
         const string cacheKey = $"{nameof(StatisticController)}.{nameof(GetAsync)}";

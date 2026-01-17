@@ -11,6 +11,7 @@ namespace JoyReactor.Accordion.WebAPI.Controllers;
 
 [Route("crawlerTasks")]
 [ApiController]
+[ProducesResponseType(StatusCodes.Status429TooManyRequests)]
 public class CrawlerTaskController(
     IMemoryCache memoryCache,
     SqlDatabaseContext sqlDatabaseContext)
@@ -19,6 +20,7 @@ public class CrawlerTaskController(
     [HttpGet]
     [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
     [AllowAnonymous]
+    [ProducesResponseType<CrawlerTaskResponse[]>(StatusCodes.Status200OK)]
     public async Task<IActionResult> ListAsync(CancellationToken cancellationToken = default)
     {
         const string cacheKey = $"{nameof(CrawlerTaskController)}.{nameof(ListAsync)}";
@@ -32,6 +34,11 @@ public class CrawlerTaskController(
 
     [HttpPost]
     [Authorize]
+    [ProducesResponseType<CrawlerTaskResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CreateAsync([FromBody] CrawlerTaskCreateRequest request, CancellationToken cancellationToken = default)
     {
         var tag = await sqlDatabaseContext.ParsedTags
@@ -62,6 +69,10 @@ public class CrawlerTaskController(
 
     [HttpDelete("{id}")]
     [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteAsync([FromRoute] Guid id, CancellationToken cancellationToken = default)
     {
         var crawlerTask = await sqlDatabaseContext.CrawlerTasks

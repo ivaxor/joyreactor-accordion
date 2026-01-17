@@ -57,7 +57,7 @@ builder.Services.AddHostedService<MediaToVectorConverter>();
 builder.Services.AddHostedService<CrawlerTaskHandler>();
 builder.Services.AddHostedService<ParsedPostAttributePictureImageTypeFixer>();
 builder.Services.AddHostedService<VectorNormalizator>();
-builder.Services.AddHostedService<VectorPostDuplicateRemover>();
+builder.Services.AddHostedService<VectorPostAttributeCleaner>();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddAuthentication()
