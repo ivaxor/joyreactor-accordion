@@ -16,8 +16,10 @@
     @else if(historyRecord.fileName) {<i class="bi bi-file-earmark-image"></i>}
     |
     {{historyRecord.createdAt | date:'short'}}
+    @if(historyRecord.results.length > 0) {
     |
-    {{historyRecord.results.length}}
+    {{historyRecord.results.length}}🪗
+    }
   </span>
 
   @if (historyRecord.results.length > 0) {

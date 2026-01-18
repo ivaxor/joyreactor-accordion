@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, inject, Output } from '@angular/core';
+import { Component, EventEmitter, inject, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BytesPipe } from '../../../pipes/bytes-pipe';
 import { SearchService } from '../../../services/search-service/search-service';
@@ -23,6 +23,7 @@ export class SearchMedia {
   file: File | null = null;
   url: string = '';
   searching: boolean = false;
+  isDuplicates = signal<number[]>([]);
 
   onFileChange(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -82,18 +83,30 @@ export class SearchMedia {
       const file = this.file;
       this.searchService.searchUpload(file)
         .pipe(
-          tap(results => this.searchMediaHistoryService.addUpload(file, results)),
-          tap(() => this.file = null),
-          tap(() => this.searching = false))
+          tap(results => {
+            this.searchMediaHistoryService.addUpload(file, results);
+            this.file = null;
+            this.searching = false;
+            if (results.length > 0) {
+              this.isDuplicates.set(results.map((_, i) => i));
+              setTimeout(() => this.isDuplicates.set([]), 3000);
+            }
+          }))
         .subscribe();
     } else if (this.url) {
       this.searching = true;
       const url = this.url;
       this.searchService.searchDownload(this.url)
         .pipe(
-          tap(results => this.searchMediaHistoryService.addDownload(url, results)),
-          tap(() => this.url = ''),
-          tap(() => this.searching = false))
+          tap(results => {
+            this.searchMediaHistoryService.addDownload(url, results);
+            this.url = '';
+            this.searching = false;
+            if (results.length > 0) {
+              this.isDuplicates.set(results.map((_, i) => i));
+              setTimeout(() => this.isDuplicates.set([]), 3000);
+            }
+          }))
         .subscribe();
     }
   }

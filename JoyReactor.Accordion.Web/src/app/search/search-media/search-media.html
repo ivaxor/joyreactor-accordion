@@ -18,8 +18,14 @@
   <input [(ngModel)]="url" (change)="onUrlChange($event)" [disabled]="searching" type="url" maxlength="500" class="form-control" placeholder="Или вставьте прямую ссылку..." />
 </div>
 
-<div class="mt-2 d-flex justify-content-end">
-  <button [disabled]="isSearchDisabled()" (click)="search()" class="btn btn-primary text-uppercase">
+<div class="mt-2 d-flex justify-content-end position-relative">
+  <button [disabled]="isSearchDisabled()" (click)="search()" class="btn btn-primary text-uppercase position-relative" style="z-index: 10;">
     Найти
   </button>
+
+  @for (item of isDuplicates(); track $index) {
+  <div class="fall-css-animation" [style.animation-delay]="$index * 0.2 + 's'">
+    🪗
+  </div>
+  }
 </div>
