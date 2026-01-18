@@ -1,11 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, inject, Output, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, HostListener, inject, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BytesPipe } from '../../../pipes/bytes-pipe';
 import { SearchService } from '../../../services/search-service/search-service';
 import { isIP } from 'is-ip';
 import { SearchMediaHistoryService } from '../../../services/search-media-history-service/search-media-history-service';
-import { tap } from 'rxjs';
+import { catchError, EMPTY, tap } from 'rxjs';
 
 @Component({
   selector: 'app-search-media',
@@ -14,6 +14,7 @@ import { tap } from 'rxjs';
   styleUrl: './search-media.scss',
 })
 export class SearchMedia {
+  private changeDetector = inject(ChangeDetectorRef);
   private searchService = inject(SearchService);
   private searchMediaHistoryService = inject(SearchMediaHistoryService);
   @Output() onFileSelected = new EventEmitter<File>();
@@ -44,6 +45,24 @@ export class SearchMedia {
         this.file = file;
         this.url = '';
       }
+    }
+  }
+
+  @HostListener('window:paste', ['$event'])
+  onPaste(event: ClipboardEvent): void {
+    if (this.searching)
+      return;
+
+    if (!event.clipboardData?.items)
+      return;
+
+    for (let i = 0; i < event.clipboardData.items.length; i++) {
+      if (!this.allowedTypes.includes(event.clipboardData.items[i].type))
+        continue;
+
+      this.file = event.clipboardData.items[i].getAsFile();
+      this.url = '';
+      break;
     }
   }
 
@@ -83,6 +102,11 @@ export class SearchMedia {
       const file = this.file;
       this.searchService.searchUpload(file)
         .pipe(
+          catchError(() => {
+            this.searching = false;
+            this.changeDetector.markForCheck();
+            return EMPTY;
+          }),
           tap(results => {
             this.searchMediaHistoryService.addUpload(file, results);
             this.file = null;
@@ -98,6 +122,11 @@ export class SearchMedia {
       const url = this.url;
       this.searchService.searchDownload(this.url)
         .pipe(
+          catchError(() => {
+            this.searching = false;
+            this.changeDetector.markForCheck();
+            return EMPTY;
+          }),
           tap(results => {
             this.searchMediaHistoryService.addDownload(url, results);
             this.url = '';
