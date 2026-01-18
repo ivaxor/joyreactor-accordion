@@ -24,10 +24,11 @@ public class CrawlerTaskController(
     public async Task<IActionResult> ListAsync(CancellationToken cancellationToken = default)
     {
         const string cacheKey = $"{nameof(CrawlerTaskController)}.{nameof(ListAsync)}";
-        var response = await memoryCache.GetOrCreateAsync(cacheKey, cacheEntry => {
+        var response = await memoryCache.GetOrCreateAsync(cacheKey, cacheEntry =>
+        {
             cacheEntry.SlidingExpiration = TimeSpan.FromMinutes(1);
             return GetCrawlerTasksAsync(cancellationToken);
-        });        
+        });
 
         return Ok(response);
     }
@@ -41,9 +42,19 @@ public class CrawlerTaskController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CreateAsync([FromBody] CrawlerTaskCreateRequest request, CancellationToken cancellationToken = default)
     {
+        var api = await sqlDatabaseContext.Apis
+            .AsNoTracking()
+            .Where(a => a.HostName == request.HostName)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (api == null)
+        {
+            ModelState.AddModelError(nameof(request.TagName), "API with specified host name not found");
+            return BadRequest(ModelState);
+        }
+
         var tag = await sqlDatabaseContext.ParsedTags
             .AsNoTracking()
-            .Where(t => t.Name == request.TagName)
+            .Where(t => t.ApiId == api.Id && t.Name == request.TagName)
             .FirstOrDefaultAsync(cancellationToken);
         if (tag == null)
         {
@@ -92,6 +103,7 @@ public class CrawlerTaskController(
         var crawlerTasks = await sqlDatabaseContext.CrawlerTasks
             .AsNoTracking()
             .Include(crawlerTask => crawlerTask.Tag)
+            .ThenInclude(tag => tag.Api)
             .OrderByDescending(crawlerTask => crawlerTask.Id)
             .ToArrayAsync(cancellationToken);
 

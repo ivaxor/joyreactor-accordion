@@ -14,7 +14,7 @@ public class ApiClient(
     ILogger<ApiClient> logger)
     : IApiClient
 {
-    protected static readonly SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
+    protected readonly SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
 
     protected readonly ResiliencePipeline ResiliencePipeline = new ResiliencePipelineBuilder()
         .AddRetry(new RetryStrategyOptions

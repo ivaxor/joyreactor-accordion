@@ -26,6 +26,7 @@ public class TagSubTagsCrawler(
 
             tagsWithEmptySubTags = await sqlDatabaseContext.ParsedTags
                 .AsNoTracking()
+                .Include(tag => tag.Api)
                 .Where(tag => tag.MainTagId == null && tag.SubTagsCount > 0 && tag.SubTags.Count() < tag.SubTagsCount)
                 .OrderByDescending(tag => tag.Id)
                 .Take(100)
@@ -39,7 +40,7 @@ public class TagSubTagsCrawler(
             logger.LogInformation("Crawling {TagsCount} tag(s) for new sub tags.", tagsWithEmptySubTags.Count());
 
             foreach (var parsedTag in tagsWithEmptySubTags)
-                await tagCrawler.CrawlSubTagsAsync(parsedTag.NumberId, cancellationToken);
+                await tagCrawler.CrawlSubTagsAsync(parsedTag.Api, parsedTag.NumberId, cancellationToken);
         } while (tagsWithEmptySubTags.Length != 0);
     }
 }

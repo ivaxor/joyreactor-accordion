@@ -12,12 +12,12 @@ public class PostParser(
     ILogger<PostParser> logger)
     : IPostParser
 {
-    public Task ParseAsync(Post post, CancellationToken cancellationToken)
+    public Task ParseAsync(Api api, Post post, CancellationToken cancellationToken)
     {
-        return ParseAsync([post], cancellationToken);
+        return ParseAsync(api, [post], cancellationToken);
     }
 
-    public async Task ParseAsync(IEnumerable<Post> posts, CancellationToken cancellationToken)
+    public async Task ParseAsync(Api api, IEnumerable<Post> posts, CancellationToken cancellationToken)
     {
         if (posts.Count() == 0)
             return;
@@ -30,11 +30,11 @@ public class PostParser(
             .ToDictionaryAsync(post => post.NumberId, post => post.ContentVersion, cancellationToken);
         foreach (var post in posts)
         {
-            if (existingPostContentVersions.TryGetValue(post.NumberId, out var contentVersion) && post.ContentVersion != contentVersion)
-            {
-                logger.LogInformation("Post {PostNubmerId} content version changed. Deleting old post information.", post.NumberId);
-                await sqlDatabaseContext.ParsedPosts.Where(p => p.NumberId == post.NumberId).ExecuteDeleteAsync(cancellationToken);
-            }
+            if (!existingPostContentVersions.TryGetValue(post.NumberId, out var contentVersion) || post.ContentVersion == contentVersion)
+                continue;
+
+            logger.LogInformation("Post {PostNubmerId} content version changed. Deleting old post information.", post.NumberId);
+            await sqlDatabaseContext.ParsedPosts.Where(p => p.NumberId == post.NumberId).ExecuteDeleteAsync(cancellationToken);
         }
         await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
 
@@ -49,7 +49,7 @@ public class PostParser(
                 continue;
             }
 
-            var parsedPost = new ParsedPost(post);
+            var parsedPost = new ParsedPost(api, post);
             parsedPosts.Add(parsedPost);
 
             foreach (var postAttribute in post.Attributes)
@@ -161,6 +161,6 @@ public class PostParser(
 
 public interface IPostParser
 {
-    Task ParseAsync(Post post, CancellationToken cancellationToken);
-    Task ParseAsync(IEnumerable<Post> posts, CancellationToken cancellationToken);
+    Task ParseAsync(Api api, Post post, CancellationToken cancellationToken);
+    Task ParseAsync(Api api, IEnumerable<Post> posts, CancellationToken cancellationToken);
 }

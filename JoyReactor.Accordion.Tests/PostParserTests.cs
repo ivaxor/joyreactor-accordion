@@ -9,14 +9,14 @@ public sealed class PostParserTests
     [TestMethod]
     public async Task CrawlAndParseByPostIdAsync(int postId)
     {
-        var post = await SharedDependencies.PostClient.GetAsync(postId, default);
-        await SharedDependencies.PostParser.ParseAsync(post, default);
+        var post = await SharedDependencies.PostClient.GetAsync(SharedDependencies.Api, postId, default);
+        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api, post, default);
     }
 
     [TestMethod]
     public async Task BandcampUrlPath()
     {
-        var tag = await SharedDependencies.TagClient.GetByNameAsync("bandcamp", TagLineType.NEW, default);
+        var tag = await SharedDependencies.TagClient.GetByNameAsync(SharedDependencies.Api, "bandcamp", TagLineType.NEW, default);
         if (tag.PostCount == 0)
             return;
 
@@ -29,7 +29,7 @@ public sealed class PostParserTests
         {
             page++;
 
-            postPager = await SharedDependencies.PostClient.GetByTagAsync(tag.NumberId, PostLineType.ALL, page, default);
+            postPager = await SharedDependencies.PostClient.GetByTagAsync(SharedDependencies.Api, tag.NumberId, PostLineType.ALL, page, default);
             posts.AddRange(postPager.Posts);
 
             var postAttributeValues = postPager.Posts
@@ -39,7 +39,7 @@ public sealed class PostParserTests
                 .ToArray();
             postsAttributeValues.AddRange(postAttributeValues);
 
-            await SharedDependencies.PostParser.ParseAsync(postPager.Posts, default);
+            await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api, postPager.Posts, default);
         } while (postPager.Posts.Length > 0 && posts.Count() < postPager.TotalCount);
 
         var urlPaths = await SharedDependencies.SqlDatabaseContext.ParsedBandCamps
@@ -57,7 +57,7 @@ public sealed class PostParserTests
     [TestMethod]
     public async Task SoundCloudUrlPath()
     {
-        var tag = await SharedDependencies.TagClient.GetByNameAsync("soundcloud", TagLineType.NEW, default);
+        var tag = await SharedDependencies.TagClient.GetByNameAsync(SharedDependencies.Api, "soundcloud", TagLineType.NEW, default);
         if (tag.PostCount == 0)
             return;
 
@@ -70,7 +70,7 @@ public sealed class PostParserTests
         {
             page++;
 
-            postPager = await SharedDependencies.PostClient.GetByTagAsync(tag.NumberId, PostLineType.ALL, page, default);
+            postPager = await SharedDependencies.PostClient.GetByTagAsync(SharedDependencies.Api, tag.NumberId, PostLineType.ALL, page, default);
             posts.AddRange(postPager.Posts);
 
             var postAttributeValues = postPager.Posts
@@ -80,7 +80,7 @@ public sealed class PostParserTests
                 .ToArray();
             postsAttributeValues.AddRange(postAttributeValues);
 
-            await SharedDependencies.PostParser.ParseAsync(postPager.Posts, default);
+            await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api, postPager.Posts, default);
         } while (postPager.Posts.Length > 0 && posts.Count() < postPager.TotalCount);
 
         var urlPaths = await SharedDependencies.SqlDatabaseContext.ParsedSoundClouds

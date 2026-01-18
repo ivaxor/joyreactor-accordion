@@ -95,6 +95,7 @@ public static class QdrantClientExtensions
             Id = Guid.NewGuid(),
             Vectors = vector,
             Payload = {
+                ["hostName"] = new Value() { StringValue = picture.Post.Api.HostName },
                 ["contentVersion"] = new Value() { IntegerValue = picture.Post.ContentVersion },
                 ["postId"] = new Value() { IntegerValue =  picture.PostId.ToInt() },
                 ["postAttributeId"] = new Value() { IntegerValue = picture.AttributeId },

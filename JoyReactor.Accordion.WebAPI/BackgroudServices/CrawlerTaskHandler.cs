@@ -74,8 +74,9 @@ public class CrawlerTaskHandler(
             var postParser = serviceScope.ServiceProvider.GetRequiredService<IPostParser>();
 
             var crawlerTask = await sqlDatabaseContext.CrawlerTasks
-                .Include(c => c.Tag)
-                .FirstAsync(c => c.Id == crawlerTaskId, cancellationToken);
+                .Include(task => task.Tag)
+                .ThenInclude(tag => tag.Api)
+                .FirstAsync(task => task.Id == crawlerTaskId, cancellationToken);
             crawlerTask.StartedAt = DateTime.UtcNow;
             crawlerTask.UpdatedAt = DateTime.UtcNow;
             sqlDatabaseContext.CrawlerTasks.Update(crawlerTask);
@@ -88,11 +89,11 @@ public class CrawlerTaskHandler(
                 cancellationToken.ThrowIfCancellationRequested();
 
                 var tagNumberId = crawlerTask.TagId.ToInt();
-                postPager = await postClient.GetByTagAsync(tagNumberId, crawlerTask.PostLineType, crawlerTask.PageCurrent, cancellationToken);                
+                postPager = await postClient.GetByTagAsync(crawlerTask.Tag.Api, tagNumberId, crawlerTask.PostLineType, crawlerTask.PageCurrent, cancellationToken);
                 isLastPage = crawlerTask.PageCurrent >= postPager.LastPage;
 
                 logger.LogInformation("Found {PostCount} post(s) using \"{TagName}\" tag on {Page}/{PageLast} page.", postPager.Posts.Length, crawlerTask.Tag.Name, crawlerTask.PageCurrent, postPager.LastPage);
-                await postParser.ParseAsync(postPager.Posts, cancellationToken);
+                await postParser.ParseAsync(crawlerTask.Tag.Api, postPager.Posts, cancellationToken);
 
                 if (isLastPage)
                     crawlerTask.FinishedAt = DateTime.UtcNow;

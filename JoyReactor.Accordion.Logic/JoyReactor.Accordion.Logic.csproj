@@ -12,6 +12,7 @@
     <PackageReference Include="GraphQL.Client" Version="6.1.0" />
     <PackageReference Include="GraphQL.Client.Serializer.SystemTextJson" Version="6.1.0" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.Abstractions" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.2" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Condition="'$(OnnxRuntime)' == 'CPU'" Version="1.23.2" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Condition="'$(OnnxRuntime)' == 'Nvidia'" Version="1.23.2" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />

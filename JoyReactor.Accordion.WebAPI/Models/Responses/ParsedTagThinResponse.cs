@@ -8,12 +8,14 @@ public record ParsedTagThinResponse
     public ParsedTagThinResponse(ParsedTag tag)
     {
         Id = tag.Id;
+        Api = new ApiThinResponse(tag.Api);
         NumberId = tag.NumberId;
         Name = tag?.Name;
     }
 
     public Guid Id { get; set; }
 
+    public ApiThinResponse Api { get; set; }
     public int NumberId { get; set; }
     public string Name { get; set; }
 }

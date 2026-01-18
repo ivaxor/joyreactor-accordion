@@ -20,7 +20,6 @@ Console.OutputEncoding = Encoding.UTF8;
 var builder = WebApplication.CreateBuilder(args);
 builder.AddLogging();
 builder.AddOptionsFromConfiguration();
-builder.AddGraphQlClient();
 builder.AddDatabases();
 builder.AddInferenceSession();
 builder.AddRateLimiter();
@@ -41,7 +40,7 @@ builder.Services
         httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
     });
 
-builder.Services.AddSingleton<IApiClient, ApiClient>();
+builder.Services.AddSingleton<IApiClientProvider, ApiClientProvider>();
 builder.Services.AddSingleton<ITagClient, TagClient>();
 builder.Services.AddScoped<ITagCrawler, TagCrawler>();
 builder.Services.AddSingleton<IPostClient, PostClient>();
@@ -49,13 +48,10 @@ builder.Services.AddScoped<IPostParser, PostParser>();
 builder.Services.AddSingleton<IMediaReducer, MediaReducer>();
 builder.Services.AddSingleton<IOnnxVectorConverter, OnnxVectorConverter>();
 
-builder.Services.AddHostedService<MainTagsCrawler>();
-builder.Services.AddHostedService<TagInnnerRangeCrawler>();
-builder.Services.AddHostedService<TagOuterRangeCrawler>();
+builder.Services.AddHostedService<RootTagsCrawler>();
 builder.Services.AddHostedService<TagSubTagsCrawler>();
 builder.Services.AddHostedService<MediaToVectorConverter>();
 builder.Services.AddHostedService<CrawlerTaskHandler>();
-builder.Services.AddHostedService<ParsedPostAttributePictureImageTypeFixer>();
 builder.Services.AddHostedService<VectorNormalizator>();
 builder.Services.AddHostedService<VectorPostAttributeCleaner>();
 

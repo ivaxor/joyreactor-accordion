@@ -1,12 +1,13 @@
 ﻿using GraphQL;
 using JoyReactor.Accordion.Logic.ApiClient.Models;
 using JoyReactor.Accordion.Logic.ApiClient.Responses;
+using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using System.Collections.Frozen;
 using System.Text;
 
 namespace JoyReactor.Accordion.Logic.ApiClient;
 
-public class TagClient(IApiClient apiClient)
+public class TagClient(IApiClientProvider apiClientProvider)
     : ITagClient
 {
     protected static readonly FrozenDictionary<TagLineType, string> TagLineTypeToValue = new Dictionary<TagLineType, string>()
@@ -15,10 +16,10 @@ public class TagClient(IApiClient apiClient)
         { TagLineType.BEST, "BEST" },
     }.ToFrozenDictionary();
 
-    public async Task<Tag> GetAsync(int numberId, TagLineType type, CancellationToken cancellationToken)
+    public async Task<Tag> GetAsync(Api api, int numberId, TagLineType type, CancellationToken cancellationToken)
     {
-        const string query = @"
-query TagClient_GetAsync($nodeId: ID!, $type: TagLineType!) {
+        const string query = $$"""
+query {{nameof(TagClient)}}_{{nameof(GetAsync)}}($nodeId: ID!, $type: TagLineType!) {
   node(id: $nodeId) {
     ... on Tag {
       id
@@ -38,7 +39,10 @@ query TagClient_GetAsync($nodeId: ID!, $type: TagLineType!) {
       }
     }
   }
-}";
+}
+""";
+
+        var apiClient = apiClientProvider.Provide(api);
 
         var nodeId = Convert.ToBase64String(Encoding.UTF8.GetBytes($"Tag:{numberId}"));
         var request = new GraphQLRequest(query, new { nodeId, type = TagLineTypeToValue[type] });
@@ -46,10 +50,10 @@ query TagClient_GetAsync($nodeId: ID!, $type: TagLineType!) {
         return response.Node;
     }
 
-    public async Task<Tag> GetByNameAsync(string name, TagLineType lineType, CancellationToken cancellationToken)
+    public async Task<Tag> GetByNameAsync(Api api, string name, TagLineType lineType, CancellationToken cancellationToken)
     {
-        const string query = @"
-query TagClient_GetByNameAsync($name: String!, $type: TagLineType!) {
+        const string query = $$"""
+query {{nameof(TagClient)}}_{{nameof(GetByNameAsync)}}($name: String!, $type: TagLineType!) {
   node: tag(name: $name) {
     ... on Tag {
       id
@@ -69,7 +73,10 @@ query TagClient_GetByNameAsync($name: String!, $type: TagLineType!) {
       }
     }
   }
-}";
+}
+""";
+
+        var apiClient = apiClientProvider.Provide(api);
 
         var type = TagLineTypeToValue[lineType];
         var request = new GraphQLRequest(query, new { name, type });
@@ -77,10 +84,10 @@ query TagClient_GetByNameAsync($name: String!, $type: TagLineType!) {
         return response.Node;
     }
 
-    public async Task<TagPager> GetSubTagsAsync(int parentNumberId, TagLineType lineType, int page, CancellationToken cancellationToken)
+    public async Task<TagPager> GetSubTagsAsync(Api api, int parentNumberId, TagLineType lineType, int page, CancellationToken cancellationToken)
     {
-        const string query = @"
-query TagClient_GetSubTagsAsync($nodeId: ID!, $page: Int!, $type: TagLineType!) {
+        const string query = $$"""
+query {{nameof(TagClient)}}_{{nameof(GetSubTagsAsync)}}($nodeId: ID!, $page: Int!, $type: TagLineType!) {
   node(id: $nodeId) {
     ... on TagPager {
       id
@@ -106,7 +113,10 @@ query TagClient_GetSubTagsAsync($nodeId: ID!, $page: Int!, $type: TagLineType!) 
       }
     }
   }
-}";
+}
+""";
+
+        var apiClient = apiClientProvider.Provide(api);
 
         var type = TagLineTypeToValue[lineType];
         var nodeId = Convert.ToBase64String(Encoding.UTF8.GetBytes($"TagPager:Category,{parentNumberId},{type}"));
@@ -115,8 +125,10 @@ query TagClient_GetSubTagsAsync($nodeId: ID!, $page: Int!, $type: TagLineType!) 
         return response.Node;
     }
 
-    public async Task<Tag[]> GetAllSubTagsAsync(int parentNumberId, TagLineType lineType, CancellationToken cancellationToken)
+    public async Task<Tag[]> GetAllSubTagsAsync(Api api, int parentNumberId, TagLineType lineType, CancellationToken cancellationToken)
     {
+        var apiClient = apiClientProvider.Provide(api);
+
         var page = 0;
         var tagPager = (TagPager)null;
         var subTags = new List<Tag>();
@@ -125,7 +137,7 @@ query TagClient_GetSubTagsAsync($nodeId: ID!, $page: Int!, $type: TagLineType!) 
         {
             page++;
 
-            tagPager = await GetSubTagsAsync(parentNumberId, lineType, page, cancellationToken);
+            tagPager = await GetSubTagsAsync(api, parentNumberId, lineType, page, cancellationToken);
             subTags.AddRange(tagPager.Tags);
         } while (subTags.Count() < tagPager.TotalCount);
 
@@ -135,8 +147,8 @@ query TagClient_GetSubTagsAsync($nodeId: ID!, $page: Int!, $type: TagLineType!) 
 
 public interface ITagClient
 {
-    Task<Tag> GetAsync(int numberId, TagLineType type, CancellationToken cancellationToken);
-    Task<Tag> GetByNameAsync(string name, TagLineType lineType, CancellationToken cancellationToken);
-    Task<TagPager> GetSubTagsAsync(int parentNumberId, TagLineType lineType, int page, CancellationToken cancellationToken);
-    Task<Tag[]> GetAllSubTagsAsync(int parentNumberId, TagLineType lineType, CancellationToken cancellationToken);
+    Task<Tag> GetAsync(Api api, int numberId, TagLineType type, CancellationToken cancellationToken);
+    Task<Tag> GetByNameAsync(Api api, string name, TagLineType lineType, CancellationToken cancellationToken);
+    Task<TagPager> GetSubTagsAsync(Api api, int parentNumberId, TagLineType lineType, int page, CancellationToken cancellationToken);
+    Task<Tag[]> GetAllSubTagsAsync(Api api, int parentNumberId, TagLineType lineType, CancellationToken cancellationToken);
 }

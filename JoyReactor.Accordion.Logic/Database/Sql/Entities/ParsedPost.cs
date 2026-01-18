@@ -9,9 +9,10 @@ public record ParsedPost : ISqlUpdatedAtEntity
 {
     public ParsedPost() { }
 
-    public ParsedPost(Post post)
+    public ParsedPost(Api api, Post post)
     {
         Id = post.NumberId.ToGuid();
+        ApiId = api.Id;
         NumberId = post.NumberId;
         ContentVersion = post.ContentVersion.Value;
         CreatedAt = DateTime.UtcNow;
@@ -19,6 +20,9 @@ public record ParsedPost : ISqlUpdatedAtEntity
     }
 
     public Guid Id { get; set; }
+
+    public Guid ApiId { get; set; }
+    public virtual Api? Api { get; set; }
 
     public int NumberId { get; set; }
     public int ContentVersion { get; set; }
@@ -34,6 +38,17 @@ public class ParsedPostEntityTypeConfiguration : IEntityTypeConfiguration<Parsed
 {
     public void Configure(EntityTypeBuilder<ParsedPost> builder)
     {
+        builder
+            .HasOne(e => e.Api)
+            .WithMany(e => e.Posts)
+            .HasPrincipalKey(e => e.Id)
+            .HasForeignKey(e => e.ApiId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder
+            .Property(e => e.ApiId)
+            .HasDefaultValue(1.ToGuid())
+            .IsRequired(true);
+
         builder
             .HasIndex(e => e.NumberId)
             .IsUnique();

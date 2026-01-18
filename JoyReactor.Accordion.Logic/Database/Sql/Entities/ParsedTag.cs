@@ -9,9 +9,10 @@ public record ParsedTag : ISqlUpdatedAtEntity
 {
     public ParsedTag() { }
 
-    public ParsedTag(Tag tag)
+    public ParsedTag(Api api, Tag tag)
     {
         Id = tag.NumberId.ToGuid();
+        ApiId = api.Id;
         MainTagId = tag.NumberId == tag.MainTag.NumberId ? null : tag.MainTag.NumberId.ToGuid();
         ParentId = tag.Hierarchy.Where(t => t.NumberId != tag.NumberId).FirstOrDefault()?.NumberId.ToGuid();
         NumberId = tag.NumberId;
@@ -24,6 +25,9 @@ public record ParsedTag : ISqlUpdatedAtEntity
     }
 
     public Guid Id { get; set; }
+
+    public Guid ApiId { get; set; }
+    public virtual Api? Api { get; set; }
 
     public Guid? MainTagId { get; set; }
     public virtual ParsedTag? MainTag { get; set; }
@@ -49,6 +53,16 @@ public class ParsedTagEntityTypeConfiguration : IEntityTypeConfiguration<ParsedT
 {
     public void Configure(EntityTypeBuilder<ParsedTag> builder)
     {
+        builder
+            .HasOne(e => e.Api)
+            .WithMany(e => e.Tags)
+            .HasPrincipalKey(e => e.Id)
+            .HasForeignKey(e => e.ApiId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder
+            .Property(e => e.ApiId)
+            .HasDefaultValue(1.ToGuid());
+
         builder
             .HasOne(e => e.MainTag)
             .WithMany(e => e.Synonyms)

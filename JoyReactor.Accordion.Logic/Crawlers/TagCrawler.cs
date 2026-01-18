@@ -14,9 +14,9 @@ public class TagCrawler(
     ILogger<TagCrawler> logger)
     : ITagCrawler
 {
-    public async Task<ParsedTag?> CrawlAsync(int numberId, CancellationToken cancellationToken)
+    public async Task<ParsedTag?> CrawlAsync(Api api, int numberId, CancellationToken cancellationToken)
     {
-        var tag = await tagClient.GetAsync(numberId, TagLineType.NEW, cancellationToken);
+        var tag = await tagClient.GetAsync(api, numberId, TagLineType.NEW, cancellationToken);
         if (tag == null)
         {
             logger.LogInformation("No tag found using \"{TagNumberId}\" number id.", numberId);
@@ -24,18 +24,18 @@ public class TagCrawler(
         }
         logger.LogInformation("Found \"{TagName}\" tag using {TagNumberId} number id.", tag.Name, tag.NumberId);
 
-        await CrawlParentTagAsync(tag, cancellationToken);
+        await CrawlParentTagAsync(api, tag, cancellationToken);
 
-        var parsedTag = new ParsedTag(tag);
+        var parsedTag = new ParsedTag(api, tag);
         await sqlDatabaseContext.ParsedTags.AddIgnoreExistingAsync(parsedTag, cancellationToken);
         await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
 
         return parsedTag;
     }
 
-    public async Task<ParsedTag?> CrawlAsync(string name, CancellationToken cancellationToken)
+    public async Task<ParsedTag?> CrawlAsync(Api api, string name, CancellationToken cancellationToken)
     {
-        var tag = await tagClient.GetByNameAsync(name, TagLineType.NEW, cancellationToken);
+        var tag = await tagClient.GetByNameAsync(api, name, TagLineType.NEW, cancellationToken);
         if (tag == null)
         {
             logger.LogInformation("No tag found using \"{TagName}\" name.", name);
@@ -43,20 +43,20 @@ public class TagCrawler(
         }
         logger.LogInformation("Found \"{TagName}\" tag using name.", tag.Name);
 
-        await CrawlParentTagAsync(tag, cancellationToken);
+        await CrawlParentTagAsync(api, tag, cancellationToken);
 
-        var parsedTag = new ParsedTag(tag);
+        var parsedTag = new ParsedTag(api, tag);
         await sqlDatabaseContext.ParsedTags.AddIgnoreExistingAsync(parsedTag, cancellationToken);
         await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
 
         return parsedTag;
     }
 
-    public async Task CrawlSubTagsAsync(int parentNumberId, CancellationToken cancellationToken)
+    public async Task CrawlSubTagsAsync(Api api, int parentNumberId, CancellationToken cancellationToken)
     {
-        var subTags = await tagClient.GetAllSubTagsAsync(parentNumberId, TagLineType.NEW, cancellationToken);
+        var subTags = await tagClient.GetAllSubTagsAsync(api, parentNumberId, TagLineType.NEW, cancellationToken);
         var parsedSubTags = subTags
-            .Select(subTag => new ParsedTag(subTag))
+            .Select(subTag => new ParsedTag(api, subTag))
             .ToArray();
 
         logger.LogInformation("Found {TagsCount} sub tag(s) using {TagNumberId} parent tag number id.", parsedSubTags.Count(), parentNumberId);
@@ -67,7 +67,7 @@ public class TagCrawler(
         await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
     }
 
-    protected async Task CrawlParentTagAsync(Tag tag, CancellationToken cancellationToken)
+    protected async Task CrawlParentTagAsync(Api api, Tag tag, CancellationToken cancellationToken)
     {
         var parentTag = tag.Hierarchy
             .Where(t => t.NumberId != tag.NumberId)
@@ -76,13 +76,13 @@ public class TagCrawler(
             return;
 
         logger.LogInformation("Crawling parent tag for \"{TagName}\" tag.", tag.Name);
-        await CrawlAsync(parentTag.NumberId, cancellationToken);
+        await CrawlAsync(api, parentTag.NumberId, cancellationToken);
     }
 }
 
 public interface ITagCrawler
 {
-    Task<ParsedTag?> CrawlAsync(int numberId, CancellationToken cancellationToken);
-    Task<ParsedTag?> CrawlAsync(string name, CancellationToken cancellationToken);
-    Task CrawlSubTagsAsync(int parentNumberId, CancellationToken cancellationToken);
+    Task<ParsedTag?> CrawlAsync(Api api, int numberId, CancellationToken cancellationToken);
+    Task<ParsedTag?> CrawlAsync(Api api, string name, CancellationToken cancellationToken);
+    Task CrawlSubTagsAsync(Api api, int parentNumberId, CancellationToken cancellationToken);
 }

@@ -27,7 +27,7 @@ public class VectorNormalizator(
             var updatedPoints = new List<PointStruct>();
             scrollResponse = await qdrantClient.ScrollAsync(
                 collectionName: qdrantSettings.Value.CollectionName,
-                limit: 10000,
+                limit: 50000,
                 filter: new Filter
                 {
                     Should = {
@@ -56,6 +56,13 @@ public class VectorNormalizator(
                 {
                     scrollPoint.Payload["postAttributeId"] = new Value() { IntegerValue = int.Parse(postAttributeIds.ListValue.Values.Single().StringValue) };
                     scrollPoint.Payload.Remove("attributeIds");
+                    isUpdated = true;
+                }
+
+
+                if (!scrollPoint.Payload.ContainsKey("hostName"))
+                {
+                    scrollPoint.Payload["hostName"] = new Value() { StringValue = "joyreactor.cc" };
                     isUpdated = true;
                 }
 

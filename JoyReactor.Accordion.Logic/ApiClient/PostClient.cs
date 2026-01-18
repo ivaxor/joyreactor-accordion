@@ -1,12 +1,13 @@
 ﻿using GraphQL;
 using JoyReactor.Accordion.Logic.ApiClient.Models;
 using JoyReactor.Accordion.Logic.ApiClient.Responses;
+using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using System.Collections.Frozen;
 using System.Text;
 
 namespace JoyReactor.Accordion.Logic.ApiClient;
 
-public class PostClient(IApiClient apiClient)
+public class PostClient(IApiClientProvider apiClientProvider)
     : IPostClient
 {
     protected static readonly FrozenDictionary<PostLineType, int> PostLineTypeToValue = new Dictionary<PostLineType, int>() {
@@ -16,10 +17,10 @@ public class PostClient(IApiClient apiClient)
         { PostLineType.NEW, 5 },
     }.ToFrozenDictionary();
 
-    public async Task<Post> GetAsync(int numberId, CancellationToken cancellationToken)
+    public async Task<Post> GetAsync(Api api, int numberId, CancellationToken cancellationToken)
     {
-        const string query = @"
-query PostClient_GetAsync($nodeId: ID!) {
+        const string query = $$"""
+query {{nameof(PostClient)}}_{{nameof(GetAsync)}}($nodeId: ID!) {
   node(id: $nodeId) {
     ... on Post {
       id
@@ -40,7 +41,10 @@ query PostClient_GetAsync($nodeId: ID!) {
       }
     }
   }
-}";
+}
+""";
+
+        var apiClient = apiClientProvider.Provide(api);
 
         var nodeId = Convert.ToBase64String(Encoding.UTF8.GetBytes($"Post:{numberId}"));
         var request = new GraphQLRequest(query, new { nodeId });
@@ -48,10 +52,10 @@ query PostClient_GetAsync($nodeId: ID!) {
         return response.Node;
     }
 
-    public async Task<PostPager> GetByTagAsync(int tagNumberId, PostLineType lineType, int page, CancellationToken cancellationToken)
+    public async Task<PostPager> GetByTagAsync(Api api, int tagNumberId, PostLineType lineType, int page, CancellationToken cancellationToken)
     {
-        const string query = @"
-query PostClient_GetByTagAsync($nodeId: ID!, $page: Int!) {
+        const string query = $$"""
+query {{nameof(PostClient)}}_{{nameof(GetByTagAsync)}}($nodeId: ID!, $page: Int!) {
   node(id: $nodeId) {
     ... on PostPager {
       id
@@ -78,7 +82,10 @@ query PostClient_GetByTagAsync($nodeId: ID!, $page: Int!) {
       }
     }
   }
-}";
+}
+""";
+
+        var apiClient = apiClientProvider.Provide(api);
 
         var type = PostLineTypeToValue[lineType];
         var nodeId = Convert.ToBase64String(Encoding.UTF8.GetBytes($"PostPager:Tag,{tagNumberId},{type},"));
@@ -87,10 +94,10 @@ query PostClient_GetByTagAsync($nodeId: ID!, $page: Int!) {
         return response.Node;
     }
 
-    public async Task<Post[]> GetWeekTopPostsAsync(int year, int week, bool nsfw, CancellationToken cancellationToken)
+    public async Task<Post[]> GetWeekTopPostsAsync(Api api, int year, int week, bool nsfw, CancellationToken cancellationToken)
     {
-        const string query = @"
-query PostClient_GetWeekTopPostsAsync($year:Int!, $week: Int!, $nsfw: Boolean!) {
+        const string query = $$"""
+query {{nameof(PostClient)}}_{{nameof(GetWeekTopPostsAsync)}}($year:Int!, $week: Int!, $nsfw: Boolean!) {
   weekTopPosts(year: $year, week: $week, nsfw: $nsfw) {
 ... on Post {
           id
@@ -111,7 +118,9 @@ query PostClient_GetWeekTopPostsAsync($year:Int!, $week: Int!, $nsfw: Boolean!) 
           }
         }
   }
-}";
+}
+""";
+        var apiClient = apiClientProvider.Provide(api);
 
         var request = new GraphQLRequest(query, new { year, week, nsfw });
         var response = await apiClient.SendAsync<ApiClientWeekTopPostsResponse>(request, cancellationToken);
@@ -121,7 +130,7 @@ query PostClient_GetWeekTopPostsAsync($year:Int!, $week: Int!, $nsfw: Boolean!) 
 
 public interface IPostClient
 {
-    Task<Post> GetAsync(int numberId, CancellationToken cancellationToken);
-    Task<PostPager> GetByTagAsync(int tagNumberId, PostLineType type, int page, CancellationToken cancellationToken);
-    Task<Post[]> GetWeekTopPostsAsync(int year, int week, bool nsfw, CancellationToken cancellationToken);
+    Task<Post> GetAsync(Api api, int numberId, CancellationToken cancellationToken);
+    Task<PostPager> GetByTagAsync(Api api, int tagNumberId, PostLineType type, int page, CancellationToken cancellationToken);
+    Task<Post[]> GetWeekTopPostsAsync(Api api, int year, int week, bool nsfw, CancellationToken cancellationToken);
 }

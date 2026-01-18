@@ -8,6 +8,10 @@ public record CrawlerTaskCreateRequest
 {
     [Required]
     [MaxLength(100)]
+    public string HostName { get; set; }
+
+    [Required]
+    [MaxLength(100)]
     public string TagName { get; set; }
 
     [Required]

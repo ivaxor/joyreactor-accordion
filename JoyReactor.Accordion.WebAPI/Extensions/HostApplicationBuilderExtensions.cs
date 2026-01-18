@@ -61,15 +61,6 @@ public static class HostApplicationBuilderExtensions
         builder.Services.Configure<RateLimiterSettings>(builder.Configuration.GetSection(nameof(RateLimiterSettings)));
     }
 
-    public static void AddGraphQlClient(this IHostApplicationBuilder builder)
-    {
-        builder.Services.AddSingleton<IGraphQLClient, GraphQLHttpClient>(serviceProvider =>
-        {
-            var settings = serviceProvider.GetRequiredService<IOptions<ApiClientSettings>>();
-            return new GraphQLHttpClient(settings.Value.GraphQlEndpointUrl, new SystemTextJsonSerializer());
-        });
-    }
-
     public static void AddDatabases(this IHostApplicationBuilder builder)
     {
         builder.Services.AddDbContext<SqlDatabaseContext>((serviceProvider, options) =>

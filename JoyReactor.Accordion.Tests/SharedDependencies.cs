@@ -2,75 +2,69 @@
 using GraphQL.Client.Serializer.SystemTextJson;
 using JoyReactor.Accordion.Logic.ApiClient;
 using JoyReactor.Accordion.Logic.Database.Sql;
+using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using JoyReactor.Accordion.Logic.Media;
 using JoyReactor.Accordion.Logic.Parsers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 
 namespace JoyReactor.Accordion.Tests;
 
 public static class SharedDependencies
 {
-    public static readonly SqlDatabaseContext SqlDatabaseContext;
-    public static readonly GraphQLHttpClient GraphQLHttpClient;
+    private static readonly IServiceProvider ServiceProvider;
 
-    public static readonly ApiClient ApiClient;
-    public static readonly TagClient TagClient;
-    public static readonly PostClient PostClient;
-    public static readonly PostParser PostParser;
-    public static readonly MediaReducer MediaReducer;
-    public static readonly MediaDownloader MediaDownloader;
+    public static SqlDatabaseContext SqlDatabaseContext => ServiceProvider.GetRequiredService<SqlDatabaseContext>();
+    public static ApiClientProvider ApiClientProvider => ServiceProvider.GetRequiredService<ApiClientProvider>();
+    public static TagClient TagClient => ServiceProvider.GetRequiredService<TagClient>();
+    public static PostClient PostClient => ServiceProvider.GetRequiredService<PostClient>();
+    public static PostParser PostParser => ServiceProvider.GetRequiredService<PostParser>();
+    public static MediaReducer MediaReducer => ServiceProvider.GetRequiredService<MediaReducer>();
+    public static MediaDownloader MediaDownloader => ServiceProvider.GetRequiredService<MediaDownloader>();
+    public static Api Api { get; }
 
     static SharedDependencies()
     {
-        var sqlDatabaseContextOptions = new DbContextOptionsBuilder<SqlDatabaseContext>()
-            .UseInMemoryDatabase(nameof(SqlDatabaseContext))
-            .Options;
-        SqlDatabaseContext = new SqlDatabaseContext(sqlDatabaseContextOptions);
+        var services = new ServiceCollection();
 
-        var apiClientSettingsOptions = Options.Create(new ApiClientSettings()
+        services.AddSingleton<ILoggerFactory, NullLoggerFactory>();
+        services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
+
+        services.AddHttpClient();
+
+        services.AddDbContext<SqlDatabaseContext>(options => options.UseInMemoryDatabase(nameof(SqlDatabaseContext)));
+
+        services.Configure<ApiClientSettings>(options =>
         {
-            GraphQlEndpointUrl = "https://api.joyreactor.cc/graphql",
-            MaxRetryAttempts = 10,
-            SubsequentCallDelay = TimeSpan.FromSeconds(2.5),
+            options.MaxRetryAttempts = 10;
+            options.SubsequentCallDelay = TimeSpan.FromSeconds(2.5);
         });
-        GraphQLHttpClient = new GraphQLHttpClient(apiClientSettingsOptions.Value.GraphQlEndpointUrl, new SystemTextJsonSerializer());
 
-        ApiClient = new ApiClient(
-            GraphQLHttpClient,
-            apiClientSettingsOptions,
-            NullLogger<ApiClient>.Instance);
-
-        TagClient = new TagClient(ApiClient);
-
-        PostClient = new PostClient(ApiClient);
-
-        PostParser = new PostParser(
-            SqlDatabaseContext,
-            NullLogger<PostParser>.Instance);
-
-        var mediaDownloaderHttpClient = new HttpClient();
-        var mediaSettingsOptions = Options.Create(new MediaSettings()
+        services.Configure<MediaSettings>(options =>
         {
-            CdnDomainNames = [
+            options.CdnDomainNames = [
                 "https://img0.joyreactor.cc",
                 "https://img1.joyreactor.cc",
                 "https://img2.joyreactor.cc",
-                "https://img10.joyreactor.cc",
-            ],
-            ResizedSize = 224,
-            MaxRetryAttempts = 10,
-            RetryDelay = TimeSpan.FromMinutes(2.5),
-            ConcurrentDownloads = 10,
+                "https://img10.joyreactor.cc"
+            ];
+            options.ResizedSize = 224;
+            options.MaxRetryAttempts = 10;
+            options.RetryDelay = TimeSpan.FromMinutes(2.5);
+            options.ConcurrentDownloads = 10;
         });
 
-        MediaReducer = new MediaReducer(mediaSettingsOptions);
+        services.AddSingleton<ApiClientProvider>();
+        services.AddSingleton<TagClient>();
+        services.AddSingleton<PostClient>();
+        services.AddSingleton<PostParser>();
+        services.AddSingleton<MediaReducer>();
+        services.AddSingleton<MediaDownloader>();
 
-        MediaDownloader = new MediaDownloader(
-            mediaDownloaderHttpClient,
-            MediaReducer,
-            mediaSettingsOptions,
-            NullLogger<MediaDownloader>.Instance);
+        ServiceProvider = services.BuildServiceProvider();
+
+        Api = SqlDatabaseContext.Apis.First();
     }
 }

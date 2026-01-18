@@ -48,10 +48,11 @@ public class MediaToVectorConverter(
             var qdrantClient = serviceScope.ServiceProvider.GetRequiredService<IQdrantClient>();
 
             unprocessedPictures = await sqlDatabaseContext.ParsedPostAttributePictures
+                .Include(picture => picture.Post)
+                .ThenInclude(post => post.Api)
                 .Where(picture => picture.NoContent == false && picture.UnsupportedContent == false && picture.IsVectorCreated == false)
                 .Where(picture => SupportedImageTypes.Contains(picture.ImageType))
-                .Where(picture => !failedPictureAttributeIds.Contains(picture.Id))
-                .Include(picture => picture.Post)
+                .Where(picture => !failedPictureAttributeIds.Contains(picture.Id))                
                 .OrderBy(picture => picture.AttributeId)
                 .Take(mediaSettings.Value.ConcurrentDownloads * 10)
                 .ToArrayAsync(cancellationToken);

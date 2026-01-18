@@ -7,14 +7,19 @@ namespace JoyReactor.Accordion.Logic.Database.Sql.Entities;
 public record EmptyTag : ISqlCreatedAtEntity
 {
     public EmptyTag() { }
-    public EmptyTag(int numberId)
+    public EmptyTag(Api api, int numberId)
     {
         Id = numberId.ToGuid();
+        ApiId = api.Id;
         NumberId = numberId;
         CreatedAt = DateTime.UtcNow;
     }
 
     public Guid Id { get; set; }
+
+    public Guid ApiId { get; set; }
+    public virtual Api? Api { get; set; }
+
     public int NumberId { get; set; }
 
     public DateTime CreatedAt { get; set; }
@@ -24,6 +29,17 @@ public class EmptyTagEntityTypeConfiguration : IEntityTypeConfiguration<EmptyTag
 {
     public void Configure(EntityTypeBuilder<EmptyTag> builder)
     {
+        builder
+            .HasOne(e => e.Api)
+            .WithMany(e => e.EmptyTags)
+            .HasPrincipalKey(e => e.Id)
+            .HasForeignKey(e => e.ApiId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder
+            .Property(e => e.ApiId)
+            .HasDefaultValue(1.ToGuid())
+            .IsRequired(true);
+
         builder
             .HasIndex(e => e.NumberId)
             .IsUnique();
