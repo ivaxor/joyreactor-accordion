@@ -10,6 +10,7 @@ public partial class SqlDatabaseContext : DbContext
         ChangeTracker.LazyLoadingEnabled = false;
     }
 
+    public DbSet<Api> Apis { get; set; }
     public DbSet<CrawlerTask> CrawlerTasks { get; set; }
 
     public DbSet<ParsedPost> ParsedPosts { get; set; }
