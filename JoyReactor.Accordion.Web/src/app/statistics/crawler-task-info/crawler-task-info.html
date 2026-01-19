@@ -1,8 +1,8 @@
 <div class="mt-3">
-  @if(crawlerTask) {
-  <a [href]="url" target="_blank">{{crawlerTask.tag.name}}</a>
-  } @else {
+  @if(!url) {
   <p class="placeholder-glow"><span class="placeholder col-1"></span></p>
+  } @else {
+  <a [href]="url" target="_blank">{{crawlerTask.tag.name}}</a>
   }
 
   @if(!percents) {

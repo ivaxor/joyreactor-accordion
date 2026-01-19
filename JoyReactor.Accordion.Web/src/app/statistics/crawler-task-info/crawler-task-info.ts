@@ -13,7 +13,9 @@ export class CrawlerTaskInfo implements OnChanges {
   percents: number | null = null;
 
   ngOnChanges(changes: SimpleChanges): void {
-    this.url = `https://${this.crawlerTask?.tag.api.hostName}/tag/${this.crawlerTask?.tag.name}`;
+    this.url = this.crawlerTask?.tag.api ?
+      `https://${this.crawlerTask.tag.api.hostName}/tag/${this.crawlerTask.tag.name}`
+      : null;
 
     this.percents = this.crawlerTask?.pageLast && this.crawlerTask?.pageCurrent
       ? 100.0 / (this.crawlerTask.pageLast ?? 1.0) * (this.crawlerTask.pageCurrent ?? 0.0)
