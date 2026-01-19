@@ -3,5 +3,5 @@
 public record BackgroundServiceSettings
 {
     public TimeSpan SubsequentRunDelay { get; set; }
-    public string[] DisabledServiceNames { get; set; }
+    public Dictionary<string, bool> ServiceNamesEnabled { get; set; }
 }

@@ -11,11 +11,11 @@ public abstract class RobustBackgroundService(
 {
     protected readonly PeriodicTimer PeriodicTimer = new PeriodicTimer(settings.Value.SubsequentRunDelay);
     protected abstract bool IsIndefinite { get; }
-    protected bool IsDisabled => settings.Value.DisabledServiceNames.Contains(GetType().Name, StringComparer.OrdinalIgnoreCase);
+    protected bool IsEnabled => settings.Value.ServiceNamesEnabled.TryGetValue(GetType().Name, out var enabled) && enabled == true;
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        if (IsDisabled)
+        if (!IsEnabled)
             return;
 
         do

@@ -27,19 +27,19 @@ public class VectorNormalizator(
             var updatedPoints = new List<PointStruct>();
             scrollResponse = await qdrantClient.ScrollAsync(
                 collectionName: qdrantSettings.Value.CollectionName,
-                limit: 50000,
+                limit: 1000,
                 filter: new Filter
                 {
                     Should = {
                         new Condition { Field = new FieldCondition() { Key = "postIds", IsEmpty = false } },
                         new Condition { Field = new FieldCondition() { Key = "attributeIds", IsEmpty = false } },
+                        new Condition { Field = new FieldCondition() { Key = "hostName", IsEmpty = true } },
                     }
                 },
                 offset: scrollOffset,
                 vectorsSelector: true,
                 payloadSelector: true,
                 cancellationToken: cancellationToken);
-            scrollOffset = scrollResponse.NextPageOffset;
 
             logger.LogInformation("Normalizing {VectorCount} vector payload(s).", scrollResponse.Result.Count);
             foreach (var scrollPoint in scrollResponse.Result)
@@ -59,7 +59,6 @@ public class VectorNormalizator(
                     isUpdated = true;
                 }
 
-
                 if (!scrollPoint.Payload.ContainsKey("hostName"))
                 {
                     scrollPoint.Payload["hostName"] = new Value() { StringValue = "joyreactor.cc" };
@@ -77,7 +76,10 @@ public class VectorNormalizator(
             }
 
             if (updatedPoints.Count == 0)
+            {
+                scrollOffset = scrollResponse.NextPageOffset;
                 continue;
+            }
 
             await qdrantClient.UpsertAsync(
                 collectionName: qdrantSettings.Value.CollectionName,
