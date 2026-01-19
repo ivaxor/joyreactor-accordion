@@ -20,10 +20,10 @@ export class SearchMediaHistoryInfo implements OnChanges {
   }
 
   getPostUrl(result: SearchResponse): string {
-    return `https://joyreactor.cc/post/${result.postId}`;
+    return `https://${result.hostName}/post/${result.postId}`;
   }
 
   getImageUrl(result: SearchResponse): string {
-    return `https://img10.joyreactor.cc/pics/post/picture-${result.postAttributeId}.jpeg`;
+    return `https://img10.${result.hostName}/pics/post/picture-${result.postAttributeId}.jpeg`;
   }
 }

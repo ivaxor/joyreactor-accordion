@@ -9,9 +9,12 @@ import { CrawlerTaskResponse } from '../../../services/crawler-task-service/craw
 })
 export class CrawlerTaskInfo implements OnChanges {
   @Input({ required: true }) crawlerTask!: CrawlerTaskResponse;
+  url: string | null = null;
   percents: number | null = null;
 
   ngOnChanges(changes: SimpleChanges): void {
+    this.url = `https://${this.crawlerTask?.tag.api.hostName}/tag/${this.crawlerTask?.tag.name}`;
+
     this.percents = this.crawlerTask?.pageLast && this.crawlerTask?.pageCurrent
       ? 100.0 / (this.crawlerTask.pageLast ?? 1.0) * (this.crawlerTask.pageCurrent ?? 0.0)
       : null;

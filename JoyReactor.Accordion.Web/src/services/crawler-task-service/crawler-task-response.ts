@@ -1,7 +1,7 @@
 export interface CrawlerTaskResponse {
   id: string,
   tag: ParsedTagThinResponse,
-  postLineType: number  
+  postLineType: number
   pageCurrent: number,
   pageLast?: number,
   startedAt?: Date,
@@ -12,6 +12,11 @@ export interface CrawlerTaskResponse {
 
 export interface ParsedTagThinResponse {
   id: string,
+  api: ApiThinResponse,
   numberId: number,
   name: string,
+}
+
+export interface ApiThinResponse {
+  hostName: string,
 }
