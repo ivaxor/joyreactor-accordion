@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
-import { NavbarHealthcheck } from "../navbar-healthcheck/navbar-healthcheck";
+import { NavbarHealthCheck } from "../navbar-healthcheck/navbar-healthcheck";
 
 @Component({
   selector: 'app-navbar-root',
-  imports: [NavbarHealthcheck],
+  imports: [NavbarHealthCheck],
   templateUrl: './navbar-root.html',
   styleUrl: './navbar-root.scss',
 })
