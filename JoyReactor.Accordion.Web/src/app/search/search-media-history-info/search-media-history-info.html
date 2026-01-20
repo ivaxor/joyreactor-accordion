@@ -1,7 +1,7 @@
 <div class="position-relative">
-  @if(historyRecord.url) {
+  @if (historyRecord.url) {
   <a [href]="historyRecord.url" target="_blank">
-    @if(historyRecord.url.endsWith('webm') || historyRecord.url.endsWith('mp4')) { <video [src]="historyRecord.url" class="img-fluid"></video> }
+    @if (historyRecord.url.endsWith('webm') || historyRecord.url.endsWith('mp4')) { <video [src]="historyRecord.url" class="img-fluid"></video> }
     @else { <img [src]="historyRecord.url" class="img-fluid" /> }
   </a>
   } @else if (historyRecord.fileName) {
@@ -13,11 +13,11 @@
   }
 
   <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-info" [class.bg-info]="historyRecord.results.length === 0" [class.bg-danger]="historyRecord.results.length > 0">
-    @if(historyRecord.url) { <i class="bi bi-link-45deg"></i> }
+    @if (historyRecord.url) { <i class="bi bi-link-45deg"></i> }
     @else if(historyRecord.fileName) {<i class="bi bi-file-earmark-image"></i>}
     |
     {{historyRecord.createdAt | date:'short'}}
-    @if(historyRecord.results.length > 0) {
+    @if (historyRecord.results.length > 0) {
     |
     {{historyRecord.results.length}}🪗
     }

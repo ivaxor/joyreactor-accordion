@@ -1,0 +1,9 @@
+@if (healthCheckResults === null) {
+<div title="Проверка доступа к ресурсам" role="status" class="spinner-grow spinner-grow-sm text-primary">
+  <span class="visually-hidden">Проверка доступа к ресурсам...</span>
+</div>
+} @else if(!healthy) {
+<div [title]="`Недоступные ресурсы:&#10;${unhealthyResources?.join('&#10;')}`" role="status" class="spinner-grow spinner-grow-sm text-danger">
+  <span class="visually-hidden">Ресурсы частично или полностью недоступны</span>
+</div>
+}

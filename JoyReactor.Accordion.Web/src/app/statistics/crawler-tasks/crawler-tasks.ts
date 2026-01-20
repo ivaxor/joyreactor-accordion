@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { CrawlerTaskInfo } from "../crawler-task-info/crawler-task-info";
 import { CrawlerTaskResponse } from '../../../services/crawler-task-service/crawler-task-response';
 import { CrawlerTaskService } from '../../../services/crawler-task-service/crawler-task-service';
+import { catchError, EMPTY } from 'rxjs';
 
 @Component({
   selector: 'app-crawler-tasks',
@@ -15,9 +16,10 @@ export class CrawlerTasks implements OnInit {
   crawlerTasks: CrawlerTaskResponse[] | null = null;
 
   ngOnInit(): void {
-    this.crawlerTaskService.get().subscribe(crawlerTasks => {
-      this.crawlerTasks = crawlerTasks?.sort(crawlerTask => crawlerTask.tag.numberId);
-      this.changeDetector.markForCheck();
-    })
+    this.crawlerTaskService.get()
+      .subscribe(tasks => {
+        this.crawlerTasks = tasks.sort((a, b) => a.tag.numberId - b.tag.numberId);
+        this.changeDetector.markForCheck();
+      });
   }
 }

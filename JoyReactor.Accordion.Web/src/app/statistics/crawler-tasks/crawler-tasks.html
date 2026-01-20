@@ -1,3 +1,11 @@
-@for (crawlerTask of (crawlerTasks ?? []); track $index) {
+@if (crawlerTasks) {
+@for (crawlerTask of crawlerTasks; track $index) {
 <app-crawler-task-info [crawlerTask]="crawlerTask" />
+}
+} @else {
+<div class="text-center">
+  <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+    <span class="visually-hidden">Загрузка...</span>
+  </div>
+</div>
 }

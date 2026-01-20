@@ -1,6 +1,6 @@
 <div (click)="fileInput.click()" (drop)="onFileDrop($event)" class="mt-2 min-vh-30 d-flex flex-column align-items-center justify-content-center form-control">
   <input #fileInput type="file" (change)="onFileChange($event)" class="d-none" [accept]="allowedTypes" [disabled]="searching">
-  @if(searching) {
+  @if (searching) {
   <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
     <span class="visually-hidden">Поиск...</span>
   </div>

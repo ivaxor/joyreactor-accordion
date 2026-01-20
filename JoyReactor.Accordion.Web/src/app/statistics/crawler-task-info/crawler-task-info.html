@@ -1,11 +1,11 @@
 <div class="mt-3">
-  @if(!url) {
+  @if (!url) {
   <p class="placeholder-glow"><span class="placeholder col-1"></span></p>
   } @else {
   <a [href]="url" target="_blank">{{crawlerTask.tag.name}}</a>
   }
 
-  @if(!percents) {
+  @if (!percents) {
   <p class="placeholder-wave"><span class="placeholder col-12"></span></p>
   } @else {
   <div class="progress" role="progressbar" aria-label="Pages" aria-valuemin="0" [aria-valuenow]="percents" aria-valuemax="100">
