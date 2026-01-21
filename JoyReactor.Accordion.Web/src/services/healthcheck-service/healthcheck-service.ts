@@ -18,7 +18,7 @@ export class HealthCheckService {
     this.configService.config$
       .pipe(
         filter(config => config !== null),
-        mergeMap(config => this.http.get(`${config.apiRoot}/healthz`, { observe: 'response' })
+        mergeMap(config => this.http.get(`${config.apiRoot}/healthz`, { observe: 'response', responseType: 'text' })
           .pipe(
             map(response => {
               console.log(response);
@@ -27,14 +27,6 @@ export class HealthCheckService {
                 success: response.status === 200,
               };
               return result;
-            }),
-            catchError(() => {
-              console.log('error');
-              const result: HealthCheckResult = {
-                name: 'JR Accordion',
-                success: false,
-              };
-              return of(result);
             }))))
       .subscribe(result => this.resultsSubject.next([...this.results ?? [], result]));
 
@@ -43,7 +35,7 @@ export class HealthCheckService {
         map(tasks => Array.from(new Set(tasks.map(task => task.tag.api.hostName)))),
         switchMap(hostNames => from(hostNames)),
         mergeMap(hostName =>
-          this.http.get(`https://${hostName}`, { observe: 'response' })
+          this.http.get(`https://${hostName}`, { observe: 'response', responseType: 'text' })
             .pipe(
               map(response => {
                 const result: HealthCheckResult = {
