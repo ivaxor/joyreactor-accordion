@@ -1,4 +1,5 @@
-﻿using JoyReactor.Accordion.Logic.Database.Sql.Entities;
+﻿using JoyReactor.Accordion.Logic.ApiClient.Models;
+using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Polly;
@@ -19,7 +20,9 @@ public class MediaDownloader(
     ILogger<MediaDownloader> logger)
     : IMediaDownloader
 {
-    protected readonly SemaphoreSlim Semaphore = new SemaphoreSlim(settings.Value.ConcurrentDownloads, settings.Value.ConcurrentDownloads);
+    private static readonly ResiliencePropertyKey<string> UrlKey = new("RequestUrl");
+
+    protected readonly SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
 
     protected readonly ResiliencePipeline ResiliencePipeline = new ResiliencePipelineBuilder()
         .AddRetry(new RetryStrategyOptions
@@ -31,10 +34,20 @@ public class MediaDownloader(
             Delay = settings.Value.RetryDelay,
             BackoffType = DelayBackoffType.Exponential,
             UseJitter = true,
-            OnRetry = args =>
+            OnRetry = async args =>
             {
-                logger.LogWarning("Failed to send HTTP request to CDN. Attempt: {Attempt}/{MaxAttempts}. Message: {Message}.", args.AttemptNumber + 1, settings.Value.MaxRetryAttempts, args.Outcome.Exception?.Message);
-                return default;
+                args.Context.Properties.TryGetValue(UrlKey, out var url);
+
+                switch (args.Outcome.Exception)
+                {
+                    case HttpRequestException ex:
+                        logger.LogWarning("Failed to download media from {Url}. Status code: {StatusCode}. Attempt: {Attempt}/{MaxAttempts}. ", url, ex.StatusCode, args.AttemptNumber + 1, settings.Value.MaxRetryAttempts + 1);
+                        break;
+
+                    default:
+                        logger.LogWarning("Failed to download media from {Url}. Message: {Message}.  Attempt: {Attempt}/{MaxAttempts}.", url, args.Outcome.Exception.Message, args.AttemptNumber + 1, settings.Value.MaxRetryAttempts + 1);
+                        break;
+                }
             },
         })
         .AddTimeout(TimeSpan.FromSeconds(100))
@@ -73,26 +86,22 @@ public class MediaDownloader(
         try
         {
             await Semaphore.WaitAsync(cancellationToken);
+            await Task.Delay(settings.Value.SubsequentCallDelay, cancellationToken);
 
-            var path = $"pics/post/picture-{picture.AttributeId}.{PictureTypeToExtensions[picture.ImageType]}";
-            foreach (var cdnDomainName in settings.Value.CdnDomainNames)
-            {
-                await Task.Delay(settings.Value.SubsequentCallDelay, cancellationToken);
+            var url = $"{settings.Value.CdnHostName}/pics/post/picture-{picture.AttributeId}.{PictureTypeToExtensions[picture.ImageType]}";
 
-                var url = $"{cdnDomainName}/{path}";
-                var image = await ResiliencePipeline.ExecuteAsync(async ct => await DownloadAsync(url, picture, ct), cancellationToken);
-                if (image == null)
-                    continue;
+            var context = ResilienceContextPool.Shared.Get(cancellationToken);
+            context.Properties.Set(UrlKey, url);
 
-                return image;
-            }
+            return await ResiliencePipeline.ExecuteAsync(
+                async (ctx, state) => await DownloadAsync(state.url, state.picture, ctx.CancellationToken),
+                context,
+                (url, picture));
         }
         finally
         {
             Semaphore.Release();
         }
-
-        throw new FileNotFoundException("Failed to download media from all CDNs");
     }
 
     protected async Task<Image<Rgb24>> DownloadAsync(string url, ParsedPostAttributePicture picture, CancellationToken cancellationToken)
@@ -100,30 +109,26 @@ public class MediaDownloader(
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
-        if (!response.IsSuccessStatusCode)
+        switch (response.StatusCode)
         {
-            switch (response.StatusCode)
-            {
-                case HttpStatusCode.Forbidden:
-                case HttpStatusCode.NotFound:
-                    logger.LogWarning("Media not found at {Url}. Status code: {StatusCode}", url, response.StatusCode);
-                    return null;
-
-                default:
-                    response.EnsureSuccessStatusCode();
-                    return null;
-            }
+            case HttpStatusCode.ServiceUnavailable:
+                logger.LogWarning("CDN service unavailable. Making a pause.");
+                await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken);
+                break;
         }
+
+        response.EnsureSuccessStatusCode();
 
         var mimeType = response.Content.Headers.ContentType?.MediaType;
         if (!AllowedMimeTypes.Contains(mimeType))
         {
             logger.LogWarning("Unsupported {MimeType} MIME type received for {Url}.", mimeType, url);
-            return null;
+            throw new NotSupportedException("Unsupported MIME type received.");
         }
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        return await mediaReducer.ReduceAsync(picture, stream, cancellationToken);
+        var image = await mediaReducer.ReduceAsync(picture, stream, cancellationToken);
+        return image;
     }
 }
 

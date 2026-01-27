@@ -19,17 +19,20 @@ public static class QdrantClientExtensions
         return qdrantClient.UpsertAsync(collectionName, [point], cancellationToken: cancellationToken);
     }
 
-    public static async Task UpsertAsync(
+    public static Task UpsertAsync(
         this IQdrantClient qdrantClient,
         string collectionName,
         IDictionary<ParsedPostAttributePicture, float[]> pictureVectors,
         CancellationToken cancellationToken)
     {
+        if (pictureVectors.Count == 0)
+            return Task.CompletedTask;
+
         var points = pictureVectors
             .Select(kvp => CreatePointStruct(kvp.Key, kvp.Value))
             .ToArray();
 
-        await qdrantClient.UpsertAsync(collectionName, points, cancellationToken: cancellationToken);
+        return qdrantClient.UpsertAsync(collectionName, points, cancellationToken: cancellationToken);
     }
 
     public static Task<IReadOnlyList<ScoredPoint>> SearchRawAsync(

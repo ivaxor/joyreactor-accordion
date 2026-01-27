@@ -11,6 +11,7 @@ using Qdrant.Client;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using System.Collections.Concurrent;
+using System.Net;
 
 namespace JoyReactor.Accordion.WebAPI.BackgroudServices;
 
@@ -52,9 +53,9 @@ public class MediaToVectorConverter(
                 .ThenInclude(post => post.Api)
                 .Where(picture => picture.NoContent == false && picture.UnsupportedContent == false && picture.IsVectorCreated == false)
                 .Where(picture => SupportedImageTypes.Contains(picture.ImageType))
-                .Where(picture => !failedPictureAttributeIds.Contains(picture.Id))                
+                .Where(picture => !failedPictureAttributeIds.Contains(picture.Id))
                 .OrderBy(picture => picture.AttributeId)
-                .Take(mediaSettings.Value.ConcurrentDownloads * 10)
+                .Take(10)
                 .ToArrayAsync(cancellationToken);
 
             if (unprocessedPictures.Length == 0)
@@ -64,19 +65,19 @@ public class MediaToVectorConverter(
             }
             logger.LogInformation("Starting crawling {PicturesCount} post attribute picture(s) without vectors.", unprocessedPictures.Length);
 
+            var pictureImages = new ConcurrentDictionary<ParsedPostAttributePicture, Image<Rgb24>>();
             var pictureVectors = new ConcurrentDictionary<ParsedPostAttributePicture, float[]>();
-            foreach (var pictures in unprocessedPictures.Chunk(mediaSettings.Value.ConcurrentDownloads))
+            foreach (var picture in unprocessedPictures)
             {
-                var pictureImages = new ConcurrentDictionary<ParsedPostAttributePicture, Image<Rgb24>>();
-                await Task.WhenAll(pictures.Select(picture => DownloadAsync(mediaDownloader, failedPictureAttributeIds, pictureImages, picture, cancellationToken)));
-
-                foreach (var (picture, image) in pictureImages)
-                {
-                    await CreateVectorAsync(onnxVectorConverter, failedPictureAttributeIds, pictureVectors, picture, image);
-                }
-
-                logger.LogInformation("Chunk of {PicturesCount} picture post attribute(s) were converted to vector(s).", pictures.Length);
+                await DownloadAsync(mediaDownloader, failedPictureAttributeIds, pictureImages, picture, cancellationToken);
             }
+            logger.LogInformation("{PicturesCount} picture post attribute(s) were downloaded.", pictureImages.Count);
+
+            foreach (var (picture, image) in pictureImages)
+            {
+                await CreateVectorAsync(onnxVectorConverter, failedPictureAttributeIds, pictureVectors, picture, image);
+            }
+            logger.LogInformation("{PicturesCount} picture post attribute(s) were converted to vector(s).", pictureVectors.Count);
 
             var failedPictureVectors = unprocessedPictures.Where(picture => picture.NoContent || picture.UnsupportedContent).ToArray();
 
@@ -107,12 +108,26 @@ public class MediaToVectorConverter(
             var image = await mediaDownloader.DownloadAsync(picture, cancellationToken);
             pictureImages.TryAdd(picture, image);
         }
-        catch (FileNotFoundException ex)
+        catch (HttpRequestException ex)
         {
-            // TODO: Try to download mp4/webm if download failed and type is GIF
-            picture.NoContent = true;
-            picture.UpdatedAt = DateTime.UtcNow;
-            logger.LogWarning(ex, "Failed to download {PictureAttributeId} post attribute picture due to no content.", picture.AttributeId);
+            switch (ex.StatusCode)
+            {
+                case HttpStatusCode.NotFound:
+                    // TODO: Try to download mp4/webm if download failed and type is GIF
+                    picture.NoContent = true;
+                    picture.UpdatedAt = DateTime.UtcNow;
+                    logger.LogWarning(ex, "Failed to download {PictureAttributeId} post attribute picture due to no content.", picture.AttributeId);
+                    break;
+
+                case HttpStatusCode.Forbidden:
+                    picture.NoContent = true;
+                    picture.UpdatedAt = DateTime.UtcNow;
+                    logger.LogWarning(ex, "Failed to download {PictureAttributeId} post attribute picture due inaccessible content.", picture.AttributeId);
+                    break;
+
+                default:
+                    throw;
+            }
         }
         catch (InvalidImageContentException ex)
         {
