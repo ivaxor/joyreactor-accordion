@@ -24,6 +24,7 @@ export class SearchMediaHistoryInfo implements OnChanges {
   }
 
   getImageUrl(result: SearchResponse): string {
+    // CDN doesn't really care what picture extension name was sent
     return `https://img10.${result.hostName}/pics/post/picture-${result.postAttributeId}.jpeg`;
   }
 }

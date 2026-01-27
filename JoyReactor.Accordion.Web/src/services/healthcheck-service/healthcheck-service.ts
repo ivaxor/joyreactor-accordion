@@ -30,6 +30,7 @@ export class HealthCheckService {
             }))))
       .subscribe(result => this.resultsSubject.next([...this.results ?? [], result]));
 
+    /*
     this.crawlerTaskService.get()
       .pipe(
         map(tasks => Array.from(new Set(tasks.map(task => task.tag.api.hostName)))),
@@ -40,7 +41,7 @@ export class HealthCheckService {
               map(response => {
                 const result: HealthCheckResult = {
                   name: hostName.replace('joyreactor', 'JoyReactor'),
-                  success: response.status === 200,
+                  success: response.status === 404,
                 };
                 return result;
               }),
@@ -52,6 +53,7 @@ export class HealthCheckService {
                 return of(result);
               }))))
       .subscribe(result => this.resultsSubject.next([...this.results ?? [], result]));
+      */
   }
 
   results$ = this.resultsSubject.asObservable();
