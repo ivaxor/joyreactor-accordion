@@ -19,6 +19,8 @@ public class MediaDownloader(
     ILogger<MediaDownloader> logger)
     : IMediaDownloader
 {
+    protected readonly SemaphoreSlim Semaphore = new SemaphoreSlim(settings.Value.ConcurrentDownloads, settings.Value.ConcurrentDownloads);
+
     protected readonly ResiliencePipeline ResiliencePipeline = new ResiliencePipelineBuilder()
         .AddRetry(new RetryStrategyOptions
         {
@@ -68,16 +70,26 @@ public class MediaDownloader(
         if (!PictureTypes.Contains(picture.ImageType))
             throw new ArgumentOutOfRangeException(nameof(picture), "Unsupported media type");
 
-        var path = $"pics/post/picture-{picture.AttributeId}.{PictureTypeToExtensions[picture.ImageType]}";
-        foreach (var cdnDomainName in settings.Value.CdnDomainNames)
+        try
         {
-            var url = $"{cdnDomainName}/{path}";
+            await Semaphore.WaitAsync(cancellationToken);
 
-            var image = await ResiliencePipeline.ExecuteAsync(async ct => await DownloadAsync(url, picture, ct), cancellationToken);
-            if (image == null)
-                continue;
+            var path = $"pics/post/picture-{picture.AttributeId}.{PictureTypeToExtensions[picture.ImageType]}";
+            foreach (var cdnDomainName in settings.Value.CdnDomainNames)
+            {
+                await Task.Delay(settings.Value.SubsequentCallDelay, cancellationToken);
 
-            return image;
+                var url = $"{cdnDomainName}/{path}";
+                var image = await ResiliencePipeline.ExecuteAsync(async ct => await DownloadAsync(url, picture, ct), cancellationToken);
+                if (image == null)
+                    continue;
+
+                return image;
+            }
+        }
+        finally
+        {
+            Semaphore.Release();
         }
 
         throw new FileNotFoundException("Failed to download media from all CDNs");

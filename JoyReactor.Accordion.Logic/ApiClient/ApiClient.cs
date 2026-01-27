@@ -24,7 +24,7 @@ public class ApiClient(
                 .Handle<HttpRequestException>()
                 .Handle<GraphQL.Client.Http.GraphQLHttpRequestException>(),
             MaxRetryAttempts = settings.Value.MaxRetryAttempts,
-            Delay = settings.Value.SubsequentCallDelay,
+            Delay = settings.Value.RetryDelay,
             BackoffType = DelayBackoffType.Exponential,
             UseJitter = true,
             OnRetry = args =>
@@ -41,7 +41,7 @@ public class ApiClient(
         try
         {
             await Semaphore.WaitAsync(cancellationToken);
-            await Task.Delay(settings.Value.SubsequentCallDelay);
+            await Task.Delay(settings.Value.SubsequentCallDelay, cancellationToken);
 
             return await ResiliencePipeline.ExecuteAsync(async ct =>
             {

@@ -35,6 +35,10 @@ public abstract class RobustBackgroundService(
                         return;
                     }
                 }
+                catch (OperationCanceledException ex)
+                {
+                    logger.LogWarning(ex, "{BackgroundServiceName} background service run cancelled.", GetType().Name);
+                }
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "{BackgroundServiceName} background service failed. Next run is scheduled.", GetType().Name);
