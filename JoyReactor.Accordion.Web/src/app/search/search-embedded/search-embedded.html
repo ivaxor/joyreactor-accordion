@@ -1,15 +1,9 @@
-<div class="search-embedded-container d-flex flex-column h-100">
-  <div class="flex-grow-1 mb-3">
-    <textarea class="form-control jr-textarea" [(ngModel)]="links"
-      placeholder="Вставьте ссылки на посты или изображения (по одной на строку)..." spellcheck="false"></textarea>
-  </div>
+<div class="mt-2">
+  <input type="text" [(ngModel)]="url" [placeholder]="placeholder()" class="form-control min-vh-30 text-center" />
+</div>
 
-  <div class="d-flex justify-content-between align-items-center">
-    <div class="text-muted small">
-      Найдено ссылок: {{ (links.split('\n').length) }}
-    </div>
-    <button class="btn btn-primary px-5 py-2 fw-bold text-uppercase" [disabled]="!links.trim()">
-      Найти
-    </button>
-  </div>
+<div class="mt-2 d-flex justify-content-end position-relative">
+  <button [disabled]="isSearchDisabled()" (click)="search()" class="btn btn-primary text-uppercase position-relative">
+    Найти
+  </button>
 </div>

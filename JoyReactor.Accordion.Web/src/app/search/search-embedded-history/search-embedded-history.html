@@ -1,0 +1,25 @@
+<div class="row">
+  <div class="col">
+    <h2>История</h2>
+  </div>
+
+  <div class="col text-end">
+    <button [disabled]="historyRecords.length === 0" (click)="onTrashClick()" class="btn btn-danger">
+      <i class="bi bi-trash"></i>
+    </button>
+  </div>
+</div>
+
+<div class="row">
+  @if (historyRecords.length === 0) {
+  <div class="col text-center">
+    Пусто...
+  </div>
+  } @else {
+  @for (historyRecord of historyRecords; track $index) {
+  <div class="col-6 col-md-4 col-lg-2 g-3">
+    <app-search-embedded-history-info [historyRecord]="historyRecord" />
+  </div>
+  }
+  }
+</div>
