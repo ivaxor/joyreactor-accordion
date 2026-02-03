@@ -17,20 +17,22 @@ public class SearchEmbeddedController(SqlDatabaseContext sqlDatabaseContext)
     [AllowAnonymous]
     [ProducesResponseType<SearchEmbeddedResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SearchAsync([FromBody] SearchEmbeddedRequest request, CancellationToken cancellationToken)
     {
         var entityId = request.Type switch
         {
             SearchEmbeddedType.BandCamp => (await sqlDatabaseContext.ParsedBandCamps.FirstOrDefaultAsync(bandCamp => bandCamp.UrlPath == request.Text, cancellationToken))?.Id,
             SearchEmbeddedType.Coub => (await sqlDatabaseContext.ParsedCoubs.FirstOrDefaultAsync(coub => coub.VideoId == request.Text, cancellationToken))?.Id,
-            SearchEmbeddedType.SoundCloud => (await sqlDatabaseContext.ParsedSoundClouds.FirstOrDefaultAsync(soundCloud => soundCloud.UrlPath == request.Text, cancellationToken))?.Id,            
+            SearchEmbeddedType.SoundCloud => (await sqlDatabaseContext.ParsedSoundClouds.FirstOrDefaultAsync(soundCloud => soundCloud.UrlPath == request.Text, cancellationToken))?.Id,
             SearchEmbeddedType.Vimeo => (await sqlDatabaseContext.ParsedVimeos.FirstOrDefaultAsync(vimeo => vimeo.VideoId == request.Text, cancellationToken))?.Id,
             SearchEmbeddedType.YouTube => (await sqlDatabaseContext.ParsedYouTubes.FirstOrDefaultAsync(youTube => youTube.VideoId == request.Text, cancellationToken))?.Id,
             _ => throw new NotImplementedException()
         };
         if (entityId == null)
-            return NotFound();
+        {
+            var emptyResponse = new SearchEmbeddedResponse(Enumerable.Empty<Guid>());
+            return Ok(emptyResponse);
+        }
 
         var query = sqlDatabaseContext.ParsedPostAttributeEmbeds.AsQueryable();
         query = request.Type switch
