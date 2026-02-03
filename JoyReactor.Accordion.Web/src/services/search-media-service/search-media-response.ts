@@ -1,4 +1,4 @@
-export interface SearchResponse {
+export interface SearchMediaResponse {
   score: number;
   hostName: string;
   postId?: number;

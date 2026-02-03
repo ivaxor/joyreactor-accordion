@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { SearchEmbeddedRequest, SearchEmbeddedType } from '../../../services/search-embedded-service/search-embedded-request';
+import { SearchEmbeddedService } from '../../../services/search-embedded-service/search-embedded-service';
 
 @Component({
   selector: 'app-search-embedded',
@@ -10,7 +11,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
   styleUrl: './search-embedded.scss',
 })
 export class SearchEmbedded implements OnInit, OnDestroy {
-  placeholders: string[] = [
+  private placeholders: string[] = [
     'Вставьте ссылку на внешний ресурс',
     'https://bandcamp.com/***',
     'https://coub.com/view/*****',
@@ -18,16 +19,19 @@ export class SearchEmbedded implements OnInit, OnDestroy {
     'https://vimeo.com/*********',
     'https://youtu.be/***********',
     'https://www.youtube.com/watch?v=***********'];
+  private searchEmbeddedService = inject(SearchEmbeddedService);
+
   url: string = '';
 
   placeholderIndex = signal(0);
   placeholderTimerId: number | null = null;
   placeholder = computed(() => this.placeholders[this.placeholderIndex()]);
 
+  searching: boolean = false;
+  isDuplicates = signal<number[]>([]);
+
   ngOnInit(): void {
-    this.placeholderTimerId = setInterval(() => {
-      this.placeholderIndex.update(index => (index + 1) % this.placeholders.length);
-    }, 3000);
+    this.placeholderTimerId = setInterval(() => this.placeholderIndex.update(index => (index + 1) % this.placeholders.length), 3000);
   }
 
   ngOnDestroy(): void {
@@ -36,51 +40,40 @@ export class SearchEmbedded implements OnInit, OnDestroy {
   }
 
   isSearchDisabled(): boolean {
-    const result = this.tryToParseLink();
-    return !result;
+    return !this.tryToParseUrl();
   }
 
   search(): void {
-    const result = this.tryToParseLink();
+    const request = this.tryToParseUrl();
+    if (!request)
+      return;
 
-    // TODO: Implement
+    this.searchEmbeddedService.search(request)
+      .subscribe(response => console.log(response));
   }
 
-  tryToParseLink(): ParsedEmbeddedLink | null {
+  tryToParseUrl(): SearchEmbeddedRequest | null {
     if (this.url.startsWith('https://bandcamp.com/')) {
       // TODO: Implement
     } else if (this.url.startsWith('https://coub.com/view/')) {
-      const url = this.url.replace('https://coub.com/view/', '');
-      return ({ type: EmbeddedType.Coub, url: url });
+      const text = this.url.replace('https://coub.com/view/', '');
+      return ({ type: SearchEmbeddedType.Coub, text });
     } else if (this.url.startsWith('https://soundcloud.com/')) {
       // TODO: Implement
     } else if (this.url.startsWith('https://vimeo.com/')) {
       // TODO: Implement
     } else if (this.url.startsWith('https://youtu.be/')) {
-      const url = this.url.replace('https://youtu.be/', '');
-      return ({ type: EmbeddedType.YouTube, url: url });
+      const text = this.url.replace('https://youtu.be/', '');
+      return ({ type: SearchEmbeddedType.YouTube, text });
     } else if (this.url.startsWith('https://www.youtube.com/watch') || this.url.startsWith('https://youtube.com/watch')) {
       const url = new URL(this.url);
-      const v = url.searchParams.get('v');
-      if (!v)
+      const text = url.searchParams.get('v');
+      if (!text)
         return null;
 
-      return ({ type: EmbeddedType.YouTube, url: v });
+      return ({ type: SearchEmbeddedType.YouTube, text });
     }
 
     return null;
   }
-}
-
-interface ParsedEmbeddedLink {
-  type: EmbeddedType,
-  url: string,
-}
-
-enum EmbeddedType {
-  BandCamp,
-  Coub,
-  SoundCloud,
-  YouTube,
-  Vimeo,
 }

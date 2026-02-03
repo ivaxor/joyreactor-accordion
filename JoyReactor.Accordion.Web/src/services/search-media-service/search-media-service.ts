@@ -1,27 +1,27 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { SearchResponse } from './search-response';
+import { SearchMediaResponse } from './search-media-response';
 import { HttpClient } from '@angular/common/http';
-import { SearchDownloadRequest } from './search-download-request';
+import { SearchMediaDownloadRequest } from './search-media-download-request';
 import { ConfigService } from '../config-service/config-service';
 
 @Injectable({
   providedIn: 'root',
 })
-export class SearchService {
+export class SearchMediaService {
   private configService = inject(ConfigService);
   private http = inject(HttpClient);
 
-  searchUpload(file: File): Observable<SearchResponse[]> {
+  searchUpload(file: File): Observable<SearchMediaResponse[]> {
     const url = `${this.configService.config!.apiRoot}/search/media/upload`;
     const request = new FormData();
     request.append('media', file, file.name);
-    return this.http.post<SearchResponse[]>(url, request);
+    return this.http.post<SearchMediaResponse[]>(url, request);
   }
 
-  searchDownload(mediaUrl: string): Observable<SearchResponse[]> {
+  searchDownload(mediaUrl: string): Observable<SearchMediaResponse[]> {
     const url = `${this.configService.config!.apiRoot}/search/media/download`;
-    const request: SearchDownloadRequest = { mediaUrl };
-    return this.http.post<SearchResponse[]>(url, request);
+    const request: SearchMediaDownloadRequest = { mediaUrl };
+    return this.http.post<SearchMediaResponse[]>(url, request);
   }
 }

@@ -1,9 +1,9 @@
-import { SearchResponse } from "../search-service/search-response";
+import { SearchMediaResponse } from "../search-media-service/search-media-response";
 
 export interface SearchMediaHistoryRecord {
   id?: number;
   url?: string;
   fileName?: string;
-  results: SearchResponse[];
+  results: SearchMediaResponse[];
   createdAt: Date;
 }

@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, EventEmitter, HostListener, inject, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BytesPipe } from '../../../pipes/bytes-pipe';
-import { SearchService } from '../../../services/search-service/search-service';
+import { SearchMediaService } from '../../../services/search-media-service/search-media-service';
 import { isIP } from 'is-ip';
 import { SearchMediaHistoryService } from '../../../services/search-media-history-service/search-media-history-service';
 import { catchError, EMPTY, tap } from 'rxjs';
@@ -15,7 +15,7 @@ import { catchError, EMPTY, tap } from 'rxjs';
 })
 export class SearchMedia {
   private changeDetector = inject(ChangeDetectorRef);
-  private searchService = inject(SearchService);
+  private searchMediaService = inject(SearchMediaService);
   private searchMediaHistoryService = inject(SearchMediaHistoryService);
   @Output() onFileSelected = new EventEmitter<File>();
 
@@ -100,7 +100,7 @@ export class SearchMedia {
     if (this.file) {
       this.searching = true;
       const file = this.file;
-      this.searchService.searchUpload(file)
+      this.searchMediaService.searchUpload(file)
         .pipe(
           catchError(() => {
             this.searching = false;
@@ -120,7 +120,7 @@ export class SearchMedia {
     } else if (this.url) {
       this.searching = true;
       const url = this.url;
-      this.searchService.searchDownload(this.url)
+      this.searchMediaService.searchDownload(this.url)
         .pipe(
           catchError(() => {
             this.searching = false;

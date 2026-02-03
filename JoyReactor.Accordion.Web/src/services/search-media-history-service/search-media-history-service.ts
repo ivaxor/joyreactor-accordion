@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, from, map, Observable, switchMap, tap } from 'rxjs';
 import { SearchMediaHistoryRecord } from './search-media-history-record';
 import Dexie, { Table } from 'dexie';
-import { SearchResponse } from '../search-service/search-response';
+import { SearchMediaResponse } from '../search-media-service/search-media-response';
 
 @Injectable({
   providedIn: 'root',
@@ -35,7 +35,7 @@ export class SearchMediaHistoryService extends Dexie {
       .toArray();
   }
 
-  async addDownload(mediaUrl: string, results: SearchResponse[]): Promise<number> {
+  async addDownload(mediaUrl: string, results: SearchMediaResponse[]): Promise<number> {
     const record: SearchMediaHistoryRecord = {
       url: mediaUrl,
       results: results,
@@ -49,7 +49,7 @@ export class SearchMediaHistoryService extends Dexie {
     return record.id;
   }
 
-  async addUpload(file: File, results: SearchResponse[]): Promise<number> {
+  async addUpload(file: File, results: SearchMediaResponse[]): Promise<number> {
     const record: SearchMediaHistoryRecord = {
       fileName: file.name,
       results: results,
