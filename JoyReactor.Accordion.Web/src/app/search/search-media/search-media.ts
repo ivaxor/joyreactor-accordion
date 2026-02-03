@@ -98,45 +98,53 @@ export class SearchMedia {
 
   search(): void {
     if (this.file) {
-      this.searching = true;
-      const file = this.file;
-      this.searchMediaService.searchUpload(file)
-        .pipe(
-          catchError(() => {
-            this.searching = false;
-            this.changeDetector.markForCheck();
-            return EMPTY;
-          }),
-          tap(results => {
-            this.searchMediaHistoryService.addUpload(file, results);
-            this.file = null;
-            this.searching = false;
-            if (results.length > 0) {
-              this.isDuplicates.set(results.map((_, i) => i));
-              setTimeout(() => this.isDuplicates.set([]), 3000);
-            }
-          }))
-        .subscribe();
+      this.searchUpload();
     } else if (this.url) {
-      this.searching = true;
-      const url = this.url;
-      this.searchMediaService.searchDownload(this.url)
-        .pipe(
-          catchError(() => {
-            this.searching = false;
-            this.changeDetector.markForCheck();
-            return EMPTY;
-          }),
-          tap(results => {
-            this.searchMediaHistoryService.addDownload(url, results);
-            this.url = '';
-            this.searching = false;
-            if (results.length > 0) {
-              this.isDuplicates.set(results.map((_, i) => i));
-              setTimeout(() => this.isDuplicates.set([]), 3000);
-            }
-          }))
-        .subscribe();
+      this.searchDownload();
     }
+  }
+
+  searchUpload(): void {
+    this.searching = true;
+    const file = this.file!;
+    this.searchMediaService.searchUpload(file)
+      .pipe(
+        catchError(() => {
+          this.searching = false;
+          this.changeDetector.markForCheck();
+          return EMPTY;
+        }),
+        tap(response => {
+          this.searchMediaHistoryService.addUpload(file, response);
+          this.file = null;
+          this.searching = false;
+          if (response.length > 0) {
+            this.isDuplicates.set(response.map((_, i) => i));
+            setTimeout(() => this.isDuplicates.set([]), 2500 * response.length);
+          }
+        }))
+      .subscribe();
+  }
+
+  searchDownload(): void {
+    this.searching = true;
+    const url = this.url;
+    this.searchMediaService.searchDownload(this.url)
+      .pipe(
+        catchError(() => {
+          this.searching = false;
+          this.changeDetector.markForCheck();
+          return EMPTY;
+        }),
+        tap(response => {
+          this.searchMediaHistoryService.addDownload(url, response);
+          this.url = '';
+          this.searching = false;
+          if (response.length > 0) {
+            this.isDuplicates.set(response.map((_, i) => i));
+            setTimeout(() => this.isDuplicates.set([]), 2500 * response.length);
+          }
+        }))
+      .subscribe();
   }
 }

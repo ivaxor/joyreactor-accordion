@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SearchEmbeddedRequest, SearchEmbeddedType } from '../../../services/search-embedded-service/search-embedded-request';
 import { SearchEmbeddedService } from '../../../services/search-embedded-service/search-embedded-service';
+import { catchError, EMPTY, tap } from 'rxjs';
 
 @Component({
   selector: 'app-search-embedded',
@@ -19,6 +20,7 @@ export class SearchEmbedded implements OnInit, OnDestroy {
     'https://vimeo.com/*********',
     'https://youtu.be/***********',
     'https://www.youtube.com/watch?v=***********'];
+  private changeDetector = inject(ChangeDetectorRef);
   private searchEmbeddedService = inject(SearchEmbeddedService);
 
   url: string = '';
@@ -40,6 +42,9 @@ export class SearchEmbedded implements OnInit, OnDestroy {
   }
 
   isSearchDisabled(): boolean {
+    if (this.searching)
+      return true;
+
     return !this.tryToParseUrl();
   }
 
@@ -48,32 +53,70 @@ export class SearchEmbedded implements OnInit, OnDestroy {
     if (!request)
       return;
 
+    this.searching = true;
+
     this.searchEmbeddedService.search(request)
-      .subscribe(response => console.log(response));
+      .pipe(
+        catchError(() => {
+          this.searching = false;
+          this.changeDetector.markForCheck();
+          return EMPTY;
+        }),
+        tap(response => {
+          this.url = '';
+          this.searching = false;
+          if (response.postIds.length > 0) {
+            this.isDuplicates.set(response.postIds.map((_, i) => i));
+            setTimeout(() => this.isDuplicates.set([]), 2500 * response.postIds.length);
+          }
+        }))
+      .subscribe();
   }
 
   tryToParseUrl(): SearchEmbeddedRequest | null {
-    if (this.url.startsWith('https://bandcamp.com/')) {
-      // TODO: Implement
-    } else if (this.url.startsWith('https://coub.com/view/')) {
-      const text = this.url.replace('https://coub.com/view/', '');
-      return ({ type: SearchEmbeddedType.Coub, text });
-    } else if (this.url.startsWith('https://soundcloud.com/')) {
-      // TODO: Implement
-    } else if (this.url.startsWith('https://vimeo.com/')) {
-      // TODO: Implement
-    } else if (this.url.startsWith('https://youtu.be/')) {
-      const text = this.url.replace('https://youtu.be/', '');
-      return ({ type: SearchEmbeddedType.YouTube, text });
-    } else if (this.url.startsWith('https://www.youtube.com/watch') || this.url.startsWith('https://youtube.com/watch')) {
+    try {
       const url = new URL(this.url);
-      const text = url.searchParams.get('v');
-      if (!text)
-        return null;
 
-      return ({ type: SearchEmbeddedType.YouTube, text });
+      if (url.host.endsWith('bandcamp.com')) {
+        if (url.pathname.startsWith('/album/') || url.pathname.startsWith('/track/')) {
+          const text = url.pathname.replace('/', '');
+          return ({ type: SearchEmbeddedType.BandCamp, text });
+        }
+      } else if (url.host === 'coub.com') {
+        if (url.pathname.startsWith('/embed/')) {
+          const text = url.pathname.replace('/embed/', '');
+          return ({ type: SearchEmbeddedType.Coub, text });
+        }
+        if (url.pathname.startsWith('/view/')) {
+          const text = url.pathname.replace('/view/', '');
+          return ({ type: SearchEmbeddedType.Coub, text });
+        }
+      } else if (url.host === 'soundcloud.com') {
+        const text = url.pathname.replace('/', '');
+        return ({ type: SearchEmbeddedType.Coub, text });
+      } else if (url.host.endsWith('vimeo.com')) {
+        if (url.host === 'vimeo.com') {
+          const text = url.pathname.replace('/', '');
+          return ({ type: SearchEmbeddedType.Vimeo, text });
+        }
+
+        if (url.host === 'player.vimeo.com' && url.pathname.startsWith('/video/')) {
+          const text = url.pathname.replace('/video/', '');
+          return ({ type: SearchEmbeddedType.Vimeo, text });
+        }
+      } else if (url.host === 'youtu.be') {
+        const text = url.pathname.replace('/', '');
+        return ({ type: SearchEmbeddedType.YouTube, text })
+      } else if (url.host === 'youtube.com' || url.host === 'www.youtube.com') {
+        const v = url.searchParams.get('v');
+        if (v) {
+          return ({ type: SearchEmbeddedType.YouTube, text: v });
+        }
+      }
+
+      return null;
+    } catch {
+      return null;
     }
-
-    return null;
   }
 }
