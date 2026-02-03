@@ -35,6 +35,9 @@
             ],
             "scripts": [
               "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"
+            ],
+            "polyfills": [
+              "@angular/localize/init"
             ]
           },
           "configurations": {
@@ -78,6 +81,14 @@
             }
           },
           "defaultConfiguration": "development"
+        }
+      },
+      "i18n": {
+        "sourceLocale": "ru-RU",
+        "locales": {
+          "en-US": {
+            "translation": "src/messages.en-US.xlf"
+          }
         }
       }
     }

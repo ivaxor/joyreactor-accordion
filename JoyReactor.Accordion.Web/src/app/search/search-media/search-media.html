@@ -2,15 +2,15 @@
   <input #fileInput type="file" (change)="onFileChange($event)" class="d-none" [accept]="allowedTypes" [disabled]="searching">
   @if (searching) {
   <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-    <span class="visually-hidden">Поиск...</span>
+    <span i18n class="visually-hidden">Поиск...</span>
   </div>
   } @else if (file) {
   <span class="fw-bold">{{file.name}}</span>
   <span class="small">{{file.size | bytes}}</span>
   } @else {
-  <span class="fw-bold">Кликните</span>
-  <span class="small">или перетащите</span>
-  <span class="small">или нажмите Ctrl + V</span>
+  <span i18n class="fw-bold">Кликните</span>
+  <span i18n class="small">или перетащите</span>
+  <span i18n class="small">или нажмите Ctrl + V</span>
   }
 </div>
 
@@ -20,7 +20,7 @@
 
 <div class="mt-2 d-flex justify-content-end position-relative">
   <button [disabled]="isSearchDisabled()" (click)="search()" class="btn btn-primary text-uppercase position-relative" style="z-index: 10;">
-    Найти
+    <span i18n>Найти</span>
   </button>
 
   @for (item of isDuplicates(); track $index) {

@@ -39,6 +39,7 @@
     "@angular/build": "^21.0.0",
     "@angular/cli": "^21.0.0",
     "@angular/compiler-cli": "^21.0.0",
+    "@angular/localize": "^21.0.6",
     "jsdom": "^27.4.0",
     "typescript": "~5.9.3"
   }

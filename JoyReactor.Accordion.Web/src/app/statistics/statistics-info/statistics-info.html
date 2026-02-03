@@ -1,10 +1,10 @@
 <div class="row">
   <div class="col-12 col-sm-4">
     <fieldset>
-      <legend>Общая</legend>
+      <legend i18n>Общая</legend>
 
       <div class="row">
-        <label for="vectors" class="col-8 col-sm-4 col-form-label">Векторов</label>
+        <label i18n for="vectors" class="col-8 col-sm-4 col-form-label">Векторов</label>
         <div class="col-4 col-sm-8 placeholder-glow">
           @if (statistics != null) { <input readonly [value]="statistics.vectors" id="vectors" class="form-control-plaintext"> }
           @else {<span class="placeholder col-12 col-sm-6"></span> }
@@ -12,7 +12,7 @@
       </div>
 
       <div class="row">
-        <label for="parsedPosts" class="col-8  col-sm-4 col-form-label">Постов</label>
+        <label i18n for="parsedPosts" class="col-8  col-sm-4 col-form-label">Постов</label>
         <div class="col-4 col-sm-8 placeholder-glow">
           @if (statistics) { <input readonly [value]="statistics.parsedPosts" id="parsedPosts" class="form-control-plaintext"> }
           @else {<span class="placeholder col-12 col-sm-6"></span> }
@@ -20,7 +20,7 @@
       </div>
 
       <div class="row">
-        <label for="parsedTags" class="col-8  col-sm-4 col-form-label">Теги</label>
+        <label i18n for="parsedTags" class="col-8  col-sm-4 col-form-label">Теги</label>
         <div class="col-4 col-sm-8 placeholder-glow">
           @if (statistics) { <input readonly [value]="statistics.parsedTags" id="parsedTags" class="form-control-plaintext"> }
           @else {<span class="placeholder col-12 col-sm-6"></span> }
@@ -28,7 +28,7 @@
       </div>
 
       <div class="row">
-        <label for="emptyTags" class="col-8 col-sm-4 col-form-label">Пустые теги</label>
+        <label i18n for="emptyTags" class="col-8 col-sm-4 col-form-label">Пустые теги</label>
         <div class="col-4 col-sm-8 placeholder-glow">
           @if (statistics) { <input readonly [value]="statistics.emptyTags" id="emptyTags" class="form-control-plaintext"> }
           @else {<span class="placeholder col-12 col-sm-6"></span> }
@@ -39,10 +39,10 @@
 
   <div class="col-12 col-sm-4">
     <fieldset>
-      <legend>Медиа</legend>
+      <legend i18n>Медиа</legend>
 
       <div class="row">
-        <label for="parsedPostAttributePictures" class="col-8 col-sm-6 col-form-label">Суммарно</label>
+        <label i18n for="parsedPostAttributePictures" class="col-8 col-sm-6 col-form-label">Суммарно</label>
         <div class="col-4 col-sm-6 placeholder-glow">
           @if (statistics) { <input readonly [value]="statistics.parsedPostAttributePictures" id="parsedPostAttributePictures" class="form-control-plaintext"> }
           @else {<span class="placeholder col-12 col-sm-7"></span> }
@@ -50,7 +50,7 @@
       </div>
 
       <div class="row">
-        <label for="parsedPostAttributePicturesNoContent" class="col-8 col-sm-6 col-form-label">Без контента</label>
+        <label i18n for="parsedPostAttributePicturesNoContent" class="col-8 col-sm-6 col-form-label">Без контента</label>
         <div class="col-4 col-sm-6 placeholder-glow">
           @if (statistics) { <input readonly [value]="statistics.parsedPostAttributePicturesNoContent" id="parsedPostAttributePicturesNoContent" class="form-control-plaintext"> }
           @else {<span class="placeholder col-12 col-sm-7"></span> }
@@ -58,7 +58,7 @@
       </div>
 
       <div class="row">
-        <label for="parsedPostAttributePicturesUnsupported" class="col-8 col-sm-6 col-form-label">Неподдерживаемый контент</label>
+        <label i18n for="parsedPostAttributePicturesUnsupported" class="col-8 col-sm-6 col-form-label">Неподдерживаемый контент</label>
         <div class="col-4 col-sm-6 placeholder-glow">
           @if (statistics) { <input readonly [value]="statistics.parsedPostAttributePicturesUnsupported" id="parsedPostAttributePicturesUnsupported" class="form-control-plaintext"> }
           @else {<span class="placeholder col-12 col-sm-7"></span> }
@@ -66,7 +66,7 @@
       </div>
 
       <div class="row">
-        <label for="parsedPostAttributePicturesWithVector" class="col-8 col-sm-6 col-form-label">С векторами</label>
+        <label i18n for="parsedPostAttributePicturesWithVector" class="col-8 col-sm-6 col-form-label">С векторами</label>
         <div class="col-4 col-sm-6 placeholder-glow">
           @if (statistics) { <input readonly [value]="statistics.parsedPostAttributePicturesWithVector" id="parsedPostAttributePicturesWithVector" class="form-control-plaintext"> }
           @else {<span class="placeholder col-12 col-sm-7"></span> }
@@ -74,7 +74,7 @@
       </div>
 
       <div class="row">
-        <label for="parsedPostAttributePictures" class="col-8 col-sm-6 col-form-label">Без векторов</label>
+        <label i18n for="parsedPostAttributePictures" class="col-8 col-sm-6 col-form-label">Без векторов</label>
         <div class="col-4 col-sm-6 placeholder-glow">
           @if (statistics) { <input readonly [value]="statistics.parsedPostAttributePicturesWithoutVector" id="parsedPostAttributePicturesWithoutVector" class="form-control-plaintext"> }
           @else {<span class="placeholder col-12 col-sm-7"></span> }
@@ -85,10 +85,10 @@
 
   <div class="col-12 col-sm-4">
     <fieldset>
-      <legend>Ссылки</legend>
+      <legend i18n>Ссылки</legend>
 
       <div class="row">
-        <label for="parsedPostAttributeEmbeds" class="col-8 col-sm-7 col-form-label">Суммарно</label>
+        <label i18n for="parsedPostAttributeEmbeds" class="col-8 col-sm-7 col-form-label">Суммарно</label>
         <div class="col-4 col-sm-5 placeholder-glow">
           @if (statistics) { <input readonly [value]="statistics.parsedPostAttributeEmbeds" id="parsedPostAttributeEmbeds" class="form-control-plaintext"> }
           @else {<span class="placeholder col-12 col-sm-7"></span> }
@@ -96,7 +96,7 @@
       </div>
 
       <div class="row">
-        <label for="parsedBandCamps" class="col-8 col-sm-7 col-form-label">Уникальных BandCamp</label>
+        <label i18n for="parsedBandCamps" class="col-8 col-sm-7 col-form-label">Уникальных BandCamp</label>
         <div class="col-4 col-sm-5 placeholder-glow">
           @if (statistics) { <input readonly [value]="statistics.parsedBandCamps" id="parsedBandCamps" class="form-control-plaintext"> }
           @else {<span class="placeholder col-12 col-sm-7"></span> }
@@ -104,7 +104,7 @@
       </div>
 
       <div class="row">
-        <label for="parsedCoubs" class="col-8 col-sm-7 col-form-label">Уникальных Coub</label>
+        <label i18n for="parsedCoubs" class="col-8 col-sm-7 col-form-label">Уникальных Coub</label>
         <div class="col-4 col-sm-5 placeholder-glow">
           @if (statistics) { <input readonly [value]="statistics.parsedCoubs" id="parsedCoubs" class="form-control-plaintext"> }
           @else {<span class="placeholder col-12 col-sm-7"></span> }
@@ -112,7 +112,7 @@
       </div>
 
       <div class="row">
-        <label for="parsedSoundClouds" class="col-8 col-sm-7 col-form-label">Уникальных SoundCloud</label>
+        <label i18n for="parsedSoundClouds" class="col-8 col-sm-7 col-form-label">Уникальных SoundCloud</label>
         <div class="col-4 col-sm-5 placeholder-glow">
           @if (statistics) { <input readonly [value]="statistics.parsedSoundClouds" id="parsedSoundClouds" class="form-control-plaintext">
           } @else {<span class="placeholder col-12 col-sm-7"></span> }
@@ -120,7 +120,7 @@
       </div>
 
       <div class="row">
-        <label for="parsedVimeos" class="col-8 col-sm-7 col-form-label">Уникальных Vimeo</label>
+        <label i18n for="parsedVimeos" class="col-8 col-sm-7 col-form-label">Уникальных Vimeo</label>
         <div class="col-4 col-sm-5 placeholder-glow">
           @if (statistics) { <input readonly [value]="statistics.parsedVimeos" id="parsedVimeos" class="form-control-plaintext"> }
           @else {<span class="placeholder col-12 col-sm-7"></span> }
@@ -128,7 +128,7 @@
       </div>
 
       <div class="row">
-        <label for="parsedYouTubes" class="col-8 col-sm-7 col-form-label">Уникальных YouTube</label>
+        <label i18n for="parsedYouTubes" class="col-8 col-sm-7 col-form-label">Уникальных YouTube</label>
         <div class="col-4 col-sm-5 placeholder-glow">
           @if (statistics) { <input readonly [value]="statistics.parsedYouTubes" id="parsedYouTubes" class="form-control-plaintext"> }
           @else {<span class="placeholder col-12 col-sm-7"></span> }

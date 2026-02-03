@@ -1,6 +1,6 @@
 <div class="row">
   <div class="col">
-    <h2>История</h2>
+    <h2 i18n>История</h2>
   </div>
 
   <div class="col text-end">
@@ -13,7 +13,7 @@
 <div class="row">
   @if (historyRecords.length === 0) {
   <div class="col text-center">
-    Пусто...
+    <span i18n>Пусто...</span>
   </div>
   } @else {
   @for (historyRecord of historyRecords; track $index) {

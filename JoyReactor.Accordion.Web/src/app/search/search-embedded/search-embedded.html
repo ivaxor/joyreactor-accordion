@@ -4,7 +4,7 @@
 
 <div class="mt-2 d-flex justify-content-end position-relative">
   <button [disabled]="isSearchDisabled()" (click)="search()" class="btn btn-primary text-uppercase position-relative" style="z-index: 10;">
-    Найти
+    <span i18n>Найти</span>
   </button>
 
   @for (item of isDuplicates(); track $index) {
