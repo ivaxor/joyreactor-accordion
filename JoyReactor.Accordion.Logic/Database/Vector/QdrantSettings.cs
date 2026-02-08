@@ -7,5 +7,4 @@ public record QdrantSettings
     public ulong CollectionVectorSize { get; set; }
 
     public int SearchLimit { get; set; }
-    public float SearchScoreThreshold { get; set; }
 }

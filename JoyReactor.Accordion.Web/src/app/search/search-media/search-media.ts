@@ -96,18 +96,18 @@ export class SearchMedia {
     }
   }
 
-  search(): void {
+  search(threshold: number): void {
     if (this.file) {
-      this.searchUpload();
+      this.searchUpload(threshold);
     } else if (this.url) {
-      this.searchDownload();
+      this.searchDownload(threshold);
     }
   }
 
-  searchUpload(): void {
+  searchUpload(threshold: number): void {
     this.searching = true;
     const file = this.file!;
-    this.searchMediaService.searchUpload(file)
+    this.searchMediaService.searchUpload(file, threshold)
       .pipe(
         catchError(() => {
           this.searching = false;
@@ -126,10 +126,10 @@ export class SearchMedia {
       .subscribe();
   }
 
-  searchDownload(): void {
+  searchDownload(threshold: number): void {
     this.searching = true;
     const url = this.url;
-    this.searchMediaService.searchDownload(this.url)
+    this.searchMediaService.searchDownload(this.url, threshold)
       .pipe(
         catchError(() => {
           this.searching = false;

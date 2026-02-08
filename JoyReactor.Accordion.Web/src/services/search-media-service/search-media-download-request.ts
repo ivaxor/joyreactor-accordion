@@ -1,3 +1,4 @@
 export interface SearchMediaDownloadRequest {
-  mediaUrl: string;
+  mediaUrl: string,
+  threshold: number,
 }

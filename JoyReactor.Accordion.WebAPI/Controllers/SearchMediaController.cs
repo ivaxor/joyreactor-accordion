@@ -85,7 +85,7 @@ public class SearchMediaController(
         }
 
         await using var stream = await downloadResponse.Content.ReadAsStreamAsync(cancellationToken);
-        var results = await SearchAsync(mediaType, stream, cancellationToken);
+        var results = await SearchAsync(mediaType, stream, request.Threshold, cancellationToken);
         return Ok(results);
     }
 
@@ -112,11 +112,11 @@ public class SearchMediaController(
         }
 
         await using var stream = request.Media.OpenReadStream();
-        var results = await SearchAsync(request.Media.ContentType, stream, cancellationToken);
+        var results = await SearchAsync(request.Media.ContentType, stream, request.Threshold, cancellationToken);
         return Ok(results);
     }
 
-    protected async Task<PictureScoredPoint[]> SearchAsync(string mimeType, Stream stream, CancellationToken cancellationToken)
+    protected async Task<PictureScoredPoint[]> SearchAsync(string mimeType, Stream stream, float threshold, CancellationToken cancellationToken)
     {
         await using var boundedStream = new FileBufferingReadStream(stream, FileSizeLimit);
         await boundedStream.DrainAsync(cancellationToken);
@@ -124,7 +124,7 @@ public class SearchMediaController(
 
         using var processedImage = await mediaReducer.ReduceAsync(mimeType, boundedStream, cancellationToken);
         var vector = await onnxVectorConverter.ConvertAsync(processedImage);
-        var results = await qdrantClient.SearchAsync(qdrantSettings.Value.CollectionName, qdrantSettings.Value.SearchLimit, qdrantSettings.Value.SearchScoreThreshold, vector, cancellationToken);
+        var results = await qdrantClient.SearchAsync(qdrantSettings.Value.CollectionName, qdrantSettings.Value.SearchLimit, threshold, vector, cancellationToken);
 
         return results;
     }

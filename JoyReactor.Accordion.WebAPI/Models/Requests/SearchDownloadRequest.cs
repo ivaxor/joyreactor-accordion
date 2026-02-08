@@ -8,6 +8,10 @@ public record SearchDownloadRequest : IValidatableObject
     [MaxLength(500)]
     public string MediaUrl { get; set; }
 
+    [Required]
+    [Range(0.8, 1)]
+    public float Threshold { get; set; }
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         var mediaUri = new Uri(MediaUrl);
@@ -21,7 +25,7 @@ public record SearchDownloadRequest : IValidatableObject
         if (Uri.CheckHostName(host) is UriHostNameType.IPv4 or UriHostNameType.IPv6)
             yield return new ValidationResult("IP addresses are not allowed");
 
-        if(!host.Contains('.', StringComparison.OrdinalIgnoreCase))
+        if (!host.Contains('.', StringComparison.OrdinalIgnoreCase))
             yield return new ValidationResult("Top level domain required");
     }
 }

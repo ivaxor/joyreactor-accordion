@@ -1,3 +1,3 @@
 export interface Config {
-  apiRoot: string;
+  apiRoot: string,
 }

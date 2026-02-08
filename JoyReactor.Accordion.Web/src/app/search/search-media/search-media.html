@@ -19,9 +19,32 @@
 </div>
 
 <div class="mt-2 d-flex justify-content-end position-relative">
-  <button [disabled]="isSearchDisabled()" (click)="search()" class="btn btn-primary text-uppercase position-relative" style="z-index: 10;">
-    <span i18n>Найти</span>
-  </button>
+  <div class="btn-group" role="group" style="z-index: 10;">
+    <button [disabled]="isSearchDisabled()" (click)="search(0.96)" class="btn btn-primary text-uppercase position-relative">
+      <span i18n>Найти</span>
+    </button>
+
+    <div class="btn-group" role="group">
+      <button [disabled]="isSearchDisabled()" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"></button>
+      <ul class="dropdown-menu">
+        <li>
+          <button (click)="search(0.90)" class="dropdown-item">
+            <span i18n>Приблизительные</span>
+          </button>
+        </li>
+        <li>
+          <button (click)="search(0.95)" class="dropdown-item">
+            <span i18n>Похожие</span>
+          </button>
+        </li>
+        <li>
+          <button (click)="search(0.99)" class="dropdown-item">
+            <span i18n>Точные</span>
+          </button>
+        </li>
+      </ul>
+    </div>
+  </div>
 
   @for (item of isDuplicates(); track $index) {
   <div class="fall-css-animation" [style.animation-delay]="$index * 0.2 + 's'">
