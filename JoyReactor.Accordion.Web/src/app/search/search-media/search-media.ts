@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, EventEmitter, HostListener, inject, Output, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener, inject, Output, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BytesPipe } from '../../../pipes/bytes-pipe';
 import { SearchMediaService } from '../../../services/search-media-service/search-media-service';
@@ -18,6 +18,7 @@ export class SearchMedia {
   private searchMediaService = inject(SearchMediaService);
   private searchMediaHistoryService = inject(SearchMediaHistoryService);
   @Output() onFileSelected = new EventEmitter<File>();
+  @ViewChild("fileInput", { read: ElementRef }) fileInput!: ElementRef<HTMLInputElement>;
 
   allowedTypes: string[] = ['image/png', 'image/jpeg', 'image/gif', 'image/bmp', 'image/tiff', 'video/mp4', 'video/webm'];
   isDragging: boolean = false;
@@ -30,6 +31,7 @@ export class SearchMedia {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       this.file = input.files[0];
+      this.fileInput.nativeElement.value = '';
       this.url = '';
     }
   }
@@ -43,6 +45,7 @@ export class SearchMedia {
       const file = event.dataTransfer.files[0];
       if (this.allowedTypes.some(allowedType => allowedType === file.type)) {
         this.file = file;
+        this.fileInput.nativeElement.value = '';
         this.url = '';
       }
     }
@@ -61,6 +64,7 @@ export class SearchMedia {
         continue;
 
       this.file = event.clipboardData.items[i].getAsFile();
+      this.fileInput.nativeElement.value = '';
       this.url = '';
       break;
     }
@@ -68,6 +72,7 @@ export class SearchMedia {
 
   onUrlChange(event: Event): void {
     this.file = null;
+    this.fileInput.nativeElement.value = '';
     this.url = decodeURIComponent(this.url);
   }
 
@@ -117,6 +122,8 @@ export class SearchMedia {
         tap(response => {
           this.searchMediaHistoryService.addUpload(file, response);
           this.file = null;
+          this.fileInput.nativeElement.value = '';
+          this.url = '';
           this.searching = false;
           if (response.length > 0) {
             this.isDuplicates.set(response.map((_, i) => i));
@@ -138,6 +145,8 @@ export class SearchMedia {
         }),
         tap(response => {
           this.searchMediaHistoryService.addDownload(url, response);
+          this.file = null;
+          this.fileInput.nativeElement.value = '';
           this.url = '';
           this.searching = false;
           if (response.length > 0) {
