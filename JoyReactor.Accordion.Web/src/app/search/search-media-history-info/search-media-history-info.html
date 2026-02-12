@@ -1,8 +1,8 @@
 <div class="position-relative">
   @if (historyRecord.url) {
   <a [href]="historyRecord.url" target="_blank">
-    @if (historyRecord.url.endsWith('webm') || historyRecord.url.endsWith('mp4')) { <video [src]="historyRecord.url" class="img-fluid"></video> }
-    @else { <img [src]="historyRecord.url" class="img-fluid" /> }
+    @if (historyRecord.url.endsWith('webm') || historyRecord.url.endsWith('mp4')) { <video [src]="historyRecord.url" class="img-fluid bg-dark"></video> }
+    @else { <img [src]="historyRecord.url" class="img-fluid bg-dark" /> }
   </a>
   } @else if (historyRecord.fileName) {
   <div class="ratio ratio-1x1">
@@ -28,7 +28,7 @@
     @for (result of historyRecord.results; track $index) {
     <div class="col-4">
       <a [href]="getPostUrl(result)" target="_blank">
-        <img [src]="getImageUrl(result)" class="img-fluid object-fit-cover w-100 h-100" />
+        <img [src]="getResultImageUrl(result)" class="img-fluid object-fit-cover w-100 h-100 bg-dark" />
       </a>
     </div>
     }

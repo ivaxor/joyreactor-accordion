@@ -23,8 +23,16 @@ export class SearchMediaHistoryInfo implements OnChanges {
     return `https://${result.hostName}/post/${result.postId}`;
   }
 
-  getImageUrl(result: SearchMediaResponse): string {
-    // CDN doesn't really care what picture extension name was sent
-    return `https://img10.${result.hostName}/pics/post/picture-${result.postAttributeId}.jpeg`;
+  getResultImageUrl(result: SearchMediaResponse): string {
+    if (this.historyRecord.fileName) {
+      const extension = this.historyRecord.fileName.split('.').pop()!;
+      return `https://img10.${result.hostName}/pics/post/picture-${result.postAttributeId}.${extension}`;
+    } else if (this.historyRecord.url) {
+      const url = new URL(this.historyRecord.url);
+      const extension = url.pathname.split('.').pop()!;
+      return `https://img10.${result.hostName}/pics/post/static/picture-${result.postAttributeId}.${extension}`;
+    }
+
+    return '';
   }
 }
