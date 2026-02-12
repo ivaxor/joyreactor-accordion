@@ -1,4 +1,4 @@
-import { SearchMediaResponse } from "../search-media-service/search-media-response";
+import { SearchMediaResponse } from '../search-media-service/search-media-response';
 
 export interface SearchMediaHistoryRecord {
   id?: number,

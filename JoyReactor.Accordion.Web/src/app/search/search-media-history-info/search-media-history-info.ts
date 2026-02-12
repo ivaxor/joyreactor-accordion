@@ -11,12 +11,41 @@ import { DatePipe } from '@angular/common';
 })
 export class SearchMediaHistoryInfo implements OnChanges {
   @Input({ required: true }) historyRecord!: SearchMediaHistoryRecord;
+  historyRecordExtended!: SearchMediaHistoryRecordExtended;
+  isVideo!: boolean;
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!this.historyRecord)
       return;
 
-    this.historyRecord.results = this.historyRecord.results.sort((a, b) => a.postId! - b.postId!);
+    if (this.historyRecord.url) {
+      const url = new URL(this.historyRecord.url);
+      const isVideo = url.pathname.endsWith('webm') || url.pathname.endsWith('mp4');
+      const isJoyReactor = url.hostname.endsWith('joyreactor.cc') || url.hostname.endsWith('joyreactor.com');
+
+      if (isVideo && isJoyReactor) {
+        this.historyRecordExtended = {
+          ...this.historyRecord,
+          url: this.historyRecord.url.replace('/picture-', '/static/picture-'),
+          isVideo: false,
+        };
+      } else {
+        this.historyRecordExtended = {
+          ...this.historyRecord,
+          url: this.historyRecord.url.replace('/picture-', '/static/picture-'),
+          isVideo: true,
+        };
+      }
+    } else if (this.historyRecord.fileName) {
+      const isVideo = this.historyRecord.fileName.endsWith('webm') || this.historyRecord.fileName.endsWith('mp4');
+
+      this.historyRecordExtended = {
+        ...this.historyRecord,
+        isVideo: isVideo,
+      };
+    }
+
+    this.historyRecordExtended.results = this.historyRecordExtended.results.sort((a, b) => a.postId! - b.postId!);
   }
 
   getPostUrl(result: SearchMediaResponse): string {
@@ -35,4 +64,8 @@ export class SearchMediaHistoryInfo implements OnChanges {
 
     return '';
   }
+}
+
+export interface SearchMediaHistoryRecordExtended extends SearchMediaHistoryRecord {
+  isVideo: boolean,
 }

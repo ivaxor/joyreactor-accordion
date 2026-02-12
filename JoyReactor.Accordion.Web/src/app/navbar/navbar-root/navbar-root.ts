@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { NavbarHealthCheck } from "../navbar-healthcheck/navbar-healthcheck";
+import { NavbarHealthCheck } from '../navbar-healthcheck/navbar-healthcheck';
 import { RouterModule } from '@angular/router';
 
 @Component({

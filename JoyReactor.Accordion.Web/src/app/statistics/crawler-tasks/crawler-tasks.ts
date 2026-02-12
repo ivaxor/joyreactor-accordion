@@ -1,8 +1,7 @@
 import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
-import { CrawlerTaskInfo } from "../crawler-task-info/crawler-task-info";
+import { CrawlerTaskInfo } from '../crawler-task-info/crawler-task-info';
 import { CrawlerTaskResponse } from '../../../services/crawler-task-service/crawler-task-response';
 import { CrawlerTaskService } from '../../../services/crawler-task-service/crawler-task-service';
-import { catchError, EMPTY } from 'rxjs';
 
 @Component({
   selector: 'app-crawler-tasks',

@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { BytesPipe } from '../../../pipes/bytes-pipe';
 import { SearchMediaService } from '../../../services/search-media-service/search-media-service';
 import { isIP } from 'is-ip';
-import { SearchMediaHistoryService } from '../../../services/search-media-history-service/search-media-history-service';
 import { catchError, EMPTY, tap } from 'rxjs';
 
 @Component({
@@ -16,7 +15,6 @@ import { catchError, EMPTY, tap } from 'rxjs';
 export class SearchMedia {
   private changeDetector = inject(ChangeDetectorRef);
   private searchMediaService = inject(SearchMediaService);
-  private searchMediaHistoryService = inject(SearchMediaHistoryService);
   @Output() onFileSelected = new EventEmitter<File>();
   @ViewChild("fileInput", { read: ElementRef }) fileInput!: ElementRef<HTMLInputElement>;
 
@@ -120,7 +118,6 @@ export class SearchMedia {
           return EMPTY;
         }),
         tap(response => {
-          this.searchMediaHistoryService.addUpload(file, response);
           this.file = null;
           this.fileInput.nativeElement.value = '';
           this.url = '';
@@ -144,7 +141,6 @@ export class SearchMedia {
           return EMPTY;
         }),
         tap(response => {
-          this.searchMediaHistoryService.addDownload(url, response);
           this.file = null;
           this.fileInput.nativeElement.value = '';
           this.url = '';

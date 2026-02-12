@@ -1,5 +1,5 @@
 export interface SearchEmbeddedRequest {
-  type: any,
+  type: SearchEmbeddedType,
   text: string,
 }
 
