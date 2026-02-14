@@ -24,6 +24,7 @@ export class SearchMedia {
   url: string = '';
   searching: boolean = false;
   isDuplicates = signal<number[]>([]);
+  errorMessage = signal<string>('');
 
   onFileChange(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -108,11 +109,13 @@ export class SearchMedia {
   }
 
   searchUpload(threshold: number): void {
+    this.errorMessage.set('');
     this.searching = true;
     const file = this.file!;
     this.searchMediaService.searchUpload(file, threshold)
       .pipe(
-        catchError(() => {
+        catchError(error => {
+          this.errorMessage.set(Object.keys(error.error).flatMap(e => error.error[e] as string[]).join('\n'));
           this.searching = false;
           this.changeDetector.markForCheck();
           return EMPTY;
@@ -131,11 +134,13 @@ export class SearchMedia {
   }
 
   searchDownload(threshold: number): void {
+    this.errorMessage.set('');
     this.searching = true;
     const url = this.url;
     this.searchMediaService.searchDownload(this.url, threshold)
       .pipe(
-        catchError(() => {
+        catchError(error => {
+          this.errorMessage.set(Object.keys(error.error).flatMap(e => error.error[e] as string[]).join('\n'));
           this.searching = false;
           this.changeDetector.markForCheck();
           return EMPTY;

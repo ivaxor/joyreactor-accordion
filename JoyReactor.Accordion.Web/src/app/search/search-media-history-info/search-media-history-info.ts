@@ -12,37 +12,43 @@ import { DatePipe } from '@angular/common';
 export class SearchMediaHistoryInfo implements OnChanges {
   @Input({ required: true }) historyRecord!: SearchMediaHistoryRecord;
   historyRecordExtended!: SearchMediaHistoryRecordExtended;
-  isVideo!: boolean;
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!this.historyRecord)
       return;
 
-    if (this.historyRecord.url) {
-      const url = new URL(this.historyRecord.url);
-      const isVideo = url.pathname.endsWith('webm') || url.pathname.endsWith('mp4');
-      const isJoyReactor = url.hostname.endsWith('joyreactor.cc') || url.hostname.endsWith('joyreactor.com');
-
-      if (isVideo && isJoyReactor) {
-        this.historyRecordExtended = {
-          ...this.historyRecord,
-          url: this.historyRecord.url.replace('/picture-', '/static/picture-'),
-          isVideo: false,
-        };
-      } else {
-        this.historyRecordExtended = {
-          ...this.historyRecord,
-          url: this.historyRecord.url.replace('/picture-', '/static/picture-'),
-          isVideo: true,
-        };
-      }
-    } else if (this.historyRecord.fileName) {
+    if (this.historyRecord.fileName) {
       const isVideo = this.historyRecord.fileName.endsWith('webm') || this.historyRecord.fileName.endsWith('mp4');
 
       this.historyRecordExtended = {
         ...this.historyRecord,
         isVideo: isVideo,
       };
+    } else if (this.historyRecord.url) {
+      const url = new URL(this.historyRecord.url);
+      const isVideo = url.pathname.endsWith('webm') || url.pathname.endsWith('mp4');
+      const isJoyReactor = url.hostname.endsWith('joyreactor.cc') || url.hostname.endsWith('joyreactor.com');
+
+      if (isVideo && isJoyReactor) {
+        let newUrl = this.historyRecord.url;
+        if (url.pathname.includes('/picture-'))
+          newUrl = newUrl.replace('/picture-', '/static/picture-');
+        else if (url.pathname.includes('/webm/') && url.pathname.endsWith('.webm'))
+          newUrl = newUrl.replace('/webm/', '/static/').replace('.webm', '.jpeg');
+        else if (url.pathname.includes('/mp4/') && url.pathname.endsWith('.mp4'))
+          newUrl = newUrl.replace('/mp4/', '/static/').replace('.mp4', '.jpeg');
+
+        this.historyRecordExtended = {
+          ...this.historyRecord,
+          url: newUrl,
+          isVideo: false,
+        };
+      } else {
+        this.historyRecordExtended = {
+          ...this.historyRecord,
+          isVideo: isVideo,
+        };
+      }
     }
 
     this.historyRecordExtended.results = this.historyRecordExtended.results.sort((a, b) => a.postId! - b.postId!);

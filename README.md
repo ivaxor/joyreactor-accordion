@@ -25,11 +25,16 @@ Examples of post and comment media URLs using only `PostAttributeId`:
 - img0.joyreactor.cc/pics/comment/picture-[postAttributeId].[extension]
 - img0.joyreactor.cc/pics/comment/full/picture-[postAttributeId].[extension]
 
-Exampled of post and comment media URLs:
+Examples of post and comment media URLs:
 - img10.joyreactor.cc/pics/post/[postTags]-[postAttributeId].[extension]
 - img10.joyreactor.cc/pics/post/full/[postTags]-[postAttributeId].[extension]
 - img10.joyreactor.cc/pics/comment/[postTags]-[postAttributeId].[extension]
 - img10.joyreactor.cc/pics/comment/full/[postTags]-[postAttributeId].[extension]
+
+Examples of post video media and static preview URLS:
+- img10.joyreactor.cc/pics/post/webm/[postTags]-[postAttributeId].webm
+- img10.joyreactor.cc/pics/post/mp4/[postTags]-[postAttributeId].mp4
+- img10.joyreactor.cc/pics/post/static/[postTags]-[postAttributeId].jpeg
 
 ## Notes
 - CC and COM domains looks similar, but are mostly independent.

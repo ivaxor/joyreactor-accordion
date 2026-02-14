@@ -18,7 +18,11 @@
   <input [(ngModel)]="url" (change)="onUrlChange($event)" [disabled]="searching" type="url" maxlength="500" class="form-control" placeholder="Или вставьте прямую ссылку..." />
 </div>
 
-<div class="mt-2 d-flex justify-content-end position-relative">
+<div class="mt-2 d-flex align-items-center justify-content-end position-relative">
+  @if (errorMessage()) {
+  <span class="me-3 text-warning">{{errorMessage()}}</span>
+  }
+
   <div class="btn-group" role="group" style="z-index: 10;">
     <button [disabled]="isSearchDisabled()" (click)="search(0.96)" class="btn btn-primary text-uppercase position-relative">
       <span i18n>Найти</span>
