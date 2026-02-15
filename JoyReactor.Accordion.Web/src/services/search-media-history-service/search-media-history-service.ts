@@ -15,7 +15,10 @@ export class SearchMediaHistoryService extends Dexie {
 
   constructor() {
     super('JoyReactorAccordion');
-    this.version(1).stores({ searchMediaHistory: '++id, createdAt' });
+    this.version(2).stores({
+      searchMediaHistory: '++id, createdAt',
+      searchEmbeddedHistory: '++id, createdAt',
+    });
     this.searchMediaHistory = this.table('searchMediaHistory');
 
     this.list().then(historyRecords => this.recordsSubject.next(historyRecords));
