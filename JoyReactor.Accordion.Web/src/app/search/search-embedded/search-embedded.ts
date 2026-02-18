@@ -78,7 +78,7 @@ export class SearchEmbedded implements OnInit, OnDestroy {
       const url = new URL(this.url);
 
       if (url.host.endsWith('bandcamp.com')) {
-        if (url.pathname.startsWith('/album/') || url.pathname.startsWith('/track/')) {
+        if (url.pathname.startsWith('/album/') || url.pathname.startsWith('/track/') || url.pathname.startsWith('/users/') || url.pathname.startsWith('/tracks/') || url.pathname.startsWith('/playlists/')) {
           const text = url.pathname.replace('/', '');
           return ({ type: SearchEmbeddedType.BandCamp, text });
         }
@@ -86,8 +86,7 @@ export class SearchEmbedded implements OnInit, OnDestroy {
         if (url.pathname.startsWith('/embed/')) {
           const text = url.pathname.replace('/embed/', '');
           return ({ type: SearchEmbeddedType.Coub, text });
-        }
-        if (url.pathname.startsWith('/view/')) {
+        } else if (url.pathname.startsWith('/view/')) {
           const text = url.pathname.replace('/view/', '');
           return ({ type: SearchEmbeddedType.Coub, text });
         }
@@ -98,9 +97,7 @@ export class SearchEmbedded implements OnInit, OnDestroy {
         if (url.host === 'vimeo.com') {
           const text = url.pathname.replace('/', '');
           return ({ type: SearchEmbeddedType.Vimeo, text });
-        }
-
-        if (url.host === 'player.vimeo.com' && url.pathname.startsWith('/video/')) {
+        } else if (url.host === 'player.vimeo.com' && url.pathname.startsWith('/video/')) {
           const text = url.pathname.replace('/video/', '');
           return ({ type: SearchEmbeddedType.Vimeo, text });
         }
