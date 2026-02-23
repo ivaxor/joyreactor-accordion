@@ -44,16 +44,13 @@ public static class SharedDependencies
 
         services.Configure<MediaSettings>(options =>
         {
-            options.CdnDomainNames = [
-                "https://img0.joyreactor.cc",
-                "https://img1.joyreactor.cc",
-                "https://img2.joyreactor.cc",
-                "https://img10.joyreactor.cc"
-            ];
+            options.CdnHostName = "https://img0.joyreactor.cc";
+            options.BatchSize = 10;
+            options.SubsequentBatchDelay = TimeSpan.FromSeconds(1);
+            options.SubsequentCallDelay = TimeSpan.FromSeconds(1);
             options.ResizedSize = 224;
             options.MaxRetryAttempts = 10;
             options.RetryDelay = TimeSpan.FromMinutes(2.5);
-            options.ConcurrentDownloads = 10;
         });
 
         services.AddSingleton<ApiClientProvider>();

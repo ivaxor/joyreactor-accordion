@@ -55,7 +55,7 @@ public class MediaToVectorConverter(
                 .Where(picture => SupportedImageTypes.Contains(picture.ImageType))
                 .Where(picture => !failedPictureAttributeIds.Contains(picture.Id))
                 .OrderBy(picture => picture.AttributeId)
-                .Take(10)
+                .Take(mediaSettings.Value.BatchSize * 10)
                 .ToArrayAsync(cancellationToken);
 
             if (unprocessedPictures.Length == 0)
@@ -66,13 +66,16 @@ public class MediaToVectorConverter(
             logger.LogInformation("Starting crawling {PicturesCount} post attribute picture(s) without vectors.", unprocessedPictures.Length);
 
             var pictureImages = new ConcurrentDictionary<ParsedPostAttributePicture, Image<Rgb24>>();
-            var pictureVectors = new ConcurrentDictionary<ParsedPostAttributePicture, float[]>();
-            foreach (var picture in unprocessedPictures)
+            foreach (var unprocessedPicturesBatch in unprocessedPictures.Chunk(mediaSettings.Value.BatchSize))
             {
-                await DownloadAsync(mediaDownloader, failedPictureAttributeIds, pictureImages, picture, cancellationToken);
-            }
-            logger.LogInformation("{PicturesCount} picture post attribute(s) were downloaded.", pictureImages.Count);
+                await Task.Delay(mediaSettings.Value.SubsequentBatchDelay, cancellationToken);
+                await Task.WhenAll(unprocessedPicturesBatch.Select(picture =>
+                    DownloadAsync(mediaDownloader, failedPictureAttributeIds, pictureImages, picture, cancellationToken)));
 
+                logger.LogInformation("{PicturesCount} picture post attribute(s) were downloaded.", unprocessedPicturesBatch.Count());
+            }
+
+            var pictureVectors = new ConcurrentDictionary<ParsedPostAttributePicture, float[]>();
             foreach (var (picture, image) in pictureImages)
             {
                 await CreateVectorAsync(onnxVectorConverter, failedPictureAttributeIds, pictureVectors, picture, image);

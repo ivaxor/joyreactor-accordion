@@ -22,7 +22,7 @@ public class MediaDownloader(
 {
     private static readonly ResiliencePropertyKey<string> UrlKey = new("RequestUrl");
 
-    protected readonly SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
+    protected readonly SemaphoreSlim Semaphore = new SemaphoreSlim(settings.Value.BatchSize, settings.Value.BatchSize);
 
     protected readonly ResiliencePipeline ResiliencePipeline = new ResiliencePipelineBuilder()
         .AddRetry(new RetryStrategyOptions
