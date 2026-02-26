@@ -42,6 +42,8 @@ public record ParsedPostAttributePicture : ISqlUpdatedAtEntity, IParsedPostAttri
     public bool UnsupportedContent { get; set; }
     public bool IsVectorCreated { get; set; }
 
+    public virtual IEnumerable<DuplicatePictureVote> DuplicateVotes { get; set; }
+
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

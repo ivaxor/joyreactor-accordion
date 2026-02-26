@@ -27,6 +27,8 @@ public partial class SqlDatabaseContext : DbContext
     public DbSet<ParsedTag> ParsedTags { get; set; }
     public DbSet<EmptyTag> EmptyTags { get; set; }
 
+    public DbSet<DuplicatePictureVote> DuplicatePictureVotes { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

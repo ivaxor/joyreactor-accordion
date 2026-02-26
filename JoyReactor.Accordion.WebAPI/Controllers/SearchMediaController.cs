@@ -52,7 +52,9 @@ public class SearchMediaController(
     [AllowAnonymous]
     [ProducesResponseType<PictureScoredPoint[]>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> SearchAsync([FromBody] SearchDownloadRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> SearchAsync(
+        [FromBody] SearchDownloadRequest request,
+        CancellationToken cancellationToken = default)
     {
         using var downloadRequest = new HttpRequestMessage(HttpMethod.Get, request.MediaUrl);
         var pictureUri = new Uri(request.MediaUrl);
@@ -96,7 +98,9 @@ public class SearchMediaController(
     [ProducesResponseType<PictureScoredPoint[]>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status413PayloadTooLarge)]
-    public async Task<IActionResult> SearchAsync([FromForm] SearchUploadRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> SearchAsync(
+        [FromForm] SearchUploadRequest request,
+        CancellationToken cancellationToken = default)
     {
         if (!AllowedMimeTypes.Contains(request.Media.ContentType))
         {

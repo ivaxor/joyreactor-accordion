@@ -17,7 +17,9 @@ public class SearchEmbeddedController(SqlDatabaseContext sqlDatabaseContext)
     [AllowAnonymous]
     [ProducesResponseType<SearchEmbeddedResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> SearchAsync([FromBody] SearchEmbeddedRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> SearchAsync(
+        [FromBody] SearchEmbeddedRequest request,
+        CancellationToken cancellationToken)
     {
         var entityId = request.Type switch
         {

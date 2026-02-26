@@ -40,7 +40,9 @@ public class CrawlerTaskController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> CreateAsync([FromBody] CrawlerTaskCreateRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> CreateAsync(
+        [FromBody] CrawlerTaskCreateRequest request,
+        CancellationToken cancellationToken = default)
     {
         var api = await sqlDatabaseContext.Apis
             .AsNoTracking()
@@ -84,7 +86,9 @@ public class CrawlerTaskController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteAsync([FromRoute] Guid id, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> DeleteAsync(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken = default)
     {
         var crawlerTask = await sqlDatabaseContext.CrawlerTasks
             .AsNoTracking()
