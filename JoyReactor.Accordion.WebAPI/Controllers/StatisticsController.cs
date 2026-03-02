@@ -1,7 +1,6 @@
 ﻿using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Vector;
 using JoyReactor.Accordion.Logic.Database.Vector.Extensions;
-using JoyReactor.Accordion.Logic.Extensions;
 using JoyReactor.Accordion.WebAPI.Models.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -42,54 +41,38 @@ public class StatisticsController(
     {
         var statitics = new StatisticsResponse();
 
-        var (vectors,
-            parsedTags, emptyTags, parsedPosts,
-            parsedPostAttributePictures, parsedPostAttributeEmbeds,
-            parsedBandCamps, parsedCoubs, parsedSoundClouds, parsedVimeos, parsedYouTubes) = await TaskTyped.WhenAll(
-            qdrantClient.CountAsync(qdrantSettings.Value.CollectionName, cancellationToken),
+        var vectors = qdrantClient.CountAsync(qdrantSettings.Value.CollectionName, cancellationToken);
+        statitics.Vectors = Convert.ToInt32(await vectors);
 
-            sqlDatabaseContext.ParsedTags.CountAsync(cancellationToken),
-            sqlDatabaseContext.EmptyTags.CountAsync(cancellationToken),
-            sqlDatabaseContext.ParsedPosts.CountAsync(cancellationToken),
+        statitics.ParsedTags = await sqlDatabaseContext.ParsedTags.CountAsync(cancellationToken);
+        statitics.EmptyTags = await sqlDatabaseContext.EmptyTags.CountAsync(cancellationToken);
 
-            sqlDatabaseContext.ParsedPostAttributePictures
-                .GroupBy(_ => 1)
-                .Select(g => new
-                {
-                    Total = g.Count(),
-                    NoContent = g.Count(p => p.NoContent == true),
-                    Unsupported = g.Count(p => p.UnsupportedContent == true),
-                    WithVector = g.Count(p => p.IsVectorCreated == true),
-                    WithoutVector = g.Count(p => p.IsVectorCreated == false)
-                })
-                .FirstAsync(cancellationToken),
-            sqlDatabaseContext.ParsedPostAttributeEmbeds.CountAsync(cancellationToken),
+        statitics.ParsedPosts = await sqlDatabaseContext.ParsedPosts.CountAsync(cancellationToken);
 
-        sqlDatabaseContext.ParsedBandCamps.CountAsync(cancellationToken),
-            sqlDatabaseContext.ParsedCoubs.CountAsync(cancellationToken),
-            sqlDatabaseContext.ParsedSoundClouds.CountAsync(cancellationToken),
-            sqlDatabaseContext.ParsedVimeos.CountAsync(cancellationToken),
-            sqlDatabaseContext.ParsedYouTubes.CountAsync(cancellationToken));
-
-        statitics.Vectors = Convert.ToInt32(vectors);
-
-        statitics.ParsedTags = parsedTags;
-        statitics.EmptyTags = emptyTags;
-        statitics.ParsedPosts = parsedPosts;
-
+        var parsedPostAttributePictures = await sqlDatabaseContext.ParsedPostAttributePictures
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                Total = g.Count(),
+                NoContent = g.Count(p => p.NoContent == true),
+                Unsupported = g.Count(p => p.UnsupportedContent == true),
+                WithVector = g.Count(p => p.IsVectorCreated == true),
+                WithoutVector = g.Count(p => p.IsVectorCreated == false)
+            })
+            .FirstAsync(cancellationToken);
         statitics.ParsedPostAttributePictures = parsedPostAttributePictures.Total;
         statitics.ParsedPostAttributePicturesNoContent = parsedPostAttributePictures.NoContent;
         statitics.ParsedPostAttributePicturesUnsupported = parsedPostAttributePictures.Unsupported;
         statitics.ParsedPostAttributePicturesWithVector = parsedPostAttributePictures.WithVector;
         statitics.ParsedPostAttributePicturesWithoutVector = parsedPostAttributePictures.WithoutVector;
 
-        statitics.ParsedPostAttributeEmbeds = parsedPostAttributeEmbeds;
+        statitics.ParsedPostAttributeEmbeds = await sqlDatabaseContext.ParsedPostAttributeEmbeds.CountAsync(cancellationToken);
 
-        statitics.ParsedBandCamps = parsedBandCamps;
-        statitics.ParsedCoubs = parsedCoubs;
-        statitics.ParsedSoundClouds = parsedSoundClouds;
-        statitics.ParsedVimeos = parsedVimeos;
-        statitics.ParsedYouTubes = parsedYouTubes;
+        statitics.ParsedBandCamps = await sqlDatabaseContext.ParsedBandCamps.CountAsync(cancellationToken);
+        statitics.ParsedCoubs = await sqlDatabaseContext.ParsedCoubs.CountAsync(cancellationToken);
+        statitics.ParsedSoundClouds = await sqlDatabaseContext.ParsedSoundClouds.CountAsync(cancellationToken);
+        statitics.ParsedVimeos = await sqlDatabaseContext.ParsedVimeos.CountAsync(cancellationToken);
+        statitics.ParsedYouTubes = await sqlDatabaseContext.ParsedYouTubes.CountAsync(cancellationToken);
 
         return statitics;
     }

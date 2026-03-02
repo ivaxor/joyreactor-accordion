@@ -3,7 +3,6 @@ using FFMpegCore.Pipes;
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System.Net.Mime;
