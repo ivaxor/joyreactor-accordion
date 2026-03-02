@@ -150,6 +150,13 @@ public class MediaToVectorConverter(
             picture.UpdatedAt = DateTime.UtcNow;
             logger.LogWarning(ex, "Failed to create image for {PictureAttributeId} post attribute picture due to unsupported content.", picture.AttributeId);
         }
+        catch (ArgumentOutOfRangeException ex)
+        when (ex.Source == "SixLabors.ImageSharp" && ex.Message.Contains("DangerousGetRowSpan", StringComparison.Ordinal))
+        {
+            picture.UnsupportedContent = true;
+            picture.UpdatedAt = DateTime.UtcNow;
+            logger.LogWarning(ex, "Failed to create image for {PictureAttributeId} post attribute picture due to broken content.", picture.AttributeId);
+        }
         catch (Exception ex)
         {
             failedPictureAttributeIds.Add(picture.Id);
