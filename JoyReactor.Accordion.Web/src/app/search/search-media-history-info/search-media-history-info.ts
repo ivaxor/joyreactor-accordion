@@ -22,6 +22,9 @@ export class SearchMediaHistoryInfo implements OnChanges {
 
       this.historyRecordExtended = {
         ...this.historyRecord,
+        isJoyReactor: false,
+        previewUrl: null,
+        isPreviewVideo: false,
         isVideo: isVideo,
       };
     } else if (this.historyRecord.url) {
@@ -29,26 +32,24 @@ export class SearchMediaHistoryInfo implements OnChanges {
       const isVideo = url.pathname.endsWith('webm') || url.pathname.endsWith('mp4');
       const isJoyReactor = url.hostname.endsWith('joyreactor.cc') || url.hostname.endsWith('joyreactor.com');
 
-      if (isVideo && isJoyReactor) {
-        let newUrl = this.historyRecord.url;
-        if (url.pathname.includes('/picture-'))
-          newUrl = newUrl.replace('/picture-', '/static/picture-');
-        else if (url.pathname.includes('/webm/') && url.pathname.endsWith('.webm'))
-          newUrl = newUrl.replace('/webm/', '/static/').replace('.webm', '.jpeg');
-        else if (url.pathname.includes('/mp4/') && url.pathname.endsWith('.mp4'))
-          newUrl = newUrl.replace('/mp4/', '/static/').replace('.mp4', '.jpeg');
+      let previewUrl = this.historyRecord.url;
 
-        this.historyRecordExtended = {
-          ...this.historyRecord,
-          url: newUrl,
-          isVideo: false,
-        };
-      } else {
-        this.historyRecordExtended = {
-          ...this.historyRecord,
-          isVideo: isVideo,
-        };
+      if (isVideo && isJoyReactor) {
+        if (url.pathname.includes('/picture-'))
+          previewUrl = previewUrl.replace('/picture-', '/static/picture-');
+        else if (url.pathname.includes('/webm/') && url.pathname.endsWith('.webm'))
+          previewUrl = previewUrl.replace('/webm/', '/static/').replace('.webm', '.jpeg');
+        else if (url.pathname.includes('/mp4/') && url.pathname.endsWith('.mp4'))
+          previewUrl = previewUrl.replace('/mp4/', '/static/').replace('.mp4', '.jpeg');
       }
+
+      this.historyRecordExtended = {
+        ...this.historyRecord,
+        isJoyReactor: isJoyReactor,
+        previewUrl: previewUrl,
+        isPreviewVideo: isVideo && !isJoyReactor,
+        isVideo: isVideo,
+      };
     }
 
     this.historyRecordExtended.results = this.historyRecordExtended.results.sort((a, b) => a.postId! - b.postId!);
@@ -65,7 +66,11 @@ export class SearchMediaHistoryInfo implements OnChanges {
     } else if (this.historyRecord.url) {
       const url = new URL(this.historyRecord.url);
       const extension = url.pathname.split('.').pop()!;
-      return `https://img10.${result.hostName}/pics/post/static/picture-${result.postAttributeId}.${extension}`;
+
+      if (this.historyRecordExtended.isVideo)
+        return `https://img10.${result.hostName}/pics/post/static/picture-${result.postAttributeId}.${extension}`;
+      else
+        return `https://img10.${result.hostName}/pics/post/picture-${result.postAttributeId}.${extension}`;
     }
 
     return '';
@@ -73,5 +78,8 @@ export class SearchMediaHistoryInfo implements OnChanges {
 }
 
 export interface SearchMediaHistoryRecordExtended extends SearchMediaHistoryRecord {
+  isJoyReactor: boolean,
+  previewUrl: string | null,
+  isPreviewVideo: boolean,
   isVideo: boolean,
 }

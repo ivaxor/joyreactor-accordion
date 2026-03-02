@@ -1,8 +1,8 @@
 <div class="position-relative">
   @if (historyRecordExtended.url) {
   <a [href]="historyRecordExtended.url" target="_blank">
-    @if (historyRecordExtended.isVideo) { <video [src]="historyRecordExtended.url" class="img-fluid bg-dark"></video> }
-    @else if(!historyRecordExtended.isVideo) { <img [src]="historyRecordExtended.url" class="img-fluid bg-dark" /> }
+    @if (historyRecordExtended.isPreviewVideo) { <video [src]="historyRecordExtended.previewUrl" class="img-fluid bg-dark"></video> }
+    @else if(!historyRecordExtended.isPreviewVideo) { <img [src]="historyRecordExtended.previewUrl" class="img-fluid bg-dark" /> }
   </a>
   } @else if (historyRecordExtended.fileName) {
   <div class="ratio ratio-1x1">
