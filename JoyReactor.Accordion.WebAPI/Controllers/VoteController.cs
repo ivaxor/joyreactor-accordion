@@ -51,7 +51,7 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
             .Where(dpv => dpv.VotingClosed == false)
             .Where(dpv => dpv.CreatedAt > createdAfter)
             .Include(dpv => dpv.OriginalPicture)
-            .Include(dpv => dpv.DuplicatePictureId)
+            .Include(dpv => dpv.DuplicatePicture)
             .OrderBy(dpv => dpv.CreatedAt)
             .Take(10)
             .ToArrayAsync(cancellationToken);

@@ -47,6 +47,8 @@ public class DuplicatePictureDetector(
                 .Take(100)
                 .ToArrayAsync(cancellationToken);
 
+            logger.LogInformation("Starting searching duplicates for {PicturesCount} post attribute picture(s).", pictures.Length);
+
             foreach (var picture in pictures)
             {
                 var response = await qdrantClient.ScrollAsync(
@@ -113,11 +115,15 @@ public class DuplicatePictureDetector(
                     .Select(v => new DuplicatePictureVote(originalPoint, v))
                     .ToArray();
 
+                logger.LogInformation("Found {DuplicatesCount} duplicates for {PictureAttributeId} post attribute picture.", duplicateVectors.Length, originalPoint.PostAttributeId);
+
                 await sqlDatabaseContext.DuplicatePictureVotes.AddRangeAsync(votes, cancellationToken);
             }
 
             duplicatePictureIdIndex.Value = (pictures.Last().AttributeId + 1).ToString();
             await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation("{PicturesCount} post attribute picture(s) were searched for duplicates.", pictures.Length);
 
         } while (pictures.Length > 0);
     }
