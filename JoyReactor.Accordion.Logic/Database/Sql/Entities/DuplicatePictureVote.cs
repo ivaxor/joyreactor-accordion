@@ -56,11 +56,11 @@ public class DuplicatePictureVoteTypeConfiguration : IEntityTypeConfiguration<Du
         {
             t.HasCheckConstraint(
                 $"CK_{nameof(DuplicatePictureVote)}s_{nameof(DuplicatePictureVote.YesVotes)}",
-                $"cardinality(\"{nameof(DuplicatePictureVote.YesVotes)}\") = (SELECT count(*) FROM (SELECT DISTINCT unnest(\"{nameof(DuplicatePictureVote.YesVotes)}\")) AS dt)");
+                $"is_array_unique(\"{nameof(DuplicatePictureVote.YesVotes)}\")");
 
             t.HasCheckConstraint(
                 $"CK_{nameof(DuplicatePictureVote)}s_{nameof(DuplicatePictureVote.NoVotes)}",
-                $"cardinality(\"{nameof(DuplicatePictureVote.NoVotes)}\") = (SELECT count(*) FROM (SELECT DISTINCT unnest(\"{nameof(DuplicatePictureVote.NoVotes)}\")) AS dt)");
+                $"is_array_unique(\"{nameof(DuplicatePictureVote.NoVotes)}\")");
         });
 
         builder

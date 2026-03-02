@@ -44,8 +44,8 @@ public class ConfigTypeConfiguration : IEntityTypeConfiguration<Config>
                Id = 1.ToGuid(),
                Name = ConfigConstants.DuplicatePictureIdIndex,
                Value = "",
-               CreatedAt = DateTime.UtcNow,
-               UpdatedAt = DateTime.UtcNow,
+               CreatedAt = new DateTime(2026, 03, 02, 0, 0, 0, DateTimeKind.Utc),
+               UpdatedAt = new DateTime(2026, 03, 02, 0, 0, 0, DateTimeKind.Utc),
            });
     }
 }
