@@ -28,7 +28,7 @@ public class DuplicatePictureVoteTypeConfiguration : IEntityTypeConfiguration<Du
     {
         builder
             .HasOne(e => e.OriginalPicture)
-            .WithMany(e => e.DuplicateVotes)
+            .WithMany(e => e.VotesAsOriginal)
             .HasPrincipalKey(e => e.Id)
             .HasForeignKey(e => e.OriginalPictureId)
             .OnDelete(DeleteBehavior.Restrict)
@@ -36,7 +36,7 @@ public class DuplicatePictureVoteTypeConfiguration : IEntityTypeConfiguration<Du
 
         builder
             .HasOne(e => e.DuplicatePicture)
-            .WithMany(e => e.DuplicateVotes)
+            .WithMany(e => e.VotesAsDuplicate)
             .HasPrincipalKey(e => e.Id)
             .HasForeignKey(e => e.DuplicatePictureId)
             .OnDelete(DeleteBehavior.Restrict)
@@ -71,6 +71,7 @@ public class DuplicatePictureVoteTypeConfiguration : IEntityTypeConfiguration<Du
         builder
             .Property(e => e.CreatedAt)
             .IsRequired(true);
+
         builder
             .Property(e => e.UpdatedAt)
             .IsRequired(true);

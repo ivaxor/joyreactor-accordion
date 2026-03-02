@@ -75,6 +75,7 @@ public class ParsedPostEntityTypeConfiguration : IEntityTypeConfiguration<Parsed
         builder
             .Property(e => e.CreatedAt)
             .IsRequired(true);
+
         builder
             .Property(e => e.UpdatedAt)
             .IsRequired(true);

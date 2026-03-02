@@ -132,6 +132,7 @@ public class ParsedPostAttributeEmbeddedEntityTypeConfiguration : IEntityTypeCon
         builder
             .Property(e => e.CreatedAt)
             .IsRequired(true);
+
         builder
             .Property(e => e.UpdatedAt)
             .IsRequired(true);

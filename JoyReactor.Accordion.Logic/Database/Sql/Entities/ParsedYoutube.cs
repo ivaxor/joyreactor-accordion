@@ -48,6 +48,7 @@ public class ParsedYouTubeEntityTypeConfiguration : IEntityTypeConfiguration<Par
         builder
             .Property(e => e.CreatedAt)
             .IsRequired(true);
+
         builder
             .Property(e => e.UpdatedAt)
             .IsRequired(true);

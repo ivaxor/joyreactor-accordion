@@ -1,5 +1,4 @@
 ﻿using JoyReactor.Accordion.Logic.Database.Sql;
-using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using JoyReactor.Accordion.WebAPI.Models.Requests;
 using JoyReactor.Accordion.WebAPI.Models.Responses;
 using Microsoft.AspNetCore.Authorization;

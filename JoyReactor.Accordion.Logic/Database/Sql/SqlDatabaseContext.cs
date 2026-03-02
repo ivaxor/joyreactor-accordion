@@ -11,6 +11,8 @@ public partial class SqlDatabaseContext : DbContext
     }
 
     public DbSet<Api> Apis { get; set; }
+    public DbSet<Config> Configs { get; set; }
+
     public DbSet<CrawlerTask> CrawlerTasks { get; set; }
 
     public DbSet<ParsedPost> ParsedPosts { get; set; }

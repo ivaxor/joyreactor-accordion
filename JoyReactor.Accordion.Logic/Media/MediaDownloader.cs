@@ -1,5 +1,4 @@
-﻿using JoyReactor.Accordion.Logic.ApiClient.Models;
-using JoyReactor.Accordion.Logic.Database.Sql.Entities;
+﻿using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Polly;

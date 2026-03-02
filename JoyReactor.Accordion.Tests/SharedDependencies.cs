@@ -1,6 +1,4 @@
-﻿using GraphQL.Client.Http;
-using GraphQL.Client.Serializer.SystemTextJson;
-using JoyReactor.Accordion.Logic.ApiClient;
+﻿using JoyReactor.Accordion.Logic.ApiClient;
 using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using JoyReactor.Accordion.Logic.Media;

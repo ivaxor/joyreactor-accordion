@@ -53,6 +53,7 @@ public class ParsedBandCampEntityTypeConfiguration : IEntityTypeConfiguration<Pa
         builder
             .Property(e => e.CreatedAt)
             .IsRequired(true);
+
         builder
             .Property(e => e.UpdatedAt)
             .IsRequired(true);

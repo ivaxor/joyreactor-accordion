@@ -48,6 +48,7 @@ public class ParsedVimeoEntityTypeConfiguration : IEntityTypeConfiguration<Parse
         builder
             .Property(e => e.CreatedAt)
             .IsRequired(true);
+
         builder
             .Property(e => e.UpdatedAt)
             .IsRequired(true);

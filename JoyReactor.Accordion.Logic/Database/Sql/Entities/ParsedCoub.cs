@@ -48,6 +48,7 @@ public class ParsedCoubEntityTypeConfiguration : IEntityTypeConfiguration<Parsed
         builder
             .Property(e => e.CreatedAt)
             .IsRequired(true);
+
         builder
             .Property(e => e.UpdatedAt)
             .IsRequired(true);

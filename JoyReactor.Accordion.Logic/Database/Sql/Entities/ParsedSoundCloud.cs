@@ -53,6 +53,7 @@ public class ParsedSoundCloudEntityTypeConfiguration : IEntityTypeConfiguration<
         builder
             .Property(e => e.CreatedAt)
             .IsRequired(true);
+
         builder
             .Property(e => e.UpdatedAt)
             .IsRequired(true);

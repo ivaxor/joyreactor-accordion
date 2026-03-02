@@ -8,7 +8,6 @@ using JoyReactor.Accordion.WebAPI.BackgroudServices;
 using JoyReactor.Accordion.WebAPI.Controllers;
 using JoyReactor.Accordion.WebAPI.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using Serilog;
 using System.Collections.Frozen;
@@ -48,10 +47,11 @@ builder.Services.AddScoped<IPostParser, PostParser>();
 builder.Services.AddSingleton<IMediaReducer, MediaReducer>();
 builder.Services.AddSingleton<IOnnxVectorConverter, OnnxVectorConverter>();
 
+builder.Services.AddHostedService<CrawlerTaskHandler>();
+builder.Services.AddHostedService<DuplicatePictureDetector>();
+builder.Services.AddHostedService<MediaToVectorConverter>();
 builder.Services.AddHostedService<RootTagsCrawler>();
 builder.Services.AddHostedService<TagSubTagsCrawler>();
-builder.Services.AddHostedService<MediaToVectorConverter>();
-builder.Services.AddHostedService<CrawlerTaskHandler>();
 builder.Services.AddHostedService<VectorNormalizator>();
 builder.Services.AddHostedService<VectorPostAttributeCleaner>();
 
