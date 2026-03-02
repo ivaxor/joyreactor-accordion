@@ -1,6 +1,7 @@
 ﻿using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using JoyReactor.Accordion.Logic.Database.Vector;
+using JoyReactor.Accordion.Logic.Database.Vector.Entities;
 using JoyReactor.Accordion.WebAPI.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -24,9 +25,11 @@ public class DuplicatePictureDetector(
         await using var sqlDatabaseContext = serviceScope.ServiceProvider.GetRequiredService<SqlDatabaseContext>();
         var qdrantClient = serviceScope.ServiceProvider.GetRequiredService<IQdrantClient>();
 
+        var pictures = (ParsedPostAttributePicture[])null;
+
         do
         {
-            var duplicatePictureIdIndex = await sqlDatabaseContext.Configs.FirstAsync(c => c.Value == ConfigConstants.DuplicatePictureIdIndex, cancellationToken);
+            var duplicatePictureIdIndex = await sqlDatabaseContext.Configs.FirstAsync(c => c.Name == ConfigConstants.DuplicatePictureIdIndex, cancellationToken);
             if (string.IsNullOrWhiteSpace(duplicatePictureIdIndex.Value))
             {
                 var initialPicture = await sqlDatabaseContext.ParsedPostAttributePictures
@@ -37,9 +40,10 @@ public class DuplicatePictureDetector(
 
             var attributeIdFrom = int.Parse(duplicatePictureIdIndex.Value);
 
-            var pictures = await sqlDatabaseContext.ParsedPostAttributePictures
+            pictures = await sqlDatabaseContext.ParsedPostAttributePictures
                 .Where(ppap => ppap.IsVectorCreated == true)
-                .Where(ppap => ppap.AttributeId > attributeIdFrom)
+                .Where(ppap => ppap.AttributeId >= attributeIdFrom)
+                .OrderBy(ppap => ppap.AttributeId)
                 .Take(100)
                 .ToArrayAsync(cancellationToken);
 
@@ -55,7 +59,7 @@ public class DuplicatePictureDetector(
                             {
                                 Field = new FieldCondition()
                                 {
-                                    Key = "postId",
+                                    Key = "postAttributeId",
                                     Match = new Match() { Integer = picture.AttributeId }
                                 },
                             },
@@ -65,14 +69,31 @@ public class DuplicatePictureDetector(
                     payloadSelector: new WithPayloadSelector() { Enable = true },
                     cancellationToken: cancellationToken);
 
-                var vector = response.Result
-                    .OrderByDescending(r => r.Payload["contentVersion"].IntegerValue)
+                var latestVector = response.Result
+                    .OrderByDescending(p => p.Payload["contentVersion"].IntegerValue)
                     .First();
 
                 var similarVectors = await qdrantClient.RecommendAsync(
                     qdrantSettings.Value.CollectionName,
-                    positive: [new Guid(vector.Id.Uuid)],
-                    scoreThreshold: 0.95f,
+                    positive: [new Guid(latestVector.Id.Uuid)],
+                    filter: new Filter()
+                    {
+                        Must =
+                        {
+                            new Condition()
+                            {
+                                Field = new FieldCondition()
+                                {
+                                    Key = "postAttributeId",
+                                    Range = new Qdrant.Client.Grpc.Range()
+                                    {
+                                        Gt = picture.AttributeId
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scoreThreshold: 0.90f,
                     limit: 10,
                     vectorsSelector: new WithVectorsSelector() { Enable = false },
                     payloadSelector: new WithPayloadSelector() { Enable = true },
@@ -81,9 +102,23 @@ public class DuplicatePictureDetector(
                 if (similarVectors.Count == 0)
                     continue;
 
+                var originalPoint = new PictureRetrivedPoint(latestVector);
 
+                var duplicateVectors = similarVectors
+                    .Select(v => new PictureScoredPoint(v))
+                    .GroupBy(p => p.PostId, (key, collection) => collection.OrderByDescending(e => e.ContentVersion).First())
+                    .ToArray();
+
+                var votes = duplicateVectors
+                    .Select(v => new DuplicatePictureVote(originalPoint, v))
+                    .ToArray();
+
+                await sqlDatabaseContext.DuplicatePictureVotes.AddRangeAsync(votes, cancellationToken);
             }
 
-        } while (true);
+            duplicatePictureIdIndex.Value = (pictures.Last().AttributeId + 1).ToString();
+            await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
+
+        } while (pictures.Length > 0);
     }
 }

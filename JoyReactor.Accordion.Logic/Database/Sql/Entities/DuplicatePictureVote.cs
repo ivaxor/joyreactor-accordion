@@ -1,10 +1,26 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using JoyReactor.Accordion.Logic.Database.Vector.Entities;
+using JoyReactor.Accordion.Logic.Extensions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace JoyReactor.Accordion.Logic.Database.Sql.Entities;
 
 public record DuplicatePictureVote : ISqlUpdatedAtEntity
 {
+    public DuplicatePictureVote() { }
+
+    public DuplicatePictureVote(PictureRetrivedPoint original, PictureScoredPoint duplicate)
+    {
+        Id = Guid.NewGuid();
+        OriginalPictureId = original.PostAttributeId.Value.ToGuid();
+        DuplicatePictureId = duplicate.PostAttributeId.Value.ToGuid();
+        Score = duplicate.Score;
+        YesVotes = [];
+        NoVotes = [];
+        CreatedAt = DateTime.UtcNow;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public Guid Id { get; set; }
 
     public Guid OriginalPictureId { get; set; }
@@ -12,6 +28,8 @@ public record DuplicatePictureVote : ISqlUpdatedAtEntity
 
     public Guid DuplicatePictureId { get; set; }
     public virtual ParsedPostAttributePicture DuplicatePicture { get; set; }
+
+    public float Score { get; set; }
 
     public string[] YesVotes { get; set; }
     public string[] NoVotes { get; set; }

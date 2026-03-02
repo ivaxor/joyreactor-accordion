@@ -103,10 +103,11 @@ public static class HostApplicationBuilderExtensions
                         OnDisk = false,
                     }).GetAwaiter().GetResult();
 
+                client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "postAttributeId", schemaType: PayloadSchemaType.Integer).GetAwaiter().GetResult();
+
                 /*
                 client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "contentVersion", schemaType: PayloadSchemaType.Integer).GetAwaiter().GetResult();
-                client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "postId", schemaType: PayloadSchemaType.Integer).GetAwaiter().GetResult();
-                client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "postAttributeId", schemaType: PayloadSchemaType.Integer).GetAwaiter().GetResult();
+                client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "postId", schemaType: PayloadSchemaType.Integer).GetAwaiter().GetResult();                
                 client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "commentId", schemaType: PayloadSchemaType.Integer).GetAwaiter().GetResult();
                 client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "commentAttributeId", schemaType: PayloadSchemaType.Integer).GetAwaiter().GetResult();
                 client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "createdAt", schemaType: PayloadSchemaType.Datetime).GetAwaiter().GetResult();
