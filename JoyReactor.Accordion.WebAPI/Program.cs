@@ -97,4 +97,14 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/healthz");
 
+app.MapGet("/headers", (HttpContext context) =>
+{
+    var headerDict = new Dictionary<string, string>();
+    foreach (var header in context.Request.Headers)
+    {
+        headerDict.Add(header.Key, header.Value.ToString());
+    }
+    return Results.Ok(headerDict);
+});
+
 app.Run();
