@@ -10,22 +10,12 @@
 </div>
 } @else if(vote) {
 <div class="row">
-  <div class="col-6 text-center mb-3">
+  <div class="col-6 text-center">
     <h3>Оригинал ({{vote.originalPictureAttributeId}})</h3>
-    <div class="image-wrapper bg-dark">
-      <a [href]="originalImageUrl" target="_blank">
-        <img [src]="originalImageUrl" (load)="originalImageLoaded.set(true)" (error)="originalImageFailed()" class="img-fluid object-fit-cover w-100 h-100" />
-      </a>
-    </div>
   </div>
 
-  <div class="col-6 text-center mb-3">
+  <div class="col-6 text-center">
     <h3>Баян ({{vote.duplicatePictureAttributeId}})</h3>
-    <div class="image-wrapper bg-dark">
-      <a [href]="duplicateImageUrl" target="_blank">
-        <img [src]="duplicateImageUrl" (load)="duplicateImageLoaded.set(true)" (error)="duplicateImageFailed()" class="img-fluid object-fit-cover w-100 h-100" />
-      </a>
-    </div>
   </div>
 </div>
 
@@ -48,6 +38,24 @@
           Баян
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-3">
+  <div class="col-6 text-center">
+    <div class="bg-dark">
+      <a [href]="originalImageUrl" target="_blank">
+        <img [src]="originalImageUrl" (load)="originalImageLoaded.set(true)" (error)="originalImageFailed()" class="img-fluid object-fit-cover w-100 h-100" />
+      </a>
+    </div>
+  </div>
+
+  <div class="col-6 text-center image-wrapper">
+    <div class="bg-dark">
+      <a [href]="duplicateImageUrl" target="_blank">
+        <img [src]="duplicateImageUrl" (load)="duplicateImageLoaded.set(true)" (error)="duplicateImageFailed()" class="img-fluid object-fit-cover w-100 h-100" />
+      </a>
     </div>
   </div>
 </div>

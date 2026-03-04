@@ -13,7 +13,7 @@ export class VoteService {
   private http = inject(HttpClient);
 
   getAfter(createdAfter: string): Observable<VoteResponse[]> {
-    const url = `${this.configService.config!.apiRoot}/vote/`;
+    const url = `${this.configService.config!.apiRoot}/vote`;
     return this.http.get<VoteResponse[]>(url, { params: { createdAfter } });
   }
 
@@ -23,7 +23,7 @@ export class VoteService {
   }
 
   vote(id: string, yes: boolean): Observable<any> {
-    const url = `${this.configService.config!.apiRoot}/vote/`;
+    const url = `${this.configService.config!.apiRoot}/vote`;
     const request: VoteRequest = {
       id,
       yes,

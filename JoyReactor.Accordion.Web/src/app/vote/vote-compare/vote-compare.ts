@@ -2,7 +2,8 @@ import { ChangeDetectorRef, Component, inject, OnInit, signal } from '@angular/c
 import { VoteResponse } from '../../../services/vote-service/vote-response';
 import { JoyReactorMediaMetadataService } from '../../../services/joyreactor-media-metadata-service/joyreactor-media-metadata-service';
 import { VoteService } from '../../../services/vote-service/vote-service';
-import { catchError, of, tap, throwError } from 'rxjs';
+import { catchError, Observable, of, tap, throwError } from 'rxjs';
+import { Subscription } from 'dexie';
 
 @Component({
   selector: 'app-vote-compare',
@@ -67,10 +68,10 @@ export class VoteCompare implements OnInit {
     this.voteService.getAfter(afterDate)
       .subscribe(votes => {
         this.votes = votes.reverse();
-        if (this.votes.length > 0)
-          this.goToNextVote();
-        else
+        if (this.vote)
           this.changeDetector.markForCheck();
+        else
+          this.goToNextVote();
       });
   }
 
@@ -88,22 +89,21 @@ export class VoteCompare implements OnInit {
   }
 
   goToNextVote(): void {
+    const newVote = this.votes.pop()!;
+
+    if (this.vote?.originalPictureAttributeId !== newVote.originalPictureAttributeId)
+      this.originalImageLoaded.set(false);
+
+    if (this.vote?.duplicatePictureAttributeId !== newVote.duplicatePictureAttributeId)
+      this.duplicateImageLoaded.set(false);
+
+    this.originalImageUrl = this.joyReactorMediaMetadataService.createImageUrl(newVote.originalPictureAttributeId);
+    this.duplicateImageUrl = this.joyReactorMediaMetadataService.createImageUrl(newVote.duplicatePictureAttributeId);
+    this.vote = newVote;
+
     if (this.votes.length === 0)
       this.loadNewVotes();
-    else {
-      const newVote = this.votes.pop()!;
 
-      if (this.vote?.originalPictureAttributeId !== newVote.originalPictureAttributeId)
-        this.originalImageLoaded.set(false);
-
-      if (this.vote?.duplicatePictureAttributeId !== newVote.duplicatePictureAttributeId)
-        this.duplicateImageLoaded.set(false);
-
-      this.originalImageUrl = this.joyReactorMediaMetadataService.createImageUrl(newVote.originalPictureAttributeId);
-      this.duplicateImageUrl = this.joyReactorMediaMetadataService.createImageUrl(newVote.duplicatePictureAttributeId);
-      this.vote = newVote;
-
-      this.changeDetector.markForCheck();
-    }
+    this.changeDetector.markForCheck();
   }
 }
