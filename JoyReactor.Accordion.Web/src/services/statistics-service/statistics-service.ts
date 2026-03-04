@@ -12,6 +12,7 @@ export class StatisticsService {
   private http = inject(HttpClient);
 
   get(): Observable<StatisticsResponse> {
-    return this.http.get<StatisticsResponse>(`${this.configService.config!.apiRoot}/statistics`);
+    const url = `${this.configService.config!.apiRoot}/statistics`;
+    return this.http.get<StatisticsResponse>(url);
   }
 }
