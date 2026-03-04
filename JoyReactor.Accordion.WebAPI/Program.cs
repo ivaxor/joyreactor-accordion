@@ -24,6 +24,14 @@ builder.AddInferenceSession();
 builder.AddRateLimiter();
 builder.AddHealthChecks();
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+    options.ForwardLimit = 5;
+});
+
 var userAgent = $"JoyReactor.Accordion/{Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3)} (Bot; +https://github.com/ivaxor/joyreactor-accordion)";
 
 builder.Services.AddHttpClient();
@@ -75,9 +83,9 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+app.UseForwardedHeaders();
 app.UseSerilogRequestLogging();
 app.UseCors();
-app.UseForwardedHeaders(new ForwardedHeadersOptions { ForwardedHeaders = ForwardedHeaders.All });
 
 if (app.Environment.IsDevelopment())
 {
@@ -105,6 +113,12 @@ app.MapGet("/headers", (HttpContext context) =>
         headerDict.Add(header.Key, header.Value.ToString());
     }
     return Results.Ok(headerDict);
+});
+
+app.MapGet("/ip", (HttpContext context) =>
+{
+    var ip = context.Connection.RemoteIpAddress!.ToString();
+    return Results.Ok(ip);
 });
 
 app.Run();
