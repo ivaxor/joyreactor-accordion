@@ -7,5 +7,5 @@ export interface VoteResponse {
   yesVotes: number,
   noVotes: number,
 
-  createdAt: Date,
+  createdAt: string,
 }

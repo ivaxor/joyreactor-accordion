@@ -1,0 +1,54 @@
+@if (!votes) {
+<div class="text-center">
+  <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+    <span class="visually-hidden">Загрузка...</span>
+  </div>
+</div>
+} @else if (votes.length === 0 ) {
+<div class="text-center">
+  <h3>Пока-что это всё...</h3>
+</div>
+} @else if(vote) {
+<div class="row">
+  <div class="col-6 text-center mb-3">
+    <h3>Оригинал ({{vote.originalPictureAttributeId}})</h3>
+    <div class="image-wrapper bg-dark">
+      <a [href]="originalImageUrl" target="_blank">
+        <img [src]="originalImageUrl" (load)="originalImageLoaded.set(true)" (error)="originalImageFailed()" class="img-fluid object-fit-cover w-100 h-100" />
+      </a>
+    </div>
+  </div>
+
+  <div class="col-6 text-center mb-3">
+    <h3>Баян ({{vote.duplicatePictureAttributeId}})</h3>
+    <div class="image-wrapper bg-dark">
+      <a [href]="duplicateImageUrl" target="_blank">
+        <img [src]="duplicateImageUrl" (load)="duplicateImageLoaded.set(true)" (error)="duplicateImageFailed()" class="img-fluid object-fit-cover w-100 h-100" />
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-3">
+  <div class="col-12">
+    <div class="d-grid gap-2">
+      <div class="btn-group" role="group">
+        <button type="button" class="btn btn-success" [disabled]="!originalImageLoaded() || !duplicateImageLoaded()" (click)="submitVote(false)">
+          <i class="bi bi-check-circle"></i>
+          Не баян
+        </button>
+
+        <button type="button" class="btn btn-warning" (click)="goToNextVote()">
+          <i class="bi bi-skip-forward-fill"></i>
+          Пропустить
+        </button>
+
+        <button type="button" class="btn btn-danger" [disabled]="!originalImageLoaded() || !duplicateImageLoaded()" (click)="submitVote(true)">
+          <i class="bi bi-ban"></i>
+          Баян
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+}

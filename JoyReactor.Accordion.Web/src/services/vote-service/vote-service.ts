@@ -12,9 +12,9 @@ export class VoteService {
   private configService = inject(ConfigService);
   private http = inject(HttpClient);
 
-  getAfter(createdAfter: Date): Observable<VoteResponse[]> {
+  getAfter(createdAfter: string): Observable<VoteResponse[]> {
     const url = `${this.configService.config!.apiRoot}/vote/`;
-    return this.http.get<VoteResponse[]>(url, { params: { createdAfter: createdAfter.toISOString() } });
+    return this.http.get<VoteResponse[]>(url, { params: { createdAfter } });
   }
 
   getPage(page: number = 0): Observable<VoteResponse[]> {
