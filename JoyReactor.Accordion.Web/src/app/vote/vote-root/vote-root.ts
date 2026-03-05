@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { VoteCompare } from "../vote-compare/vote-compare";
 
 @Component({
@@ -7,4 +7,10 @@ import { VoteCompare } from "../vote-compare/vote-compare";
   templateUrl: './vote-root.html',
   styleUrl: './vote-root.scss',
 })
-export class VoteRoot { }
+export class VoteRoot {
+  started = signal(false);
+
+  start(): void {
+    this.started.set(true);
+  }
+}

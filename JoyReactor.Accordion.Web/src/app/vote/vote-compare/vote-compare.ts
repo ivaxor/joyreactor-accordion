@@ -60,6 +60,11 @@ export class VoteCompare implements OnInit {
   }
 
   setAfterDate(date: string): void {
+    const oldDate = new Date(this.getAfterDate());
+    const newDate = new Date(date);
+    if (newDate <= oldDate)
+      return;
+
     localStorage.setItem('voteAfterDate', date);
   }
 

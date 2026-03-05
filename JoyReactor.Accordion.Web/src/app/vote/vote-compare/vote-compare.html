@@ -1,21 +1,27 @@
 @if (!votes) {
 <div class="text-center">
   <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-    <span class="visually-hidden">Загрузка...</span>
+    <span i18n class="visually-hidden">Загрузка...</span>
   </div>
 </div>
 } @else if (votes.length === 0 ) {
 <div class="text-center">
-  <h3>Пока-что это всё...</h3>
+  <h3 i18n>Пока-что это всё...</h3>
 </div>
 } @else if(vote) {
 <div class="row">
   <div class="col-6 text-center">
-    <h3>Оригинал ({{vote.originalPictureAttributeId}})</h3>
+    <h3>
+      <span i18n>Оригинал</span>
+      ({{vote.originalPictureAttributeId}})
+    </h3>
   </div>
 
   <div class="col-6 text-center">
-    <h3>Баян ({{vote.duplicatePictureAttributeId}})</h3>
+    <h3>
+      <span i18n>Баян</span>
+      ({{vote.duplicatePictureAttributeId}})
+    </h3>
   </div>
 </div>
 
@@ -24,18 +30,18 @@
     <div class="d-grid gap-2">
       <div class="btn-group" role="group">
         <button type="button" class="btn btn-success" [disabled]="!originalImageLoaded() || !duplicateImageLoaded()" (click)="submitVote(false)">
-          <i class="bi bi-check-circle"></i>
-          Не баян
+          <i class="bi bi-check-circle"></i>&nbsp;
+          <span i18n>Не баян</span>
         </button>
 
         <button type="button" class="btn btn-warning" (click)="goToNextVote()">
-          <i class="bi bi-skip-forward-fill"></i>
-          Пропустить
+          <i class="bi bi-skip-forward-fill"></i>&nbsp;          
+          <span i18n>Пропустить</span>
         </button>
 
         <button type="button" class="btn btn-danger" [disabled]="!originalImageLoaded() || !duplicateImageLoaded()" (click)="submitVote(true)">
-          <i class="bi bi-ban"></i>
-          Баян
+          <i class="bi bi-ban"></i>&nbsp;
+          <span i18n>Баян</span>
         </button>
       </div>
     </div>
