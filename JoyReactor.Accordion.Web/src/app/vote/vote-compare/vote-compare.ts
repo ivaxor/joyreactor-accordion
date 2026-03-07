@@ -50,26 +50,8 @@ export class VoteCompare implements OnInit {
     }, 1000);
   }
 
-  getAfterDate(): string {
-    const voteAfterDate = localStorage.getItem('voteAfterDate');
-    if (voteAfterDate)
-      return voteAfterDate;
-    else
-      return new Date(2026, 0, 1, 1, 0, 0, 0).toISOString();
-  }
-
-  setAfterDate(date: string): void {
-    const oldDate = new Date(this.getAfterDate());
-    const newDate = new Date(date);
-    if (newDate <= oldDate)
-      return;
-
-    localStorage.setItem('voteAfterDate', date);
-  }
-
   loadNewVotes(): void {
-    const afterDate = this.getAfterDate();
-    this.voteService.getAfter(afterDate)
+    this.voteService.getAfter()
       .subscribe(votes => {
         this.votes = votes.reverse();
         if (this.vote)
@@ -80,15 +62,7 @@ export class VoteCompare implements OnInit {
   }
 
   submitVote(yes: boolean): void {
-    this.voteService.vote(this.vote!.id, yes)
-      .pipe(
-        catchError((error) => {
-          if (error?.status === 409)
-            return of(null);
-
-          return throwError(() => error);
-        }),
-        tap(() => this.setAfterDate(this.vote!.createdAt)))
+    this.voteService.vote(this.vote!, yes)
       .subscribe(() => this.goToNextVote());
   }
 

@@ -5,12 +5,16 @@
   </div>
 </div>
 } @else {
-<table class="table table-light">
+<table class="table table-sm table-light table-striped table-hover">
   <thead>
     <tr>
       <th class="text-end">Оригинал</th>
       <th class="text-end">Дубликат</th>
+      <th class="text-center">Результат</th>
       <th class="text-center">Да / Нет</th>
+      @if (apiKeySet) {
+      <th class="text-end">Действия</th>
+      }
     </tr>
   </thead>
   <tbody>
@@ -29,8 +33,30 @@
       </td>
 
       <td class="text-center">
+        @if (vote.yesVotes > vote.noVotes) {
+        <span>🪗</span>
+        }
+        @if (vote.noVotes > vote.yesVotes) {
+        <span>🆗</span>
+        }
+      </td>
+
+      <td class="text-center">
         {{vote.yesVotes}} / {{vote.noVotes}}
       </td>
+
+      @if (apiKeySet) {
+      <td class="text-end">
+        <div class="btn-group" role="group">
+          <button type="button" class="btn btn-sm btn-info" (click)="open(vote)">
+            <i class="bi bi-book-half"></i>
+          </button>
+          <button type="button" class="btn btn-sm btn-danger" (click)="close(vote)">
+            <i class="bi bi-sign-stop"></i>
+          </button>
+        </div>
+      </td>
+      }
     </tr>
     }
   </tbody>
