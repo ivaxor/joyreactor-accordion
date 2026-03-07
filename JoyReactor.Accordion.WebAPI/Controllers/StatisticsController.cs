@@ -57,7 +57,7 @@ public class StatisticsController(
                 NoContent = g.Count(p => p.NoContent == true),
                 Unsupported = g.Count(p => p.UnsupportedContent == true),
                 WithVector = g.Count(p => p.IsVectorCreated == true),
-                WithoutVector = g.Count(p => p.IsVectorCreated == false)
+                WithoutVector = g.Count(p => p.IsVectorCreated == false && p.NoContent == false && p.UnsupportedContent == false)
             })
             .FirstAsync(cancellationToken);
         statitics.ParsedPostAttributePictures = parsedPostAttributePictures.Total;

@@ -151,7 +151,9 @@ public class MediaToVectorConverter(
             logger.LogWarning(ex, "Failed to create image for {PictureAttributeId} post attribute picture due to unsupported content.", picture.AttributeId);
         }
         catch (ArgumentOutOfRangeException ex)
-        when (ex.Source == "SixLabors.ImageSharp" && ex.Message.Contains("DangerousGetRowSpan", StringComparison.Ordinal))
+        when (
+        (ex.Source == "SixLabors.ImageSharp" && ex.Message.Contains("DangerousGetRowSpan", StringComparison.Ordinal)) ||
+        (ex.Source == "System.Private.CoreLib" && ex.Message == "Specified argument was out of the range of valid values."))
         {
             picture.UnsupportedContent = true;
             picture.UpdatedAt = DateTime.UtcNow;
