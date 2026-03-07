@@ -1,1 +1,54 @@
-<p>vote-pager works!</p>
+@if (!votes()) {
+<div class="text-center">
+  <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+    <span i18n class="visually-hidden">Загрузка...</span>
+  </div>
+</div>
+} @else {
+<table class="table table-light">
+  <thead>
+    <tr>
+      <th class="text-end">Оригинал</th>
+      <th class="text-end">Дубликат</th>
+      <th class="text-center">Да / Нет</th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (vote of votes(); track $index) {
+    <tr>
+      <td class="text-end">
+        <a [href]="joyReactorMediaMetadataService.createImageUrl(vote.originalPictureAttributeId)">
+          {{vote.originalPictureAttributeId}}
+        </a>
+      </td>
+
+      <td class="text-end">
+        <a [href]="joyReactorMediaMetadataService.createImageUrl(vote.duplicatePictureAttributeId)">
+          {{vote.duplicatePictureAttributeId}}
+        </a>
+      </td>
+
+      <td class="text-center">
+        {{vote.yesVotes}} / {{vote.noVotes}}
+      </td>
+    </tr>
+    }
+  </tbody>
+</table>
+}
+
+<div class="text-center">
+  <div class="btn-group" role="group">
+    @if (page() > 3) {
+    <button type="button" class="btn btn-primary" (click)="goToPage(0)">0</button>
+    <button type="button" class="btn btn-primary" disabled>...</button>
+    }
+
+    @if (page() > 0) {
+    <button type="button" class="btn btn-primary" (click)="goToPage(page() - 1)">{{page() - 1}}</button>
+    }
+
+    <button type="button" class="btn btn-secondary">{{page()}}</button>
+    <button type="button" class="btn btn-primary" (click)="goToPage(page() + 1)">{{page() + 1}}</button>
+  </div>
+</div>

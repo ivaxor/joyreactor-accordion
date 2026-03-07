@@ -25,6 +25,7 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
 
         var votes = await sqlDatabaseContext.DuplicatePictureVotes
             .AsNoTracking()
+            .Where(dpv => dpv.VotingClosed == false)
             .Include(dpv => dpv.OriginalPicture)
             .Include(dpv => dpv.DuplicatePicture)
             .OrderBy(dpv => dpv.CreatedAt)
