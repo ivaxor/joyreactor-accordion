@@ -60,6 +60,7 @@ public class MediaDownloader(
         ParsedPostAttributePictureType.TIFF,
         ParsedPostAttributePictureType.MP4,
         ParsedPostAttributePictureType.WEBM,
+        ParsedPostAttributePictureType.WEBP,
     }.ToFrozenSet();
 
     protected static readonly FrozenDictionary<ParsedPostAttributePictureType, string> PictureTypeToExtensions = PictureTypes

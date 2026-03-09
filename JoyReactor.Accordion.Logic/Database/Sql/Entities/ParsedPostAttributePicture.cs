@@ -22,6 +22,7 @@ public record ParsedPostAttributePicture : ISqlUpdatedAtEntity, IParsedPostAttri
             "TIFF" => ParsedPostAttributePictureType.TIFF,
             "MP4" => ParsedPostAttributePictureType.MP4,
             "WEBM" => ParsedPostAttributePictureType.WEBM,
+            "WEBP" => ParsedPostAttributePictureType.WEBP,
             _ => throw new NotImplementedException(),
         };
         PostId = post.Id;
@@ -58,6 +59,7 @@ public enum ParsedPostAttributePictureType
     TIFF,
     MP4,
     WEBM,
+    WEBP,
 }
 
 public class ParsedPostAttributePictureEntityTypeConfiguration : IEntityTypeConfiguration<ParsedPostAttributePicture>

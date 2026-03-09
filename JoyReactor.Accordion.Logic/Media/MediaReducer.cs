@@ -29,6 +29,7 @@ public class MediaReducer(IOptions<MediaSettings> settings)
             case ParsedPostAttributePictureType.GIF:
             case ParsedPostAttributePictureType.BMP:
             case ParsedPostAttributePictureType.TIFF:
+            case ParsedPostAttributePictureType.WEBP:
                 return ReducePictureAsync(stream, cancellationToken);
 
             case ParsedPostAttributePictureType.MP4:

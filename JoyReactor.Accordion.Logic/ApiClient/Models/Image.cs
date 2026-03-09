@@ -7,7 +7,7 @@ public record Image : NodeResponseObject
 {
     /// <summary>
     /// Possible value:
-    /// PNG, JPEG, GIF, BMP, TIFF,
+    /// PNG, JPEG, GIF, BMP, TIFF, WEBP
     /// MP4, WEBM
     /// </summary>
     [JsonPropertyName("type")]

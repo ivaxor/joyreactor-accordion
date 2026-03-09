@@ -33,6 +33,7 @@ public class MediaToVectorConverter(
         ParsedPostAttributePictureType.TIFF,
         ParsedPostAttributePictureType.MP4,
         ParsedPostAttributePictureType.WEBM,
+        ParsedPostAttributePictureType.WEBP,
     ];
 
     protected override async Task RunAsync(CancellationToken cancellationToken)
