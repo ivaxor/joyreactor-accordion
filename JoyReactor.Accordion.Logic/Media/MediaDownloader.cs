@@ -76,6 +76,7 @@ public class MediaDownloader(
         MediaTypeNames.Image.Tiff,
         "video/mp4",
         "video/webm",
+        MediaTypeNames.Image.Webp,
     }.ToFrozenSet();
 
     public async Task<Image<Rgb24>> DownloadAsync(ParsedPostAttributePicture picture, CancellationToken cancellationToken)

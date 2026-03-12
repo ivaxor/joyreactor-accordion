@@ -11,6 +11,7 @@ using Microsoft.Extensions.Options;
 using Qdrant.Client;
 using System.Collections.Frozen;
 using System.Net.Mime;
+using System.Runtime.CompilerServices;
 
 namespace JoyReactor.Accordion.WebAPI.Controllers;
 
@@ -22,7 +23,8 @@ public class SearchMediaController(
     IMediaReducer mediaReducer,
     IOnnxVectorConverter onnxVectorConverter,
     IQdrantClient qdrantClient,
-    IOptions<QdrantSettings> qdrantSettings)
+    IOptions<QdrantSettings> qdrantSettings,
+    ILogger<SearchMediaController> logger)
     : ControllerBase
 {
     protected const int FileSizeLimit = 5 * 1024 * 1024;
@@ -35,6 +37,7 @@ public class SearchMediaController(
         MediaTypeNames.Image.Tiff,
         "video/mp4",
         "video/webm",
+        MediaTypeNames.Image.Webp,
     }.ToFrozenSet();
     protected static readonly FrozenSet<string> AllowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
@@ -42,10 +45,11 @@ public class SearchMediaController(
         "jpeg",
         "jpg",
         "gif",
-        "tiff",
         "bmp",
+        "tiff",        
         "mp4",
         "webm",
+        "webp",
     }.ToFrozenSet();
 
     [HttpPost("download")]
@@ -87,7 +91,7 @@ public class SearchMediaController(
         }
 
         await using var stream = await downloadResponse.Content.ReadAsStreamAsync(cancellationToken);
-        var results = await SearchAsync(mediaType, stream, request.Threshold, cancellationToken);
+        var results = await SearchAsync(mediaType, stream, request.Threshold, cancellationToken).ToArrayAsync(cancellationToken);
         return Ok(results);
     }
 
@@ -116,11 +120,15 @@ public class SearchMediaController(
         }
 
         await using var stream = request.Media.OpenReadStream();
-        var results = await SearchAsync(request.Media.ContentType, stream, request.Threshold, cancellationToken);
+        var results = await SearchAsync(request.Media.ContentType, stream, request.Threshold, cancellationToken).ToArrayAsync(cancellationToken);
         return Ok(results);
     }
 
-    protected async Task<PictureScoredPoint[]> SearchAsync(string mimeType, Stream stream, float threshold, CancellationToken cancellationToken)
+    protected async IAsyncEnumerable<PictureScoredPoint> SearchAsync(
+        string mimeType,
+        Stream stream,
+        float threshold,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         await using var boundedStream = new FileBufferingReadStream(stream, FileSizeLimit);
         await boundedStream.DrainAsync(cancellationToken);
@@ -130,6 +138,18 @@ public class SearchMediaController(
         var vector = await onnxVectorConverter.ConvertAsync(processedImage);
         var results = await qdrantClient.SearchAsync(qdrantSettings.Value.CollectionName, qdrantSettings.Value.SearchLimit, threshold, vector, cancellationToken);
 
-        return results;
+        var groupedResults = results.GroupBy(g => g.PostAttributeId).ToArray();
+        foreach (var groupedResult in groupedResults)
+        {
+            if (groupedResult.Count() > 1)
+            {
+                var postIds = groupedResult.Select(r => r.PostId);
+                var postAttributeIds = groupedResult.Select(r => r.PostAttributeId);
+
+                logger.LogWarning("Duplicates found in result search. PostIds: {PostIds}. PostAttributeIds: {PostAttributeId}.", postIds, postAttributeIds);
+            }
+
+            yield return groupedResult.First();
+        }
     }
 }

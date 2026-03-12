@@ -18,7 +18,7 @@ export class SearchMedia {
   @Output() onFileSelected = new EventEmitter<File>();
   @ViewChild("fileInput", { read: ElementRef }) fileInput!: ElementRef<HTMLInputElement>;
 
-  allowedTypes: string[] = ['image/png', 'image/jpeg', 'image/gif', 'image/bmp', 'image/tiff', 'video/mp4', 'video/webm'];
+  allowedTypes: string[] = ['image/png', 'image/jpeg', 'image/gif', 'image/bmp', 'image/tiff', 'video/mp4', 'video/webm', 'image/webp'];
   isDragging: boolean = false;
   file: File | null = null;
   url: string = '';

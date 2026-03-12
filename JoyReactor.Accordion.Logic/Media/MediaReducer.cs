@@ -50,6 +50,7 @@ public class MediaReducer(IOptions<MediaSettings> settings)
             case MediaTypeNames.Image.Gif:
             case MediaTypeNames.Image.Bmp:
             case MediaTypeNames.Image.Tiff:
+            case MediaTypeNames.Image.Webp:
                 return ReducePictureAsync(stream, cancellationToken);
 
             case "video/mp4":
