@@ -1,1 +1,25 @@
-<p>search-embedded-history-info works!</p>
+<div class="position-relative">
+  @if (iframeUrl) {
+  <div class="ratio ratio-16x9">
+    <iframe [src]="iframeUrl" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen frameborder="0"></iframe>
+  </div>
+  }
+
+  <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-info" [class.bg-info]="historyRecord.postIds.length === 0" [class.bg-danger]="historyRecord.postIds.length > 0">
+    {{historyRecord.createdAt | date:'short'}}
+    @if (historyRecord.postIds.length > 0) {
+    |
+    {{historyRecord.postIds.length}}🪗
+    }
+  </span>
+
+  @if (historyRecord.postIds.length > 0) {
+  <div class="row g-1 pb-1 rounded border-start border-bottom border-end border-primary">
+    @for (postId of historyRecord.postIds; track $index) {
+    <div class="col-6 col-lg-4 text-center">
+      <a [href]="joyReactorMediaMetadataService.getPostUrl(postId)">{{postId}}</a>
+    </div>
+    }
+  </div>
+  }
+</div>
