@@ -7,7 +7,10 @@ public record PictureRetrivedPoint
 {
     public PictureRetrivedPoint() { }
 
-    public PictureRetrivedPoint(RetrievedPoint retrievedPoint) : this(retrievedPoint.Payload) { }
+    public PictureRetrivedPoint(RetrievedPoint retrievedPoint) : this(retrievedPoint.Payload)
+    {
+        PointId = new Guid(retrievedPoint.Id.Uuid);
+    }
 
     public PictureRetrivedPoint(MapField<string, Value> payload)
     {
@@ -35,6 +38,8 @@ public record PictureRetrivedPoint
             ? Convert.ToInt32(commentAttributeIdValue.IntegerValue)
             : null;
     }
+
+    public Guid PointId { get; set; }
 
     public string HostName { get; set; }
 

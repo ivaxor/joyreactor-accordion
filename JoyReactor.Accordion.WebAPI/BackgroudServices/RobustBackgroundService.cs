@@ -1,17 +1,28 @@
-﻿
-using JoyReactor.Accordion.WebAPI.Models;
+﻿using JoyReactor.Accordion.WebAPI.Models;
 using Microsoft.Extensions.Options;
 
 namespace JoyReactor.Accordion.WebAPI.BackgroudServices;
 
-public abstract class RobustBackgroundService(
+public abstract class RobustBackgroundService : BackgroundService
+{
+    private readonly IOptions<BackgroundServiceSettings> settings;
+    private readonly ILogger<RobustBackgroundService> logger;
+
+    protected readonly PeriodicTimer PeriodicTimer;
+    protected abstract bool IsIndefinite { get; }
+
+    protected virtual TimeSpan SubsequentRunDelay => settings.Value.SubsequentRunDelay;
+    protected bool IsEnabled => settings.Value.ServiceNamesEnabled.TryGetValue(GetType().Name, out var enabled) && enabled == true;
+
+    public RobustBackgroundService(
     IOptions<BackgroundServiceSettings> settings,
     ILogger<RobustBackgroundService> logger)
-    : BackgroundService
-{
-    protected readonly PeriodicTimer PeriodicTimer = new PeriodicTimer(settings.Value.SubsequentRunDelay);
-    protected abstract bool IsIndefinite { get; }
-    protected bool IsEnabled => settings.Value.ServiceNamesEnabled.TryGetValue(GetType().Name, out var enabled) && enabled == true;
+    {
+        this.settings = settings;
+        this.logger = logger;
+
+        PeriodicTimer = new PeriodicTimer(SubsequentRunDelay);
+    }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {

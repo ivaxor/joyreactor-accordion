@@ -46,7 +46,7 @@ public class SearchMediaController(
         "jpg",
         "gif",
         "bmp",
-        "tiff",        
+        "tiff",
         "mp4",
         "webm",
         "webp",
@@ -91,7 +91,7 @@ public class SearchMediaController(
         }
 
         await using var stream = await downloadResponse.Content.ReadAsStreamAsync(cancellationToken);
-        var results = await SearchAsync(mediaType, stream, request.Threshold, cancellationToken).ToArrayAsync(cancellationToken);
+        var results = await SearchAsync(mediaType, stream, request.Limit, request.Threshold, cancellationToken).ToArrayAsync(cancellationToken);
         return Ok(results);
     }
 
@@ -120,13 +120,14 @@ public class SearchMediaController(
         }
 
         await using var stream = request.Media.OpenReadStream();
-        var results = await SearchAsync(request.Media.ContentType, stream, request.Threshold, cancellationToken).ToArrayAsync(cancellationToken);
+        var results = await SearchAsync(request.Media.ContentType, stream, request.Limit, request.Threshold, cancellationToken).ToArrayAsync(cancellationToken);
         return Ok(results);
     }
 
     protected async IAsyncEnumerable<PictureScoredPoint> SearchAsync(
         string mimeType,
         Stream stream,
+        int limit,
         float threshold,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
@@ -136,7 +137,7 @@ public class SearchMediaController(
 
         using var processedImage = await mediaReducer.ReduceAsync(mimeType, boundedStream, cancellationToken);
         var vector = await onnxVectorConverter.ConvertAsync(processedImage);
-        var results = await qdrantClient.SearchAsync(qdrantSettings.Value.CollectionName, qdrantSettings.Value.SearchLimit, threshold, vector, cancellationToken);
+        var results = await qdrantClient.SearchAsync(qdrantSettings.Value.CollectionName, limit, threshold, vector, cancellationToken);
 
         var groupedResults = results.GroupBy(g => g.PostAttributeId).ToArray();
         foreach (var groupedResult in groupedResults)

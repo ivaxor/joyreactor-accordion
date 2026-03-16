@@ -61,7 +61,6 @@ builder.Services.AddHostedService<MediaToVectorConverter>();
 builder.Services.AddHostedService<RootTagsCrawler>();
 builder.Services.AddHostedService<TagSubTagsCrawler>();
 builder.Services.AddHostedService<VectorNormalizator>();
-builder.Services.AddHostedService<VectorPostAttributeCleaner>();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddAuthentication()

@@ -33,6 +33,7 @@ public class DuplicatePictureDetector(
             if (string.IsNullOrWhiteSpace(duplicatePictureIdIndex.Value))
             {
                 var initialPicture = await sqlDatabaseContext.ParsedPostAttributePictures
+                    .AsNoTracking()
                     .OrderBy(ppap => ppap.AttributeId)
                     .FirstAsync(cancellationToken);
                 duplicatePictureIdIndex.Value = initialPicture.AttributeId.ToString();
@@ -41,6 +42,7 @@ public class DuplicatePictureDetector(
             var attributeIdFrom = int.Parse(duplicatePictureIdIndex.Value);
 
             pictures = await sqlDatabaseContext.ParsedPostAttributePictures
+                .AsNoTracking()
                 .Where(ppap => ppap.IsVectorCreated == true)
                 .Where(ppap => ppap.AttributeId >= attributeIdFrom)
                 .OrderBy(ppap => ppap.AttributeId)
@@ -70,6 +72,9 @@ public class DuplicatePictureDetector(
                     vectorsSelector: new WithVectorsSelector() { Enable = false },
                     payloadSelector: new WithPayloadSelector() { Enable = true },
                     cancellationToken: cancellationToken);
+
+                if (response.Result.Count == 0)
+                    logger.LogError("Failed to find vector for {PictureAttributeId} post attribute picture.", picture.AttributeId);
 
                 var latestVector = response.Result
                     .OrderByDescending(p => p.Payload["contentVersion"].IntegerValue)

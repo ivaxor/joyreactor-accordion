@@ -1,8 +1,14 @@
-﻿using JoyReactor.Accordion.Logic.Database.Vector;
+﻿using JoyReactor.Accordion.Logic.Database.Sql;
+using JoyReactor.Accordion.Logic.Database.Sql.Entities;
+using JoyReactor.Accordion.Logic.Database.Vector;
+using JoyReactor.Accordion.Logic.Database.Vector.Entities;
 using JoyReactor.Accordion.WebAPI.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Qdrant.Client;
 using Qdrant.Client.Grpc;
+using System.Collections.Frozen;
+using Range = Qdrant.Client.Grpc.Range;
 
 namespace JoyReactor.Accordion.WebAPI.BackgroudServices;
 
@@ -13,79 +19,123 @@ public class VectorNormalizator(
     ILogger<VectorNormalizator> logger)
     : RobustBackgroundService(settings, logger)
 {
-    protected override bool IsIndefinite => true;
+    protected override TimeSpan SubsequentRunDelay => TimeSpan.FromDays(1);
+    protected override bool IsIndefinite => false;
+    protected const int BatchSize = 100_000;
 
     protected override async Task RunAsync(CancellationToken cancellationToken)
     {
         await using var serviceScope = serviceScopeFactory.CreateAsyncScope();
+        using var sqlDatabaseContext = serviceScope.ServiceProvider.GetRequiredService<SqlDatabaseContext>();
         var qdrantClient = serviceScope.ServiceProvider.GetRequiredService<IQdrantClient>();
 
-        var scrollOffset = (PointId)null;
-        var scrollResponse = (ScrollResponse)null;
+        var fromAttributeId = 0;
+        var toAttributeId = BatchSize;
+
+        Dictionary<int, ParsedPostAttributePicture> postAttributeByAttributeId = null;
         do
         {
-            var updatedPoints = new List<PointStruct>();
-            scrollResponse = await qdrantClient.ScrollAsync(
+            var postAttributesChangeCount = 0;
+            postAttributeByAttributeId = await sqlDatabaseContext.ParsedPostAttributePictures
+                .Include(picture => picture.Post)
+                .Where(picture => picture.AttributeId >= fromAttributeId && picture.AttributeId < toAttributeId)
+                .OrderBy(picture => picture.AttributeId)
+                .ToDictionaryAsync(picture => picture.AttributeId, cancellationToken);
+
+            var scrollResponse = await qdrantClient.ScrollAsync(
                 collectionName: qdrantSettings.Value.CollectionName,
-                limit: 1000,
-                filter: new Filter
+                filter: new Filter()
                 {
-                    Should = {
-                        new Condition { Field = new FieldCondition() { Key = "postIds", IsEmpty = false } },
-                        new Condition { Field = new FieldCondition() { Key = "attributeIds", IsEmpty = false } },
-                        new Condition { Field = new FieldCondition() { Key = "hostName", IsEmpty = true } },
+                    Must =
+                    {
+                    new Condition()
+                    {
+                        Field = new FieldCondition()
+                        {
+                            Key = "postAttributeId",
+                            Range = new Range()
+                            {
+                                Gte = fromAttributeId,
+                                Lt = toAttributeId,
+                            }
+                        }
+                    }
                     }
                 },
-                offset: scrollOffset,
-                vectorsSelector: true,
+                limit: BatchSize * 2,
+                vectorsSelector: false,
                 payloadSelector: true,
+                orderBy: new OrderBy()
+                {
+                    Key = "postAttributeId",
+                    Direction = Direction.Asc,
+                },
                 cancellationToken: cancellationToken);
+            var retrivedPoints = scrollResponse.Result.Select(p => new PictureRetrivedPoint(p)).ToArray();
 
-            logger.LogInformation("Normalizing {VectorCount} vector payload(s).", scrollResponse.Result.Count);
-            foreach (var scrollPoint in scrollResponse.Result)
+            logger.LogInformation("Checking {VectorCount} vector(s) agains {SqlCount} SQL record(s) for cleanup.", retrivedPoints.Length, postAttributeByAttributeId.Count);
+
+            var retrivedPointsByPostAttributeId = retrivedPoints
+                .GroupBy(p => p.PostAttributeId.Value)
+                .ToDictionary(g => g.Key, g => g.OrderBy(p => p.ContentVersion).ToArray())
+                .ToFrozenDictionary();
+
+            var oldContentVersionPointIds = new List<Guid>();
+            foreach (var (postAttributeId, points) in retrivedPointsByPostAttributeId)
             {
-                var isUpdated = false;
-                if (scrollPoint.Payload.TryGetValue("postIds", out var postIdsValue) && postIdsValue.KindCase == Value.KindOneofCase.ListValue)
+                if (!postAttributeByAttributeId.ContainsKey(postAttributeId))
                 {
-                    scrollPoint.Payload["postId"] = new Value() { IntegerValue = int.Parse(postIdsValue.ListValue.Values.Single().StringValue) };
-                    scrollPoint.Payload.Remove("postIds");
-                    isUpdated = true;
+                    var pointIds = points.Select(p => p.PointId).ToArray();
+                    oldContentVersionPointIds.AddRange(pointIds);
                 }
-
-                if (scrollPoint.Payload.TryGetValue("attributeIds", out var postAttributeIds) && postAttributeIds.KindCase == Value.KindOneofCase.ListValue)
+                else if (points.Length != 1)
                 {
-                    scrollPoint.Payload["postAttributeId"] = new Value() { IntegerValue = int.Parse(postAttributeIds.ListValue.Values.Single().StringValue) };
-                    scrollPoint.Payload.Remove("attributeIds");
-                    isUpdated = true;
+                    var pointIds = points.SkipLast(1).Select(p => p.PointId).ToArray();
+                    oldContentVersionPointIds.AddRange(pointIds);
                 }
+            }
 
-                if (!scrollPoint.Payload.ContainsKey("hostName"))
-                {
-                    scrollPoint.Payload["hostName"] = new Value() { StringValue = "joyreactor.cc" };
-                    isUpdated = true;
-                }
-
-                if (!isUpdated)
+            foreach (var (postAttributeId, postAttribute) in postAttributeByAttributeId)
+            {
+                if (!postAttribute.IsVectorCreated)
                     continue;
 
-                var pointStruct = new PointStruct();
-                pointStruct.Id = scrollPoint.Id;
-                pointStruct.Vectors = new Vectors() { Vector = new Vector() { Data = { scrollPoint.Vectors.Vector.Data } } };
-                pointStruct.Payload.Add(scrollPoint.Payload);
-                updatedPoints.Add(pointStruct);
+                if (retrivedPointsByPostAttributeId.TryGetValue(postAttributeId, out var existingRetrivedPoints))
+                {
+                    var latestContentVersionRetrivedPoint = existingRetrivedPoints.Last();
+                    if (latestContentVersionRetrivedPoint.ContentVersion == postAttribute.Post.ContentVersion)
+                        continue;
+
+                    oldContentVersionPointIds.Add(latestContentVersionRetrivedPoint.PointId);
+                    postAttribute.IsVectorCreated = false;
+                    postAttribute.UpdatedAt = DateTime.UtcNow;
+                    postAttributesChangeCount++;
+                }
+                else
+                {
+                    postAttribute.IsVectorCreated = false;
+                    postAttribute.UpdatedAt = DateTime.UtcNow;
+                    postAttributesChangeCount++;
+                }
             }
 
-            if (updatedPoints.Count == 0)
+            if (oldContentVersionPointIds.Count > 0)
             {
-                scrollOffset = scrollResponse.NextPageOffset;
-                continue;
+                await qdrantClient.DeleteAsync(
+                    collectionName: qdrantSettings.Value.CollectionName,
+                    ids: oldContentVersionPointIds,
+                    cancellationToken: cancellationToken);
+                logger.LogInformation("Deleted {VectorCount} vector(s).", oldContentVersionPointIds.Count);
             }
 
-            await qdrantClient.UpsertAsync(
-                collectionName: qdrantSettings.Value.CollectionName,
-                points: updatedPoints,
-                cancellationToken: cancellationToken);
-            logger.LogInformation("Normalized {VectorCount} vector payload(s).", updatedPoints.Count);
-        } while (scrollResponse.Result.Count != 0 && scrollResponse.NextPageOffset != null);
+            if (postAttributesChangeCount > 0)
+            {
+                await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
+                logger.LogInformation("Updated {SqlCount} SQL record(s).", postAttributesChangeCount);
+            }
+
+            fromAttributeId += BatchSize;
+            toAttributeId += BatchSize;
+        } while (postAttributeByAttributeId.Count != 0);
     }
 }

@@ -9,6 +9,10 @@ public record SearchDownloadRequest : IValidatableObject
     public string MediaUrl { get; set; }
 
     [Required]
+    [Range(1, 5)]
+    public int Limit { get; set; }
+
+    [Required]
     [Range(0.8, 1)]
     public float Threshold { get; set; }
 
