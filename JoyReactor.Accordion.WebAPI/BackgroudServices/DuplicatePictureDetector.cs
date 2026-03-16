@@ -120,7 +120,7 @@ public class DuplicatePictureDetector(
                     .Select(v => new DuplicatePictureVote(originalPoint, v))
                     .ToArray();
 
-                logger.LogInformation("Found {DuplicatesCount} duplicates for {PictureAttributeId} post attribute picture.", duplicateVectors.Length, originalPoint.PostAttributeId);
+                logger.LogDebug("Found {DuplicatesCount} duplicate(s) for {PictureAttributeId} post attribute picture.", duplicateVectors.Length, originalPoint.PostAttributeId);
 
                 await sqlDatabaseContext.DuplicatePictureVotes.AddRangeAsync(votes, cancellationToken);
             }
