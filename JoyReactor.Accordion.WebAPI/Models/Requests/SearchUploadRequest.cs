@@ -15,5 +15,6 @@ public record SearchUploadRequest
 
     [Required]
     [Range(0.8, 1)]
+    [DefaultValue(0.95f)]
     public float Threshold { get; set; }
 }

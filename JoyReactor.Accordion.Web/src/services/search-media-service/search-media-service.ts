@@ -13,11 +13,14 @@ export class SearchMediaService {
   private configService = inject(ConfigService);
   private http = inject(HttpClient);
   private searchMediaHistoryService = inject(SearchMediaHistoryService);
+  private readonly limit = 3;
 
   searchUpload(file: File, threshold: number): Observable<SearchMediaResponse[]> {
     const url = `${this.configService.config!.apiRoot}/search/media/upload`;
     const request = new FormData();
     request.append('media', file, file.name);
+    request.append('limit', this.limit.toString());
+    request.append('threshold', threshold.toString());
 
     return this.http.post<SearchMediaResponse[]>(url, request)
       .pipe(tap(response => this.searchMediaHistoryService.addUpload(file, response)));
@@ -27,7 +30,8 @@ export class SearchMediaService {
     const url = `${this.configService.config!.apiRoot}/search/media/download`;
     const request: SearchMediaDownloadRequest = {
       mediaUrl,
-      threshold
+      limit: this.limit,
+      threshold,
     };
 
     return this.http.post<SearchMediaResponse[]>(url, request)
