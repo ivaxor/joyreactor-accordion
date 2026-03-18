@@ -1,4 +1,5 @@
 ﻿using JoyReactor.Accordion.Logic.Database.Sql;
+using JoyReactor.Accordion.Logic.Extensions;
 using JoyReactor.Accordion.WebAPI.Models.Requests;
 using JoyReactor.Accordion.WebAPI.Models.Responses;
 using Microsoft.AspNetCore.Authorization;
@@ -44,16 +45,25 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
     [AllowAnonymous]
     [ProducesResponseType<DuplicatePictureVoteThinResponse[]>(StatusCodes.Status200OK)]
     public async Task<IActionResult> ListAsync(
-        [FromQuery] DateTime createdAfter,
+        [FromQuery] DateTime? createdAt,
+        [FromQuery] int? originalPictureId,
         CancellationToken cancellationToken = default)
     {
-        var votes = await sqlDatabaseContext.DuplicatePictureVotes
+        var votesQuery = sqlDatabaseContext.DuplicatePictureVotes
             .AsNoTracking()
-            .Where(dpv => dpv.VotingClosed == false)
-            .Where(dpv => dpv.CreatedAt > createdAfter)
+            .Where(dpv => dpv.VotingClosed == false);
+
+        if (createdAt != null)
+            votesQuery = votesQuery.Where(dpv => dpv.CreatedAt > createdAt);
+
+        if (originalPictureId != null)
+            votesQuery = votesQuery.Where(dpv => dpv.OriginalPictureId > originalPictureId.Value.ToGuid());
+
+        var votes = await votesQuery
             .Include(dpv => dpv.OriginalPicture)
             .Include(dpv => dpv.DuplicatePicture)
             .OrderBy(dpv => dpv.CreatedAt)
+            .ThenBy(dpv => dpv.OriginalPictureId)
             .Take(10)
             .ToArrayAsync(cancellationToken);
 

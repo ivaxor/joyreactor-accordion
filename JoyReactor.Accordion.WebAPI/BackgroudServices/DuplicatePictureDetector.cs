@@ -100,7 +100,7 @@ public class DuplicatePictureDetector(
                             }
                         }
                     },
-                    scoreThreshold: 0.95f,
+                    scoreThreshold: 0.99f,
                     limit: 10,
                     vectorsSelector: new WithVectorsSelector() { Enable = false },
                     payloadSelector: new WithPayloadSelector() { Enable = true },
