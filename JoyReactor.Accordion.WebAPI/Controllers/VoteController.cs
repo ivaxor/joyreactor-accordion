@@ -29,7 +29,8 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
             .Where(dpv => dpv.VotingClosed == false)
             .Include(dpv => dpv.OriginalPicture)
             .Include(dpv => dpv.DuplicatePicture)
-            .OrderBy(dpv => dpv.CreatedAt)
+            .OrderBy(dpv => dpv.OriginalPictureId)
+            .ThenBy(dpv => dpv.DuplicatePictureId)
             .Skip(pageSize * page)
             .Take(pageSize)
             .ToArrayAsync(cancellationToken);
@@ -62,9 +63,9 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
         var votes = await votesQuery
             .Include(dpv => dpv.OriginalPicture)
             .Include(dpv => dpv.DuplicatePicture)
-            .OrderBy(dpv => dpv.CreatedAt)
-            .ThenBy(dpv => dpv.OriginalPictureId)
-            .Take(10)
+            .OrderBy(dpv => dpv.OriginalPictureId)
+            .ThenBy(dpv => dpv.DuplicatePictureId)
+            .Take(100)
             .ToArrayAsync(cancellationToken);
 
         var votesThin = votes
