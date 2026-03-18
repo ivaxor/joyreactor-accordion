@@ -46,10 +46,10 @@ public class DuplicatePictureDetector(
                 .Where(ppap => ppap.IsVectorCreated == true)
                 .Where(ppap => ppap.AttributeId >= attributeIdFrom)
                 .OrderBy(ppap => ppap.AttributeId)
-                .Take(100)
+                .Take(1000)
                 .ToArrayAsync(cancellationToken);
 
-            logger.LogInformation("Starting searching duplicates for {PicturesCount} post attribute picture(s).", pictures.Length);
+            logger.LogInformation("Starting searching duplicates for {PicturesCount} post attribute picture(s) after {PictureAttributeId} picture attribute id.", pictures.Length, attributeIdFrom);
 
             foreach (var picture in pictures)
             {
@@ -127,8 +127,6 @@ public class DuplicatePictureDetector(
 
             duplicatePictureIdIndex.Value = (pictures.Last().AttributeId + 1).ToString();
             await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
-
-            logger.LogInformation("{PicturesCount} post attribute picture(s) were searched for duplicates.", pictures.Length);
         } while (pictures.Length > 0);
     }
 }
