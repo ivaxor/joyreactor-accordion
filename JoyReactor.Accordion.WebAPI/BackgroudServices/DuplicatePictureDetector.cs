@@ -17,6 +17,7 @@ public class DuplicatePictureDetector(
     ILogger<DuplicatePictureDetector> logger)
     : RobustBackgroundService(settings, logger)
 {
+    protected static readonly int BatchSize = 10000;
     protected override bool IsIndefinite => true;
 
     protected override async Task RunAsync(CancellationToken cancellationToken)
@@ -46,8 +47,9 @@ public class DuplicatePictureDetector(
                 .Where(ppap => ppap.IsVectorCreated == true)
                 .Where(ppap => ppap.AttributeId >= attributeIdFrom)
                 .OrderBy(ppap => ppap.AttributeId)
-                .Take(1000)
+                .Take(BatchSize)
                 .ToArrayAsync(cancellationToken);
+            var votesCount = 0;
 
             logger.LogInformation("Starting searching duplicates for {PicturesCount} post attribute picture(s) after {PictureAttributeId} picture attribute id.", pictures.Length, attributeIdFrom);
 
@@ -119,6 +121,7 @@ public class DuplicatePictureDetector(
                 var votes = duplicateVectors
                     .Select(v => new DuplicatePictureVote(originalPoint, v))
                     .ToArray();
+                votesCount += votes.Length;
 
                 logger.LogDebug("Found {DuplicatesCount} duplicate(s) for {PictureAttributeId} post attribute picture.", duplicateVectors.Length, originalPoint.PostAttributeId);
 
@@ -127,6 +130,8 @@ public class DuplicatePictureDetector(
 
             duplicatePictureIdIndex.Value = (pictures.Last().AttributeId + 1).ToString();
             await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation("Found {DuplicatesCount} post attribute picture duplicate(s).", votesCount);
         } while (pictures.Length > 0);
     }
 }
