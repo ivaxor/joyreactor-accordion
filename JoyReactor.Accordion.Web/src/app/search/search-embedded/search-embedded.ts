@@ -80,34 +80,34 @@ export class SearchEmbedded implements OnInit, OnDestroy {
       if (url.host.endsWith('bandcamp.com')) {
         if (url.pathname.startsWith('/album/') || url.pathname.startsWith('/track/') || url.pathname.startsWith('/users/') || url.pathname.startsWith('/tracks/') || url.pathname.startsWith('/playlists/')) {
           const text = url.pathname.replace('/', '');
-          return ({ type: SearchEmbeddedType.BandCamp, text });
+          return ({ type: SearchEmbeddedType.BandCamp, text, limit: 3 });
         }
       } else if (url.host === 'coub.com') {
         if (url.pathname.startsWith('/embed/')) {
           const text = url.pathname.replace('/embed/', '');
-          return ({ type: SearchEmbeddedType.Coub, text });
+          return ({ type: SearchEmbeddedType.Coub, text, limit: 3 });
         } else if (url.pathname.startsWith('/view/')) {
           const text = url.pathname.replace('/view/', '');
-          return ({ type: SearchEmbeddedType.Coub, text });
+          return ({ type: SearchEmbeddedType.Coub, text, limit: 3 });
         }
       } else if (url.host === 'soundcloud.com') {
         const text = url.pathname.replace('/', '');
-        return ({ type: SearchEmbeddedType.Coub, text });
+        return ({ type: SearchEmbeddedType.Coub, text, limit: 3 });
       } else if (url.host.endsWith('vimeo.com')) {
         if (url.host === 'vimeo.com') {
           const text = url.pathname.replace('/', '');
-          return ({ type: SearchEmbeddedType.Vimeo, text });
+          return ({ type: SearchEmbeddedType.Vimeo, text, limit: 3 });
         } else if (url.host === 'player.vimeo.com' && url.pathname.startsWith('/video/')) {
           const text = url.pathname.replace('/video/', '');
-          return ({ type: SearchEmbeddedType.Vimeo, text });
+          return ({ type: SearchEmbeddedType.Vimeo, text, limit: 3 });
         }
       } else if (url.host === 'youtu.be') {
         const text = url.pathname.replace('/', '');
-        return ({ type: SearchEmbeddedType.YouTube, text })
+        return ({ type: SearchEmbeddedType.YouTube, text, limit: 3 })
       } else if (url.host === 'youtube.com' || url.host === 'www.youtube.com') {
         const v = url.searchParams.get('v');
         if (v) {
-          return ({ type: SearchEmbeddedType.YouTube, text: v });
+          return ({ type: SearchEmbeddedType.YouTube, text: v, limit: 3 });
         }
       }
 

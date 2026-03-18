@@ -9,7 +9,7 @@
   <p class="placeholder-wave"><span class="placeholder col-12"></span></p>
   } @else {
   <div class="progress" role="progressbar" aria-label="Pages" aria-valuemin="0" [aria-valuenow]="percents" aria-valuemax="100">
-    <div class="progress-bar progress-bar-striped progress-bar-animated text-bg-primary" [style.width]="`${percents}%`">{{crawlerTask?.pageCurrent}} / {{crawlerTask?.pageLast}}</div>
+    <div class="progress-bar progress-bar-striped text-bg-primary" [class.progress-bar-animated]="isActive" [style.width]="`${percents}%`">{{crawlerTask?.pageCurrent}} / {{crawlerTask?.pageLast}}</div>
   </div>
   }
 </div>
