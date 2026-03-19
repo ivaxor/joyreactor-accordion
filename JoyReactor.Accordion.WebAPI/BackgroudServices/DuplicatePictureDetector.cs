@@ -7,7 +7,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Qdrant.Client;
 using Qdrant.Client.Grpc;
-using Range = Qdrant.Client.Grpc.Range;
 
 namespace JoyReactor.Accordion.WebAPI.BackgroudServices;
 
@@ -79,29 +78,16 @@ public class DuplicatePictureDetector(
                 if (response.Result.Count == 0)
                     logger.LogError("Failed to find vector for {PictureAttributeId} post attribute picture.", picture.AttributeId);
 
-                var latestVector = response.Result
-                    .OrderByDescending(p => p.Payload["contentVersion"].IntegerValue)
-                    .First();
+                var initialPoint = response.Result
+                    .Select(v => new PictureRetrivedPoint(v))
+                    .OrderBy(p => p.ContentVersion)
+                    .Last();
 
                 var similarVectors = await qdrantClient.RecommendAsync(
                     qdrantSettings.Value.CollectionName,
-                    positive: [new Guid(latestVector.Id.Uuid)],
+                    positive: [initialPoint.PointId],
                     filter: new Filter()
                     {
-                        Must =
-                        {
-                            new Condition()
-                            {
-                                Field = new FieldCondition()
-                                {
-                                    Key = "postAttributeId",
-                                    Range = new Range()
-                                    {
-                                        Gt = picture.AttributeId
-                                    }
-                                }
-                            }
-                        },
                         MustNot =
                         {
                             new Condition()
@@ -109,16 +95,21 @@ public class DuplicatePictureDetector(
                                 Field = new FieldCondition()
                                 {
                                     Key = "postId",
-                                    Match = new Match()
-                                    {
-                                        Integer = latestVector.Payload["postId"].IntegerValue
-                                    }
+                                    Match = new Match() { Integer = initialPoint.PostId.Value }
+                                }
+                            },
+                            new Condition()
+                            {
+                                Field = new FieldCondition()
+                                {
+                                    Key = "postAttributeId",
+                                    Match = new Match() { Integer = initialPoint.PostAttributeId.Value }
                                 }
                             }
                         }
                     },
                     scoreThreshold: 0.99f,
-                    limit: 10,
+                    limit: 100,
                     vectorsSelector: new WithVectorsSelector() { Enable = false },
                     payloadSelector: new WithPayloadSelector() { Enable = true },
                     cancellationToken: cancellationToken);
@@ -126,19 +117,21 @@ public class DuplicatePictureDetector(
                 if (similarVectors.Count == 0)
                     continue;
 
-                var originalPoint = new PictureRetrivedPoint(latestVector);
-
-                var duplicateVectors = similarVectors
+                var similarPoints = similarVectors
                     .Select(v => new PictureScoredPoint(v))
+                    .Where(p => p.PostId != initialPoint.PostId)
+                    .Where(p => p.PostAttributeId != initialPoint.PostAttributeId)
                     .GroupBy(p => p.PostId, (key, collection) => collection.OrderByDescending(e => e.ContentVersion).First())
                     .ToArray();
 
-                var votes = duplicateVectors
-                    .Select(v => new DuplicatePictureVote(originalPoint, v))
+                var votes = similarPoints
+                    .Select(similarPoint => initialPoint.PostAttributeId < similarPoint.PostAttributeId
+                        ? new DuplicatePictureVote(initialPoint, similarPoint)
+                        : new DuplicatePictureVote(similarPoint, initialPoint))
                     .ToArray();
                 votesCount += votes.Length;
 
-                logger.LogDebug("Found {DuplicatesCount} duplicate(s) for {PictureAttributeId} post attribute picture.", duplicateVectors.Length, originalPoint.PostAttributeId);
+                logger.LogDebug("Found {DuplicatesCount} duplicate(s) for {PictureAttributeId} post attribute picture.", similarPoints.Length, initialPoint.PostAttributeId);
 
                 await sqlDatabaseContext.DuplicatePictureVotes.AddRangeAsync(votes, cancellationToken);
             }

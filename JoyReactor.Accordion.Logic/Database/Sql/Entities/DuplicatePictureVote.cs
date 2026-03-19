@@ -21,6 +21,18 @@ public record DuplicatePictureVote : ISqlUpdatedAtEntity
         UpdatedAt = DateTime.UtcNow;
     }
 
+    public DuplicatePictureVote(PictureScoredPoint original, PictureRetrivedPoint duplicate)
+    {
+        Id = Guid.NewGuid();
+        OriginalPictureId = original.PostAttributeId.Value.ToGuid();
+        DuplicatePictureId = duplicate.PostAttributeId.Value.ToGuid();
+        Score = original.Score;
+        YesVotes = [];
+        NoVotes = [];
+        CreatedAt = DateTime.UtcNow;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public Guid Id { get; set; }
 
     public Guid OriginalPictureId { get; set; }
