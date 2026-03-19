@@ -26,7 +26,7 @@ public record DuplicatePictureVoteThinResponse
         OriginalPictureAttributeId = duplicatePictureVote.OriginalPicture.AttributeId;
         OriginalPostId = duplicatePictureVote.OriginalPicture.PostId.ToInt();
         DuplicatePictureAttributeId = duplicatePictureVote.DuplicatePicture.AttributeId;
-        DuplicatePictureAttributeId = duplicatePictureVote.DuplicatePicture.PostId.ToInt();
+        DuplicatePostId = duplicatePictureVote.DuplicatePicture.PostId.ToInt();
         YesVotes = duplicatePictureVote.YesVotes.Length;
         NoVotes = duplicatePictureVote.NoVotes.Length;
         CreatedAt = duplicatePictureVote.CreatedAt;
