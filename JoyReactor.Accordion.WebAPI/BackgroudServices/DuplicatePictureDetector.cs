@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Qdrant.Client;
 using Qdrant.Client.Grpc;
+using Range = Qdrant.Client.Grpc.Range;
 
 namespace JoyReactor.Accordion.WebAPI.BackgroudServices;
 
@@ -94,9 +95,23 @@ public class DuplicatePictureDetector(
                                 Field = new FieldCondition()
                                 {
                                     Key = "postAttributeId",
-                                    Range = new Qdrant.Client.Grpc.Range()
+                                    Range = new Range()
                                     {
                                         Gt = picture.AttributeId
+                                    }
+                                }
+                            }
+                        },
+                        MustNot =
+                        {
+                            new Condition()
+                            {
+                                Field = new FieldCondition()
+                                {
+                                    Key = "postId",
+                                    Match = new Match()
+                                    {
+                                        Integer = latestVector.Payload["postId"].IntegerValue
                                     }
                                 }
                             }
