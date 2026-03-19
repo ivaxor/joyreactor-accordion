@@ -8,8 +8,10 @@
 <table class="table table-sm table-light table-striped table-hover">
   <thead>
     <tr>
-      <th class="text-end">Оригинал</th>
-      <th class="text-end">Дубликат</th>
+      <th class="text-end">Оригинал (пост)</th>
+      <th class="text-end">Дубликат (пост)</th>
+      <th class="text-end">Оригинал (картинка)</th>
+      <th class="text-end">Дубликат (картинка)</th>
       <th class="text-center">Результат</th>
       <th class="text-center">Да / Нет</th>
       @if (apiKeySet) {
@@ -22,15 +24,19 @@
     <tr>
       <td class="text-end">
         <a [href]="joyReactorMediaMetadataService.createImageUrl(vote.originalPictureAttributeId)">
-          {{vote.originalPostId}} ({{vote.originalPictureAttributeId}})
+          {{vote.originalPostId}}
         </a>
       </td>
 
       <td class="text-end">
         <a [href]="joyReactorMediaMetadataService.createImageUrl(vote.duplicatePictureAttributeId)">
-          {{vote.duplicatePostId}} ({{vote.duplicatePictureAttributeId}})
+          {{vote.duplicatePostId}}
         </a>
       </td>
+
+      <td class="text-end">{{vote.originalPictureAttributeId}}</td>
+      
+      <td class="text-end">{{vote.duplicatePictureAttributeId}}</td>
 
       <td class="text-center">
         @if (vote.yesVotes > vote.noVotes) {
@@ -82,7 +88,7 @@
 
     @if(pages() - 3 > page()) {
     <button type="button" class="btn btn-primary" disabled>...</button>
-    <button type="button" class="btn btn-primary" (click)="goToPage(this.pages())">{{this.pages()}}</button>
+    <button type="button" class="btn btn-primary" (click)="goToPage(this.pages() - 1)">{{this.pages() - 1}}</button>
     }
   </div>
 </div>
