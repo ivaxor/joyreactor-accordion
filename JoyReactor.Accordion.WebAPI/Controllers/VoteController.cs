@@ -46,19 +46,19 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
     [AllowAnonymous]
     [ProducesResponseType<DuplicatePictureVoteThinResponse[]>(StatusCodes.Status200OK)]
     public async Task<IActionResult> ListAsync(
-        [FromQuery] DateTime? createdAt,
         [FromQuery] int? originalPictureId,
+        [FromQuery] DateTime? createdAt,
         CancellationToken cancellationToken = default)
     {
         var votesQuery = sqlDatabaseContext.DuplicatePictureVotes
             .AsNoTracking()
             .Where(dpv => dpv.VotingClosed == false);
 
-        if (createdAt != null)
-            votesQuery = votesQuery.Where(dpv => dpv.CreatedAt > createdAt);
-
         if (originalPictureId != null)
             votesQuery = votesQuery.Where(dpv => dpv.OriginalPictureId > originalPictureId.Value.ToGuid());
+
+        if (createdAt != null)
+            votesQuery = votesQuery.Where(dpv => dpv.CreatedAt > createdAt);
 
         var votes = await votesQuery
             .Include(dpv => dpv.OriginalPicture)

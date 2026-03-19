@@ -15,9 +15,10 @@ export class VoteService {
   private http = inject(HttpClient);
 
   getAfter(): Observable<VoteResponse[]> {
-    const createdAfter = this.getAfterDate();
+    const originalPictureId = this.getOriginalPictureId();
+    const createdAt = this.getCreatedAt();
     const url = `${this.configService.config!.apiRoot}/vote`;
-    return this.http.get<VoteResponse[]>(url, { params: { createdAfter } });
+    return this.http.get<VoteResponse[]>(url, { params: { originalPictureId, createdAt } });
   }
 
   getPage(page: number = 0): Observable<VoteResponse[]> {
@@ -39,7 +40,10 @@ export class VoteService {
 
           return throwError(() => error);
         }),
-        tap(() => this.setAfterDate(vote.createdAt)));
+        tap(() => {
+          this.setOriginalPictureId(vote.originalPictureAttributeId);
+          this.setCreatedAt(vote.createdAt);
+        }));
   }
 
   close(vote: VoteResponse): Observable<any> {
@@ -55,20 +59,27 @@ export class VoteService {
     return this.http.delete(url, { headers });
   }
 
-  private getAfterDate(): string {
-    const voteAfterDate = localStorage.getItem('voteAfterDate');
-    if (voteAfterDate)
-      return voteAfterDate;
+  private getOriginalPictureId(): number {
+    const originalPictureId = localStorage.getItem('voteOriginalPictureId');
+    if (originalPictureId)
+      return Number.parseInt(originalPictureId);
+    else
+      return 0;
+  }
+
+  private setOriginalPictureId(originalPictureId: number): void {
+    localStorage.setItem('voteOriginalPictureId', originalPictureId.toString());
+  }
+
+  private getCreatedAt(): string {
+    const createdAt = localStorage.getItem('voteCreatedAt');
+    if (createdAt)
+      return createdAt;
     else
       return new Date(2026, 0, 1, 1, 0, 0, 0).toISOString();
   }
 
-  private setAfterDate(date: string): void {
-    const oldDate = new Date(this.getAfterDate());
-    const newDate = new Date(date);
-    if (newDate <= oldDate)
-      return;
-
-    localStorage.setItem('voteAfterDate', date);
+  private setCreatedAt(createdAt: string): void {
+    localStorage.setItem('voteCreatedAt', createdAt);
   }
 }
