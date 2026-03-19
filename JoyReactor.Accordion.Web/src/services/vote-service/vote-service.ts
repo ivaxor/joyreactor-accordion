@@ -5,6 +5,7 @@ import { catchError, EMPTY, Observable, of, tap, throwError } from 'rxjs';
 import { VoteResponse } from './vote-response';
 import { VoteRequest } from './vote-request';
 import { ApiKeyService } from '../api-key-service/api-key-service';
+import { PagedResponse } from './paged-response';
 
 @Injectable({
   providedIn: 'root',
@@ -21,9 +22,9 @@ export class VoteService {
     return this.http.get<VoteResponse[]>(url, { params: { originalPictureId, createdAt } });
   }
 
-  getPage(page: number = 0): Observable<VoteResponse[]> {
+  getPage(page: number = 0): Observable<PagedResponse<VoteResponse>> {
     const url = `${this.configService.config!.apiRoot}/vote/pager`;
-    return this.http.get<VoteResponse[]>(url, { params: { page } });
+    return this.http.get<PagedResponse<VoteResponse>>(url, { params: { page } });
   }
 
   vote(vote: VoteResponse, yes: boolean): Observable<any> {

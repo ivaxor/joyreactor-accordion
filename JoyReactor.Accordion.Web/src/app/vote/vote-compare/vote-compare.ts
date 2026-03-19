@@ -2,7 +2,6 @@ import { ChangeDetectorRef, Component, inject, OnInit, signal } from '@angular/c
 import { VoteResponse } from '../../../services/vote-service/vote-response';
 import { JoyReactorMediaMetadataService } from '../../../services/joyreactor-media-metadata-service/joyreactor-media-metadata-service';
 import { VoteService } from '../../../services/vote-service/vote-service';
-import { catchError, of, tap, throwError } from 'rxjs';
 
 @Component({
   selector: 'app-vote-compare',

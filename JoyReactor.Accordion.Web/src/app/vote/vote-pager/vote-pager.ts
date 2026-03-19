@@ -21,6 +21,7 @@ export class VotePager implements OnInit {
 
   apiKeySet = false;
   page = signal<number>(0);
+  pages = signal<number>(0);
   votes = signal<VoteResponse[] | null>(null);
 
   ngOnInit(): void {
@@ -64,6 +65,9 @@ export class VotePager implements OnInit {
   private loadVotes(): void {
     this.voteService
       .getPage(this.page())
-      .subscribe(votes => this.votes.set(votes));
+      .subscribe(paged => {
+        this.votes.set(paged.values);
+        this.pages.set(paged.pages);
+      });
   }
 }

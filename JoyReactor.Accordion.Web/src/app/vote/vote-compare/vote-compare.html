@@ -13,14 +13,14 @@
   <div class="col-6 text-center">
     <h3>
       <span i18n>Оригинал</span>
-      ({{vote.originalPictureAttributeId}})
+      {{vote.originalPostId}} ({{vote.originalPictureAttributeId}})
     </h3>
   </div>
 
   <div class="col-6 text-center">
     <h3>
       <span i18n>Баян</span>
-      ({{vote.duplicatePictureAttributeId}})
+      {{vote.duplicatePostId}} ({{vote.duplicatePictureAttributeId}})
     </h3>
   </div>
 </div>
@@ -35,7 +35,7 @@
         </button>
 
         <button type="button" class="btn btn-warning" (click)="goToNextVote()">
-          <i class="bi bi-skip-forward-fill"></i>&nbsp;          
+          <i class="bi bi-skip-forward-fill"></i>&nbsp;
           <span i18n>Пропустить</span>
         </button>
 

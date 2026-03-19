@@ -13,17 +13,16 @@ namespace JoyReactor.Accordion.WebAPI.Controllers;
 [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
 public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerBase
 {
+    protected const int PageSize = 100;
     protected static readonly SemaphoreSlim VoteSemaphore = new SemaphoreSlim(1, 1);
 
     [HttpGet("pager")]
     [AllowAnonymous]
-    [ProducesResponseType<DuplicatePictureVoteThinResponse[]>(StatusCodes.Status200OK)]
+    [ProducesResponseType<PagedResponse<DuplicatePictureVoteThinResponse>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> ListAsync(
         [FromQuery] int page = 0,
         CancellationToken cancellationToken = default)
     {
-        const int pageSize = 100;
-
         var votes = await sqlDatabaseContext.DuplicatePictureVotes
             .AsNoTracking()
             .Where(dpv => dpv.VotingClosed == false)
@@ -31,15 +30,26 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
             .Include(dpv => dpv.DuplicatePicture)
             .OrderBy(dpv => dpv.OriginalPictureId)
             .ThenBy(dpv => dpv.DuplicatePictureId)
-            .Skip(pageSize * page)
-            .Take(pageSize)
+            .Skip(PageSize * page)
+            .Take(PageSize)
             .ToArrayAsync(cancellationToken);
 
         var votesThin = votes
             .Select(v => new DuplicatePictureVoteThinResponse(v))
             .ToArray();
 
-        return Ok(votesThin);
+        var votesTotal = await sqlDatabaseContext.DuplicatePictureVotes
+            .AsNoTracking()
+            .Where(dpv => dpv.VotingClosed == false)
+            .CountAsync(cancellationToken);
+
+        var paged = new PagedResponse<DuplicatePictureVoteThinResponse>()
+        {
+            Values = votesThin,
+            Pages = Convert.ToInt32(Math.Ceiling((decimal)votesTotal / PageSize)),
+        };
+
+        return Ok(paged);
     }
 
     [HttpGet]
@@ -65,7 +75,7 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
             .Include(dpv => dpv.DuplicatePicture)
             .OrderBy(dpv => dpv.OriginalPictureId)
             .ThenBy(dpv => dpv.DuplicatePictureId)
-            .Take(100)
+            .Take(PageSize)
             .ToArrayAsync(cancellationToken);
 
         var votesThin = votes

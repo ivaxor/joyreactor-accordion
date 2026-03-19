@@ -22,13 +22,13 @@
     <tr>
       <td class="text-end">
         <a [href]="joyReactorMediaMetadataService.createImageUrl(vote.originalPictureAttributeId)">
-          {{vote.originalPictureAttributeId}}
+          {{vote.originalPostId}} ({{vote.originalPictureAttributeId}})
         </a>
       </td>
 
       <td class="text-end">
         <a [href]="joyReactorMediaMetadataService.createImageUrl(vote.duplicatePictureAttributeId)">
-          {{vote.duplicatePictureAttributeId}}
+          {{vote.duplicatePostId}} ({{vote.duplicatePictureAttributeId}})
         </a>
       </td>
 
@@ -36,7 +36,7 @@
         @if (vote.yesVotes > vote.noVotes) {
         <span>🪗</span>
         }
-        @if (vote.noVotes > vote.yesVotes) {
+        @else if (vote.noVotes > vote.yesVotes) {
         <span>🆗</span>
         }
       </td>
@@ -75,6 +75,14 @@
     }
 
     <button type="button" class="btn btn-secondary">{{page()}}</button>
+
+    @if (pages() > page()) {
     <button type="button" class="btn btn-primary" (click)="goToPage(page() + 1)">{{page() + 1}}</button>
+    }
+
+    @if(pages() - 3 > page()) {
+    <button type="button" class="btn btn-primary" disabled>...</button>
+    <button type="button" class="btn btn-primary" (click)="goToPage(this.pages())">{{this.pages()}}</button>
+    }
   </div>
 </div>
