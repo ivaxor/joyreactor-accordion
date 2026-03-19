@@ -10,7 +10,7 @@
    ``` ps1
    winget install ffmpeg
    ```
-- ['clip-ViT-B-32-vision'](https://huggingface.co/Qdrant/clip-ViT-B-32-vision/blob/main/model.onnx)
+- [clip-ViT-B-32-vision](https://huggingface.co/Qdrant/clip-ViT-B-32-vision/blob/main/model.onnx)
 - Fuckton of free time and CPU/GPU/IO resources
 
 ## Documentation
