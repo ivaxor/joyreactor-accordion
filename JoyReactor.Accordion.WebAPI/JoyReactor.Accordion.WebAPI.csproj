@@ -24,6 +24,7 @@
 
   <ItemGroup>
 	<PackageReference Include="Elastic.Serilog.Sinks" Version="9.0.0" />
+	<PackageReference Include="FlexLabs.EntityFrameworkCore.Upsert" Version="10.0.0" />
 	<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Condition="'$(Configuration)' == 'Debug'" Version="10.0.5">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -31,7 +32,7 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.5" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0" />
-    <PackageReference Include="Scalar.AspNetCore" Version="2.13.6" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.13.13" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
   </ItemGroup>

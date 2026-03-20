@@ -50,6 +50,7 @@ public class DuplicatePictureDetector(
                 .Take(BatchSize)
                 .ToArrayAsync(cancellationToken);
             var votesCount = 0;
+            var votesUpsertedCount = 0;
 
             logger.LogInformation("Starting searching duplicates for {PicturesCount} post attribute picture(s) after {PictureAttributeId} picture attribute id.", pictures.Length, attributeIdFrom);
 
@@ -109,7 +110,7 @@ public class DuplicatePictureDetector(
                         }
                     },
                     scoreThreshold: 0.99f,
-                    limit: 100,
+                    limit: 25,
                     vectorsSelector: new WithVectorsSelector() { Enable = false },
                     payloadSelector: new WithPayloadSelector() { Enable = true },
                     cancellationToken: cancellationToken);
@@ -125,7 +126,7 @@ public class DuplicatePictureDetector(
                     .ToArray();
 
                 var votes = similarPoints
-                    .Select(similarPoint => initialPoint.PostAttributeId < similarPoint.PostAttributeId
+                    .Select(similarPoint => initialPoint.PostId < similarPoint.PostId
                         ? new DuplicatePictureVote(initialPoint, similarPoint)
                         : new DuplicatePictureVote(similarPoint, initialPoint))
                     .ToArray();
@@ -133,13 +134,19 @@ public class DuplicatePictureDetector(
 
                 logger.LogDebug("Found {DuplicatesCount} duplicate(s) for {PictureAttributeId} post attribute picture.", similarPoints.Length, initialPoint.PostAttributeId);
 
-                await sqlDatabaseContext.DuplicatePictureVotes.AddRangeAsync(votes, cancellationToken);
+                votesUpsertedCount += await sqlDatabaseContext.DuplicatePictureVotes
+                    .UpsertRange(votes)
+                    .On(v => new { v.OriginalPictureId, v.DuplicatePictureId })
+                    .NoUpdate()
+                    .RunAsync(cancellationToken);
             }
+
+            logger.LogInformation("Found {DuplicatesCount} post attribute picture duplicate(s).", votesCount);
 
             duplicatePictureIdIndex.Value = (pictures.Last().AttributeId + 1).ToString();
             await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
 
-            logger.LogInformation("Found {DuplicatesCount} post attribute picture duplicate(s).", votesCount);
+            logger.LogInformation("Upserted {DuplicatesCount} post attribute picture duplicate(s).", votesUpsertedCount);
         } while (pictures.Length > 0);
     }
 }
