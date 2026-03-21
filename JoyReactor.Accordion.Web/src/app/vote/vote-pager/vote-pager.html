@@ -20,6 +20,11 @@
     </tr>
   </thead>
   <tbody>
+    @if (votes()!.length === 0) {
+    <tr>
+      <td class="text-center" [colSpan]="apiKeySet ? 7 : 6">Пустая страница</td>
+    </tr>
+    }
     @for (vote of votes(); track $index) {
     <tr>
       <td class="text-end">
@@ -35,7 +40,7 @@
       </td>
 
       <td class="text-end">{{vote.originalPictureAttributeId}}</td>
-      
+
       <td class="text-end">{{vote.duplicatePictureAttributeId}}</td>
 
       <td class="text-center">
@@ -71,8 +76,11 @@
 
 <div class="text-center">
   <div class="btn-group" role="group">
-    @if (page() > 3) {
+    @if (page() > 1) {
     <button type="button" class="btn btn-primary" (click)="goToPage(0)">0</button>
+    }
+
+    @if (page() > 2) {
     <button type="button" class="btn btn-primary" disabled>...</button>
     }
 
@@ -80,14 +88,17 @@
     <button type="button" class="btn btn-primary" (click)="goToPage(page() - 1)">{{page() - 1}}</button>
     }
 
-    <button type="button" class="btn btn-secondary">{{page()}}</button>
+    <button type="button" class="btn btn-secondary" disabled>{{page()}}</button>
 
     @if (pages() > page()) {
     <button type="button" class="btn btn-primary" (click)="goToPage(page() + 1)">{{page() + 1}}</button>
     }
 
-    @if(pages() - 3 > page()) {
+    @if (pages() - 3 > page()) {
     <button type="button" class="btn btn-primary" disabled>...</button>
+    }
+
+    @if (pages() - 2 > page()) {
     <button type="button" class="btn btn-primary" (click)="goToPage(this.pages() - 1)">{{this.pages() - 1}}</button>
     }
   </div>
