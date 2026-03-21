@@ -14,7 +14,6 @@ public record DuplicatePictureVote : ISqlUpdatedAtEntity
         Id = Guid.NewGuid();
         OriginalPictureId = original.PostAttributeId.Value.ToGuid();
         DuplicatePictureId = duplicate.PostAttributeId.Value.ToGuid();
-        Score = duplicate.Score;
         YesVotes = [];
         NoVotes = [];
         CreatedAt = DateTime.UtcNow;
@@ -26,7 +25,6 @@ public record DuplicatePictureVote : ISqlUpdatedAtEntity
         Id = Guid.NewGuid();
         OriginalPictureId = original.PostAttributeId.Value.ToGuid();
         DuplicatePictureId = duplicate.PostAttributeId.Value.ToGuid();
-        Score = original.Score;
         YesVotes = [];
         NoVotes = [];
         CreatedAt = DateTime.UtcNow;
@@ -40,8 +38,6 @@ public record DuplicatePictureVote : ISqlUpdatedAtEntity
 
     public Guid DuplicatePictureId { get; set; }
     public virtual ParsedPostAttributePicture DuplicatePicture { get; set; }
-
-    public float Score { get; set; }
 
     public string[] YesVotes { get; set; }
     public string[] NoVotes { get; set; }
@@ -71,6 +67,10 @@ public class DuplicatePictureVoteTypeConfiguration : IEntityTypeConfiguration<Du
             .HasForeignKey(e => e.DuplicatePictureId)
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);
+
+        builder
+            .HasIndex(e => new { e.OriginalPictureId, e.DuplicatePictureId })
+            .IsUnique();
 
         builder
             .Property(u => u.YesVotes)

@@ -31,16 +31,16 @@ public class DuplicatePictureDetector(
         do
         {
             var duplicatePictureIdIndex = await sqlDatabaseContext.Configs.FirstAsync(c => c.Name == ConfigConstants.DuplicatePictureIdIndex, cancellationToken);
-            if (string.IsNullOrWhiteSpace(duplicatePictureIdIndex.Value))
+            if (string.IsNullOrWhiteSpace(duplicatePictureIdIndex.Value) || !int.TryParse(duplicatePictureIdIndex.Value, out var attributeIdFrom))
             {
                 var initialPicture = await sqlDatabaseContext.ParsedPostAttributePictures
                     .AsNoTracking()
                     .OrderBy(ppap => ppap.AttributeId)
                     .FirstAsync(cancellationToken);
-                duplicatePictureIdIndex.Value = initialPicture.AttributeId.ToString();
-            }
 
-            var attributeIdFrom = int.Parse(duplicatePictureIdIndex.Value);
+                duplicatePictureIdIndex.Value = initialPicture.AttributeId.ToString();
+                attributeIdFrom = initialPicture.AttributeId;
+            }
 
             pictures = await sqlDatabaseContext.ParsedPostAttributePictures
                 .AsNoTracking()

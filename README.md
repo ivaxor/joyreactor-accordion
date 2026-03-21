@@ -10,6 +10,12 @@
    ``` ps1
    winget install ffmpeg
    ```
+- .NET EF CLI
+
+  Windows installation via PowerShell:
+  ``` ps1
+  dotnet tool install --global dotnet-ef
+  ```
 - [clip-ViT-B-32-vision](https://huggingface.co/Qdrant/clip-ViT-B-32-vision/blob/main/model.onnx)
 - Fuckton of free time and CPU/GPU/IO resources
 
