@@ -68,7 +68,7 @@ public class ParsedPostAttributePictureEntityTypeConfiguration : IEntityTypeConf
     {
         builder
             .Property(e => e.Id)
-            .ValueGeneratedOnAdd();
+            .HasDefaultValueSql("gen_random_uuid()");
 
         builder
             .HasIndex(e => new { e.PostId, e.AttributeId })

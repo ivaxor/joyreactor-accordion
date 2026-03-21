@@ -69,7 +69,7 @@ public class ParsedPostAttributeEmbeddedEntityTypeConfiguration : IEntityTypeCon
     {
         builder
             .Property(e => e.Id)
-            .ValueGeneratedOnAdd();
+            .HasDefaultValueSql("gen_random_uuid()");
 
         builder
             .HasOne(e => e.Post)

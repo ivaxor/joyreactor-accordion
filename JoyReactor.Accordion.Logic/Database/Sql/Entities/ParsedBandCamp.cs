@@ -37,7 +37,7 @@ public class ParsedBandCampEntityTypeConfiguration : IEntityTypeConfiguration<Pa
     {
         builder
             .Property(e => e.Id)
-            .ValueGeneratedOnAdd();
+            .HasDefaultValueSql("gen_random_uuid()");
 
         builder
             .HasIndex(e => e.UrlPath)

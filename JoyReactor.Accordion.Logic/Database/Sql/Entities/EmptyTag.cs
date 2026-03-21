@@ -31,7 +31,7 @@ public class EmptyTagEntityTypeConfiguration : IEntityTypeConfiguration<EmptyTag
     {
         builder
             .Property(e => e.Id)
-            .ValueGeneratedOnAdd();
+            .HasDefaultValueSql("gen_random_uuid()");
 
         builder
             .HasOne(e => e.Api)

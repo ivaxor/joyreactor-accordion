@@ -24,7 +24,7 @@ public class ApiEntityTypeConfiguration : IEntityTypeConfiguration<Api>
     {
         builder
             .Property(e => e.Id)
-            .ValueGeneratedOnAdd();
+            .HasDefaultValueSql("gen_random_uuid()");
 
         builder
             .HasMany(e => e.Tags)

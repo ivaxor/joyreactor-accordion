@@ -28,7 +28,7 @@ public class CrawlerTaskEntityTypeConfiguration : IEntityTypeConfiguration<Crawl
     {
         builder
             .Property(e => e.Id)
-            .ValueGeneratedOnAdd();
+            .HasDefaultValueSql("gen_random_uuid()");
 
         builder
             .HasOne(e => e.Tag)
