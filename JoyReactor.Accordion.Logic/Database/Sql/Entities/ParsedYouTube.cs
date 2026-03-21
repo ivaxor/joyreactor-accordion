@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace JoyReactor.Accordion.Logic.Database.Sql.Entities;
 
-public record ParsedYouube : ISqlUpdatedAtEntity, IParsedAttributeEmbedded
+public record ParsedYouTube : ISqlUpdatedAtEntity, IParsedAttributeEmbedded
 {
-    public ParsedYouube() { }
+    public ParsedYouTube() { }
 
-    public ParsedYouube(PostAttribute attribute)
+    public ParsedYouTube(PostAttribute attribute)
     {
         Id = Guid.NewGuid();
         VideoId = attribute.Value;
@@ -26,9 +26,9 @@ public record ParsedYouube : ISqlUpdatedAtEntity, IParsedAttributeEmbedded
     public DateTime UpdatedAt { get; set; }
 }
 
-public class ParsedYouTubeEntityTypeConfiguration : IEntityTypeConfiguration<ParsedYouube>
+public class ParsedYouTubeEntityTypeConfiguration : IEntityTypeConfiguration<ParsedYouTube>
 {
-    public void Configure(EntityTypeBuilder<ParsedYouube> builder)
+    public void Configure(EntityTypeBuilder<ParsedYouTube> builder)
     {
         builder
             .Property(e => e.Id)
@@ -44,7 +44,7 @@ public class ParsedYouTubeEntityTypeConfiguration : IEntityTypeConfiguration<Par
         builder
             .HasOne(e => e.PostAttributeEmbedded)
             .WithOne(e => e.YouTube)
-            .HasPrincipalKey<ParsedYouube>(e => e.Id)
+            .HasPrincipalKey<ParsedYouTube>(e => e.Id)
             .HasForeignKey<ParsedPostAttributeEmbedded>(e => e.YouTubeId)
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);
