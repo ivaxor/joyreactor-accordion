@@ -39,6 +39,10 @@ public class ParsedPostEntityTypeConfiguration : IEntityTypeConfiguration<Parsed
     public void Configure(EntityTypeBuilder<ParsedPost> builder)
     {
         builder
+            .Property(e => e.Id)
+            .ValueGeneratedOnAdd();
+
+        builder
             .HasOne(e => e.Api)
             .WithMany(e => e.Posts)
             .HasPrincipalKey(e => e.Id)

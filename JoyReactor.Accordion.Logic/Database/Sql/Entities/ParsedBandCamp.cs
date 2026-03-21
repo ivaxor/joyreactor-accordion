@@ -36,6 +36,10 @@ public class ParsedBandCampEntityTypeConfiguration : IEntityTypeConfiguration<Pa
     public void Configure(EntityTypeBuilder<ParsedBandCamp> builder)
     {
         builder
+            .Property(e => e.Id)
+            .ValueGeneratedOnAdd();
+
+        builder
             .HasIndex(e => e.UrlPath)
             .IsUnique();
         builder

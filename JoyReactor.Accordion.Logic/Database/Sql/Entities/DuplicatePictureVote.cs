@@ -53,6 +53,10 @@ public class DuplicatePictureVoteTypeConfiguration : IEntityTypeConfiguration<Du
     public void Configure(EntityTypeBuilder<DuplicatePictureVote> builder)
     {
         builder
+            .Property(e => e.Id)
+            .ValueGeneratedOnAdd();
+
+        builder
             .HasOne(e => e.OriginalPicture)
             .WithMany(e => e.VotesAsOriginal)
             .HasPrincipalKey(e => e.Id)

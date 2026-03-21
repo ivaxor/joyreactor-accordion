@@ -31,6 +31,10 @@ public class ParsedCoubEntityTypeConfiguration : IEntityTypeConfiguration<Parsed
     public void Configure(EntityTypeBuilder<ParsedCoub> builder)
     {
         builder
+            .Property(e => e.Id)
+            .ValueGeneratedOnAdd();
+
+        builder
             .HasIndex(e => e.VideoId)
             .IsUnique();
         builder

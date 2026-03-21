@@ -24,7 +24,7 @@ public partial class SqlDatabaseContext : DbContext
     public DbSet<ParsedCoub> ParsedCoubs { get; set; }
     public DbSet<ParsedSoundCloud> ParsedSoundClouds { get; set; }
     public DbSet<ParsedVimeo> ParsedVimeos { get; set; }
-    public DbSet<ParsedYouTube> ParsedYouTubes { get; set; }
+    public DbSet<ParsedYouube> ParsedYouTubes { get; set; }
 
     public DbSet<ParsedTag> ParsedTags { get; set; }
     public DbSet<EmptyTag> EmptyTags { get; set; }

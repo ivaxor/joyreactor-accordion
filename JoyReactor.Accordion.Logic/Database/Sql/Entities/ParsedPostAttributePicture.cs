@@ -67,6 +67,10 @@ public class ParsedPostAttributePictureEntityTypeConfiguration : IEntityTypeConf
     public void Configure(EntityTypeBuilder<ParsedPostAttributePicture> builder)
     {
         builder
+            .Property(e => e.Id)
+            .ValueGeneratedOnAdd();
+
+        builder
             .HasIndex(e => new { e.PostId, e.AttributeId })
             .IsUnique();
         builder

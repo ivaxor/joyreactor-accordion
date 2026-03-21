@@ -23,6 +23,10 @@ public class ApiEntityTypeConfiguration : IEntityTypeConfiguration<Api>
     public void Configure(EntityTypeBuilder<Api> builder)
     {
         builder
+            .Property(e => e.Id)
+            .ValueGeneratedOnAdd();
+
+        builder
             .HasMany(e => e.Tags)
             .WithOne(e => e.Api)
             .HasPrincipalKey(e => e.Id)

@@ -30,6 +30,10 @@ public class EmptyTagEntityTypeConfiguration : IEntityTypeConfiguration<EmptyTag
     public void Configure(EntityTypeBuilder<EmptyTag> builder)
     {
         builder
+            .Property(e => e.Id)
+            .ValueGeneratedOnAdd();
+
+        builder
             .HasOne(e => e.Api)
             .WithMany(e => e.EmptyTags)
             .HasPrincipalKey(e => e.Id)

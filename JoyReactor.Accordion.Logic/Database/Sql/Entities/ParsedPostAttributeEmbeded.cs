@@ -57,7 +57,7 @@ public record ParsedPostAttributeEmbedded : ISqlUpdatedAtEntity, IParsedPostAttr
     public virtual ParsedVimeo? Vimeo { get; set; }
 
     public Guid? YouTubeId { get; set; }
-    public virtual ParsedYouTube? YouTube { get; set; }
+    public virtual ParsedYouube? YouTube { get; set; }
 
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
@@ -67,6 +67,10 @@ public class ParsedPostAttributeEmbeddedEntityTypeConfiguration : IEntityTypeCon
 {
     public void Configure(EntityTypeBuilder<ParsedPostAttributeEmbedded> builder)
     {
+        builder
+            .Property(e => e.Id)
+            .ValueGeneratedOnAdd();
+
         builder
             .HasOne(e => e.Post)
             .WithMany(e => e.AttributeEmbeds)
@@ -124,7 +128,7 @@ public class ParsedPostAttributeEmbeddedEntityTypeConfiguration : IEntityTypeCon
         builder
             .HasOne(e => e.YouTube)
             .WithOne(e => e.PostAttributeEmbedded)
-            .HasPrincipalKey<ParsedYouTube>(e => e.Id)
+            .HasPrincipalKey<ParsedYouube>(e => e.Id)
             .HasForeignKey<ParsedPostAttributeEmbedded>(e => e.YouTubeId)
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);

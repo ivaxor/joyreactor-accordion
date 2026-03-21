@@ -27,6 +27,10 @@ public class CrawlerTaskEntityTypeConfiguration : IEntityTypeConfiguration<Crawl
     public void Configure(EntityTypeBuilder<CrawlerTask> builder)
     {
         builder
+            .Property(e => e.Id)
+            .ValueGeneratedOnAdd();
+
+        builder
             .HasOne(e => e.Tag)
             .WithMany(e => e.CrawlerTasks)
             .HasPrincipalKey(e => e.Id)

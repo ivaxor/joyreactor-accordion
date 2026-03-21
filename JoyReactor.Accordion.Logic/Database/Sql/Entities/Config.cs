@@ -20,6 +20,10 @@ public class ConfigTypeConfiguration : IEntityTypeConfiguration<Config>
     public void Configure(EntityTypeBuilder<Config> builder)
     {
         builder
+            .Property(e => e.Id)
+            .ValueGeneratedOnAdd();
+
+        builder
             .HasIndex(e => e.Name)
             .IsUnique();
         builder

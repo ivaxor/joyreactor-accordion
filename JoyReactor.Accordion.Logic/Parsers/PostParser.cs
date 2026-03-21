@@ -87,7 +87,7 @@ public class PostParser(
                 ParsedCoub => sqlDatabaseContext.ParsedCoubs.UpsertRangeAsync(group.Cast<ParsedCoub>(), cancellationToken),
                 ParsedSoundCloud => sqlDatabaseContext.ParsedSoundClouds.UpsertRangeAsync(group.Cast<ParsedSoundCloud>(), cancellationToken),
                 ParsedVimeo => sqlDatabaseContext.ParsedVimeos.UpsertRangeAsync(group.Cast<ParsedVimeo>(), cancellationToken),
-                ParsedYouTube => sqlDatabaseContext.ParsedYouTubes.UpsertRangeAsync(group.Cast<ParsedYouTube>(), cancellationToken),
+                ParsedYouube => sqlDatabaseContext.ParsedYouTubes.UpsertRangeAsync(group.Cast<ParsedYouube>(), cancellationToken),
                 _ => throw new NotImplementedException(),
             });
         }
@@ -115,7 +115,7 @@ public class PostParser(
             "COUB" => new ParsedCoub(postAttribute),
             "SOUNDCLOUD" => new ParsedSoundCloud(postAttribute),
             "VIMEO" => new ParsedVimeo(postAttribute),
-            "YOUTUBE" => new ParsedYouTube(postAttribute),
+            "YOUTUBE" => new ParsedYouube(postAttribute),
             _ => throw new NotImplementedException(),
         };
     }
@@ -129,7 +129,7 @@ public class PostParser(
             ParsedCoub parsedCoub => await sqlDatabaseContext.ParsedCoubs.Where(coub => coub.VideoId == parsedCoub.VideoId).FirstOrDefaultAsync(cancellationToken),
             ParsedSoundCloud parsedSoundCloud => await sqlDatabaseContext.ParsedSoundClouds.Where(soundCloud => soundCloud.UrlPath == parsedSoundCloud.UrlPath).FirstOrDefaultAsync(cancellationToken),
             ParsedVimeo parsedVimeo => await sqlDatabaseContext.ParsedVimeos.Where(vimeo => vimeo.VideoId == parsedVimeo.VideoId).FirstOrDefaultAsync(cancellationToken),
-            ParsedYouTube parsedYouTube => await sqlDatabaseContext.ParsedYouTubes.Where(youTube => youTube.VideoId == parsedYouTube.VideoId).FirstOrDefaultAsync(cancellationToken),
+            ParsedYouube parsedYouTube => await sqlDatabaseContext.ParsedYouTubes.Where(youTube => youTube.VideoId == parsedYouTube.VideoId).FirstOrDefaultAsync(cancellationToken),
             _ => throw new NotImplementedException(),
         };
     }
@@ -143,7 +143,7 @@ public class PostParser(
             ParsedCoub parsedCoub => parsedAttributes.Where(pa => pa is ParsedCoub).Cast<ParsedCoub>().SingleOrDefault(pa => pa.VideoId == parsedCoub.VideoId),
             ParsedSoundCloud parsedSoundCloud => parsedAttributes.Where(pa => pa is ParsedSoundCloud).Cast<ParsedSoundCloud>().SingleOrDefault(pa => pa.UrlPath == parsedSoundCloud.UrlPath),
             ParsedVimeo parsedVimeo => parsedAttributes.Where(pa => pa is ParsedVimeo).Cast<ParsedVimeo>().SingleOrDefault(pa => pa.VideoId == parsedVimeo.VideoId),
-            ParsedYouTube parsedYouTube => parsedAttributes.Where(pa => pa is ParsedYouTube).Cast<ParsedYouTube>().SingleOrDefault(pa => pa.VideoId == parsedYouTube.VideoId),
+            ParsedYouube parsedYouTube => parsedAttributes.Where(pa => pa is ParsedYouube).Cast<ParsedYouube>().SingleOrDefault(pa => pa.VideoId == parsedYouTube.VideoId),
             _ => throw new NotImplementedException(),
         };
     }

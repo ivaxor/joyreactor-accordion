@@ -36,6 +36,10 @@ public class ParsedSoundCloudEntityTypeConfiguration : IEntityTypeConfiguration<
     public void Configure(EntityTypeBuilder<ParsedSoundCloud> builder)
     {
         builder
+            .Property(e => e.Id)
+            .ValueGeneratedOnAdd();
+
+        builder
             .HasIndex(e => e.UrlPath)
             .IsUnique();
         builder

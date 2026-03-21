@@ -54,6 +54,10 @@ public class ParsedTagEntityTypeConfiguration : IEntityTypeConfiguration<ParsedT
     public void Configure(EntityTypeBuilder<ParsedTag> builder)
     {
         builder
+            .Property(e => e.Id)
+            .ValueGeneratedOnAdd();
+
+        builder
             .HasOne(e => e.Api)
             .WithMany(e => e.Tags)
             .HasPrincipalKey(e => e.Id)
