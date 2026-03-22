@@ -61,16 +61,14 @@ public class DuplicatePictureVoteTypeConfiguration : IEntityTypeConfiguration<Du
             .WithMany(e => e.VotesAsOriginal)
             .HasPrincipalKey(e => e.Id)
             .HasForeignKey(e => e.OriginalPictureId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder
             .HasOne(e => e.DuplicatePicture)
             .WithMany(e => e.VotesAsDuplicate)
             .HasPrincipalKey(e => e.Id)
             .HasForeignKey(e => e.DuplicatePictureId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder
             .HasIndex(e => new { e.OriginalPictureId, e.DuplicatePictureId })

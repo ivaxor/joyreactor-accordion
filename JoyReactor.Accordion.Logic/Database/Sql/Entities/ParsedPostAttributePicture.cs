@@ -27,6 +27,7 @@ public record ParsedPostAttributePicture : ISqlUpdatedAtEntity, IParsedPostAttri
         };
         PostId = post.Id;
         IsVectorCreated = false;
+        IsVectorCheckedForDuplicates = false;
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
@@ -42,6 +43,7 @@ public record ParsedPostAttributePicture : ISqlUpdatedAtEntity, IParsedPostAttri
     public bool NoContent { get; set; }
     public bool UnsupportedContent { get; set; }
     public bool IsVectorCreated { get; set; }
+    public bool IsVectorCheckedForDuplicates { get; set; }
 
     public virtual IEnumerable<DuplicatePictureVote> VotesAsOriginal { get; set; }
     public virtual IEnumerable<DuplicatePictureVote> VotesAsDuplicate { get; set; }
@@ -104,6 +106,27 @@ public class ParsedPostAttributePictureEntityTypeConfiguration : IEntityTypeConf
             .Property(e => e.IsVectorCreated)
             .HasDefaultValue(false)
             .IsRequired(true);
+
+        builder
+           .HasIndex(e => e.IsVectorCheckedForDuplicates);
+        builder
+            .Property(e => e.IsVectorCheckedForDuplicates)
+            .HasDefaultValue(false)
+            .IsRequired(true);
+
+        builder
+            .HasMany(e => e.VotesAsOriginal)
+            .WithOne(e => e.OriginalPicture)
+            .HasPrincipalKey(e => e.Id)
+            .HasForeignKey(e => e.OriginalPictureId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder
+            .HasMany(e => e.VotesAsDuplicate)
+            .WithOne(e => e.DuplicatePicture)
+            .HasPrincipalKey(e => e.Id)
+            .HasForeignKey(e => e.DuplicatePictureId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder
             .Property(e => e.CreatedAt)

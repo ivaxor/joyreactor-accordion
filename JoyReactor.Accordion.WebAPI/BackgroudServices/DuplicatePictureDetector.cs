@@ -30,51 +30,42 @@ public class DuplicatePictureDetector(
 
         do
         {
-            var duplicatePictureIdIndex = await sqlDatabaseContext.Configs.FirstAsync(c => c.Name == ConfigConstants.DuplicatePictureIdIndex, cancellationToken);
-            if (string.IsNullOrWhiteSpace(duplicatePictureIdIndex.Value) || !int.TryParse(duplicatePictureIdIndex.Value, out var attributeIdFrom))
-            {
-                var initialPicture = await sqlDatabaseContext.ParsedPostAttributePictures
-                    .AsNoTracking()
-                    .OrderBy(ppap => ppap.AttributeId)
-                    .FirstAsync(cancellationToken);
-
-                duplicatePictureIdIndex.Value = initialPicture.AttributeId.ToString();
-                attributeIdFrom = initialPicture.AttributeId;
-            }
-
             pictures = await sqlDatabaseContext.ParsedPostAttributePictures
-                .AsNoTracking()
                 .Where(ppap => ppap.IsVectorCreated == true)
-                .Where(ppap => ppap.AttributeId >= attributeIdFrom)
+                .Where(ppap => ppap.IsVectorCheckedForDuplicates == false)
                 .OrderBy(ppap => ppap.AttributeId)
                 .Take(BatchSize)
                 .ToArrayAsync(cancellationToken);
-            var votesCount = 0;
-            var votesUpsertedCount = 0;
 
-            logger.LogInformation("Starting searching duplicates for {PicturesCount} post attribute picture(s) after {PictureAttributeId} picture attribute id.", pictures.Length, attributeIdFrom);
+            if (pictures.Length == 0)
+                return;
+
+            var foundTotal = 0;
+            var upsertedTotal = 0;
+
+            logger.LogInformation("Starting searching duplicates for {PicturesCount} post attribute picture(s).", pictures.Length);
 
             foreach (var picture in pictures)
             {
                 var response = await qdrantClient.ScrollAsync(
-                    qdrantSettings.Value.CollectionName,
-                    filter: new Filter()
+                qdrantSettings.Value.CollectionName,
+                filter: new Filter()
+                {
+                    Must =
                     {
-                        Must =
+                    new Condition()
+                    {
+                        Field = new FieldCondition()
                         {
-                            new Condition()
-                            {
-                                Field = new FieldCondition()
-                                {
-                                    Key = "postAttributeId",
-                                    Match = new Match() { Integer = picture.AttributeId }
-                                },
-                            },
+                            Key = "postAttributeId",
+                            Match = new Match() { Integer = picture.AttributeId }
                         },
                     },
-                    vectorsSelector: new WithVectorsSelector() { Enable = false },
-                    payloadSelector: new WithPayloadSelector() { Enable = true },
-                    cancellationToken: cancellationToken);
+                    },
+                },
+                vectorsSelector: new WithVectorsSelector() { Enable = false },
+                payloadSelector: new WithPayloadSelector() { Enable = true },
+                cancellationToken: cancellationToken);
 
                 if (response.Result.Count == 0)
                     logger.LogError("Failed to find vector for {PictureAttributeId} post attribute picture.", picture.AttributeId);
@@ -91,22 +82,22 @@ public class DuplicatePictureDetector(
                     {
                         MustNot =
                         {
-                            new Condition()
-                            {
-                                Field = new FieldCondition()
-                                {
-                                    Key = "postId",
-                                    Match = new Match() { Integer = initialPoint.PostId.Value }
-                                }
-                            },
-                            new Condition()
-                            {
-                                Field = new FieldCondition()
-                                {
-                                    Key = "postAttributeId",
-                                    Match = new Match() { Integer = initialPoint.PostAttributeId.Value }
-                                }
-                            }
+                    new Condition()
+                    {
+                        Field = new FieldCondition()
+                        {
+                            Key = "postId",
+                            Match = new Match() { Integer = initialPoint.PostId.Value }
+                        }
+                    },
+                    new Condition()
+                    {
+                        Field = new FieldCondition()
+                        {
+                            Key = "postAttributeId",
+                            Match = new Match() { Integer = initialPoint.PostAttributeId.Value }
+                        }
+                    }
                         }
                     },
                     scoreThreshold: 0.99f,
@@ -130,23 +121,24 @@ public class DuplicatePictureDetector(
                         ? new DuplicatePictureVote(initialPoint, similarPoint)
                         : new DuplicatePictureVote(similarPoint, initialPoint))
                     .ToArray();
-                votesCount += votes.Length;
 
                 logger.LogDebug("Found {DuplicatesCount} duplicate(s) for {PictureAttributeId} post attribute picture.", similarPoints.Length, initialPoint.PostAttributeId);
 
-                votesUpsertedCount += await sqlDatabaseContext.DuplicatePictureVotes
+                var votesUpserted = await sqlDatabaseContext.DuplicatePictureVotes
                     .UpsertRange(votes)
                     .On(v => new { v.OriginalPictureId, v.DuplicatePictureId })
                     .NoUpdate()
                     .RunAsync(cancellationToken);
+
+                foundTotal += votes.Length;
+                upsertedTotal += votesUpserted;
+
+                picture.IsVectorCheckedForDuplicates = true;
             }
 
-            logger.LogInformation("Found {DuplicatesCount} post attribute picture duplicate(s).", votesCount);
-
-            duplicatePictureIdIndex.Value = (pictures.Last().AttributeId + 1).ToString();
             await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
 
-            logger.LogInformation("Upserted {DuplicatesCount} post attribute picture duplicate(s).", votesUpsertedCount);
+            logger.LogInformation("Found {DuplicatesCount} and upserted {DuplicatesCount} post attribute picture duplicate(s) as votes.", foundTotal, upsertedTotal);
         } while (pictures.Length > 0);
     }
 }
