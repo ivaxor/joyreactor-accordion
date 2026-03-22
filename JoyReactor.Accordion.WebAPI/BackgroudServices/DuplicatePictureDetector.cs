@@ -47,6 +47,8 @@ public class DuplicatePictureDetector(
 
             foreach (var picture in pictures)
             {
+                picture.IsVectorCheckedForDuplicates = true;
+
                 var response = await qdrantClient.ScrollAsync(
                 qdrantSettings.Value.CollectionName,
                 filter: new Filter()
@@ -132,8 +134,6 @@ public class DuplicatePictureDetector(
 
                 foundTotal += votes.Length;
                 upsertedTotal += votesUpserted;
-
-                picture.IsVectorCheckedForDuplicates = true;
             }
 
             await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
