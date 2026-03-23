@@ -56,7 +56,7 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
     [AllowAnonymous]
     [ProducesResponseType<DuplicatePictureVoteThinResponse[]>(StatusCodes.Status200OK)]
     public async Task<IActionResult> ListAsync(
-        [FromQuery] int? originalPictureId,
+        [FromQuery] int? duplicatePictureId,
         [FromQuery] DateTime? createdAt,
         CancellationToken cancellationToken = default)
     {
@@ -64,8 +64,8 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
             .AsNoTracking()
             .Where(dpv => dpv.VotingClosed == false);
 
-        if (originalPictureId != null)
-            votesQuery = votesQuery.Where(dpv => dpv.OriginalPictureId > originalPictureId.Value.ToGuid());
+        if (duplicatePictureId != null)
+            votesQuery = votesQuery.Where(dpv => dpv.DuplicatePictureId > duplicatePictureId.Value.ToGuid());
 
         if (createdAt != null)
             votesQuery = votesQuery.Where(dpv => dpv.CreatedAt > createdAt);
@@ -73,8 +73,8 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
         var votes = await votesQuery
             .Include(dpv => dpv.OriginalPicture)
             .Include(dpv => dpv.DuplicatePicture)
-            .OrderBy(dpv => dpv.OriginalPictureId)
-            .ThenBy(dpv => dpv.DuplicatePictureId)
+            .OrderBy(dpv => dpv.DuplicatePictureId)
+            .ThenBy(dpv => dpv.OriginalPictureId)
             .Take(PageSize)
             .ToArrayAsync(cancellationToken);
 

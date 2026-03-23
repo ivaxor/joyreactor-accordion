@@ -8,10 +8,14 @@
 <table class="table table-sm table-light table-striped table-hover">
   <thead>
     <tr>
-      <th class="text-end">Оригинал (пост)</th>
       <th class="text-end">Дубликат (пост)</th>
-      <th class="text-end">Оригинал (картинка)</th>
+      <th class="text-end">Оригинал (пост)</th>
+      <th class="text-end">Разница (пост)</th>
+
       <th class="text-end">Дубликат (картинка)</th>
+      <th class="text-end">Оригинал (картинка)</th>
+      <th class="text-end">Разница (картинка)</th>
+
       <th class="text-center">Результат</th>
       <th class="text-center">Да / Нет</th>
       @if (apiKeySet) {
@@ -22,26 +26,26 @@
   <tbody>
     @if (votes()!.length === 0) {
     <tr>
-      <td class="text-center" [colSpan]="apiKeySet ? 7 : 6">Пустая страница</td>
+      <td class="text-center" [colSpan]="apiKeySet ? 9 : 8">Пустая страница</td>
     </tr>
     }
     @for (vote of votes(); track $index) {
     <tr>
       <td class="text-end">
-        <a [href]="joyReactorMediaMetadataService.createImageUrl(vote.originalPictureAttributeId)">
-          {{vote.originalPostId}}
-        </a>
-      </td>
-
-      <td class="text-end">
-        <a [href]="joyReactorMediaMetadataService.createImageUrl(vote.duplicatePictureAttributeId)">
+        <a [href]="joyReactorMediaMetadataService.getPostUrl(vote.duplicatePostId)">
           {{vote.duplicatePostId}}
         </a>
       </td>
-
-      <td class="text-end">{{vote.originalPictureAttributeId}}</td>
+      <td class="text-end">
+        <a [href]="joyReactorMediaMetadataService.getPostUrl(vote.originalPostId)">
+          {{vote.originalPostId}}
+        </a>
+      </td>
+      <td class="text-end">{{vote.duplicatePostId - vote.originalPostId}}</td>
 
       <td class="text-end">{{vote.duplicatePictureAttributeId}}</td>
+      <td class="text-end">{{vote.originalPictureAttributeId}}</td>
+      <td class="text-end">{{vote.duplicatePictureAttributeId - vote.originalPictureAttributeId}}</td>
 
       <td class="text-center">
         @if (vote.yesVotes > vote.noVotes) {
@@ -90,7 +94,7 @@
 
     <button type="button" class="btn btn-secondary" disabled>{{page()}}</button>
 
-    @if (pages() > page()) {
+    @if (pages() - 1 > page()) {
     <button type="button" class="btn btn-primary" (click)="goToPage(page() + 1)">{{page() + 1}}</button>
     }
 

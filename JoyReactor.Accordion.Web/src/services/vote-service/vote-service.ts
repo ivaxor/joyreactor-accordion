@@ -16,10 +16,10 @@ export class VoteService {
   private http = inject(HttpClient);
 
   getAfter(): Observable<VoteResponse[]> {
-    const originalPictureId = this.getOriginalPictureId();
+    const duplicatePictureId = this.getDuplicatePictureId();
     const createdAt = this.getCreatedAt();
     const url = `${this.configService.config!.apiRoot}/vote`;
-    return this.http.get<VoteResponse[]>(url, { params: { originalPictureId, createdAt } });
+    return this.http.get<VoteResponse[]>(url, { params: { duplicatePictureId, createdAt } });
   }
 
   getPage(page: number = 0): Observable<PagedResponse<VoteResponse>> {
@@ -42,7 +42,7 @@ export class VoteService {
           return throwError(() => error);
         }),
         tap(() => {
-          this.setOriginalPictureId(vote.originalPictureAttributeId);
+          this.setDuplicatePictureId(vote.duplicatePictureAttributeId);
           this.setCreatedAt(vote.createdAt);
         }));
   }
@@ -60,16 +60,16 @@ export class VoteService {
     return this.http.delete(url, { headers });
   }
 
-  private getOriginalPictureId(): number {
-    const originalPictureId = localStorage.getItem('voteOriginalPictureId');
-    if (originalPictureId)
-      return Number.parseInt(originalPictureId);
+  private getDuplicatePictureId(): number {
+    const duplicatePictureId = localStorage.getItem('voteDuplicatePictureId');
+    if (duplicatePictureId)
+      return Number.parseInt(duplicatePictureId);
     else
       return 0;
   }
 
-  private setOriginalPictureId(originalPictureId: number): void {
-    localStorage.setItem('voteOriginalPictureId', originalPictureId.toString());
+  private setDuplicatePictureId(duplicatePictureId: number): void {
+    localStorage.setItem('voteDuplicatePictureId', duplicatePictureId.toString());
   }
 
   private getCreatedAt(): string {

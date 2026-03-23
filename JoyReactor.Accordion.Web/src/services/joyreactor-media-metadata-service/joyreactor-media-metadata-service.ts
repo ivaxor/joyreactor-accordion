@@ -36,7 +36,7 @@ export class JoyReactorMediaMetadataService {
   }
 
   getPostUrl(postId: number): string {
-    return `https://joyreactor.cc/${postId}`;
+    return `https://joyreactor.cc/post/${postId}`;
   }
 
   getIframeUrl(historyRecord: SearchEmbeddedHistoryRecord): string {
