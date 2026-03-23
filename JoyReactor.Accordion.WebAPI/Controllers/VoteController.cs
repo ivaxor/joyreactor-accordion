@@ -28,8 +28,8 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
             .Where(dpv => dpv.VotingClosed == false)
             .Include(dpv => dpv.OriginalPicture)
             .Include(dpv => dpv.DuplicatePicture)
-            .OrderBy(dpv => dpv.OriginalPictureId)
-            .ThenBy(dpv => dpv.DuplicatePictureId)
+            .OrderBy(dpv => dpv.DuplicatePictureId)
+            .ThenBy(dpv => dpv.OriginalPictureId)
             .Skip(PageSize * page)
             .Take(PageSize)
             .ToArrayAsync(cancellationToken);
