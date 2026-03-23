@@ -60,6 +60,19 @@ export class VoteService {
     return this.http.delete(url, { headers });
   }
 
+  closeAll(duplicatePostId: number): Observable<any> {
+    const apiKey = this.apiKeyService.get();
+    if (apiKey === null)
+      return EMPTY;
+
+    const url = `${this.configService.config!.apiRoot}/vote`;
+
+    let headers = new HttpHeaders();
+    headers = headers.append('X-API-Key', apiKey);
+
+    return this.http.delete(url, { headers, params: { duplicatePostId } });
+  }
+
   private getDuplicatePictureId(): number {
     const duplicatePictureId = localStorage.getItem('voteDuplicatePictureId');
     if (duplicatePictureId)

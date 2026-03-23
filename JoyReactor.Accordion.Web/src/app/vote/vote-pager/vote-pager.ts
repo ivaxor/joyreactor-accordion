@@ -55,10 +55,18 @@ export class VotePager implements OnInit {
   }
 
   close(vote: VoteResponse): void {
-    if (!confirm('Вы точно хотите окончить голосование?'))
+    if (!confirm('Вы точно хотите окончить это голосование?'))
       return;
 
     this.voteService.close(vote)
+      .subscribe(() => this.loadVotes());
+  }
+
+  closeAll(duplicatePostId: number): void {
+    if (!confirm('Вы точно хотите окончить все голосования?'))
+      return;
+
+    this.voteService.closeAll(duplicatePostId)
       .subscribe(() => this.loadVotes());
   }
 

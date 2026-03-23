@@ -148,4 +148,30 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
 
         return Ok();
     }
+
+    [HttpDelete]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> CloseAllAsync(
+        [FromQuery] int duplicatePostId,
+        CancellationToken cancellationToken = default)
+    {
+        var votes = await sqlDatabaseContext.DuplicatePictureVotes
+            .Where(dpv => dpv.DuplicatePicture.Post.NumberId == duplicatePostId)
+            .Where(dpv => dpv.VotingClosed == false)
+            .ToArrayAsync(cancellationToken);
+
+        if (votes.Length == 0)
+            return NotFound();
+
+        foreach (var vote in votes)
+        {
+            vote.VotingClosed = true;
+        }
+        await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
+
+        return Ok();
+    }
 }

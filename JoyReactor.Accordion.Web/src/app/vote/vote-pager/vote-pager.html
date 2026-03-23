@@ -67,7 +67,10 @@
             <i class="bi bi-book-half"></i>
           </button>
           <button type="button" class="btn btn-sm btn-danger" (click)="close(vote)">
-            <i class="bi bi-sign-stop"></i>
+            <i class="bi bi-check"></i>
+          </button>
+          <button type="button" class="btn btn-sm btn-danger" (click)="closeAll(vote.duplicatePostId)">
+            <i class="bi bi-check-all"></i>
           </button>
         </div>
       </td>
