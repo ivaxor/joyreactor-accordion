@@ -32,12 +32,12 @@
     @for (vote of votes(); track $index) {
     <tr>
       <td class="text-end">
-        <a [href]="joyReactorMediaMetadataService.getPostUrl(vote.duplicatePostId)">
+        <a [href]="joyReactorMediaMetadataService.getPostUrl(vote.duplicatePostId)" target="_blank">
           {{vote.duplicatePostId}}
         </a>
       </td>
       <td class="text-end">
-        <a [href]="joyReactorMediaMetadataService.getPostUrl(vote.originalPostId)">
+        <a [href]="joyReactorMediaMetadataService.getPostUrl(vote.originalPostId)" target="_blank">
           {{vote.originalPostId}}
         </a>
       </td>
