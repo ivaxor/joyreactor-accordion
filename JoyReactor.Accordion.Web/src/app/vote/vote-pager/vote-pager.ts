@@ -48,10 +48,10 @@ export class VotePager implements OnInit {
 
   open(vote: VoteResponse): void {
     const originalUrl = this.joyReactorMediaMetadataService.getPostUrl(vote.originalPostId);
-    window.open(originalUrl, "_blank");
-
     const duplicateUrl = this.joyReactorMediaMetadataService.getPostUrl(vote.duplicatePostId);
+
     window.open(duplicateUrl, "_blank");
+    window.open(originalUrl, "_blank");
   }
 
   close(vote: VoteResponse): void {
