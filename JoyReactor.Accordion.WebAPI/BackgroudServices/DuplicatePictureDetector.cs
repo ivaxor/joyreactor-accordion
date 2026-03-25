@@ -2,6 +2,7 @@
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using JoyReactor.Accordion.Logic.Database.Vector;
 using JoyReactor.Accordion.Logic.Database.Vector.Entities;
+using JoyReactor.Accordion.Logic.Extensions;
 using JoyReactor.Accordion.WebAPI.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -49,20 +50,25 @@ public class DuplicatePictureDetector(
             {
                 picture.IsVectorCheckedForDuplicates = true;
 
+                // https://joyreactor.cc/tag/%D0%B1%D0%B0%D1%8F%D0%BD
+                // Только посты после 15 ноября 2017 года могут быть баянами
+                if (picture.PostId.ToInt() < 3302432)
+                    continue;
+
                 var response = await qdrantClient.ScrollAsync(
                 qdrantSettings.Value.CollectionName,
                 filter: new Filter()
                 {
                     Must =
                     {
-                    new Condition()
-                    {
-                        Field = new FieldCondition()
+                        new Condition()
                         {
-                            Key = "postAttributeId",
-                            Match = new Match() { Integer = picture.AttributeId }
+                            Field = new FieldCondition()
+                            {
+                                Key = "postAttributeId",
+                                Match = new Match() { Integer = picture.AttributeId }
+                            },
                         },
-                    },
                     },
                 },
                 vectorsSelector: new WithVectorsSelector() { Enable = false },
@@ -84,22 +90,22 @@ public class DuplicatePictureDetector(
                     {
                         MustNot =
                         {
-                    new Condition()
-                    {
-                        Field = new FieldCondition()
-                        {
-                            Key = "postId",
-                            Match = new Match() { Integer = initialPoint.PostId.Value }
-                        }
-                    },
-                    new Condition()
-                    {
-                        Field = new FieldCondition()
-                        {
-                            Key = "postAttributeId",
-                            Match = new Match() { Integer = initialPoint.PostAttributeId.Value }
-                        }
-                    }
+                            new Condition()
+                            {
+                                Field = new FieldCondition()
+                                {
+                                    Key = "postId",
+                                    Match = new Match() { Integer = initialPoint.PostId.Value }
+                                }
+                            },
+                            new Condition()
+                            {
+                                Field = new FieldCondition()
+                                {
+                                    Key = "postAttributeId",
+                                    Match = new Match() { Integer = initialPoint.PostAttributeId.Value }
+                                }
+                            }
                         }
                     },
                     scoreThreshold: 0.99f,

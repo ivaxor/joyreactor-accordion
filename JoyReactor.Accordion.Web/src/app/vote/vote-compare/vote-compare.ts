@@ -20,10 +20,12 @@ export class VoteCompare implements OnInit {
   originalImageLoaded = signal(false);
   originalImageRetryCounter: number = 0;
   originalImageUrl!: string;
+  originalImagePostUrl!: string;
 
-  duplicateImageLoaded = signal(false);
-  duplicateImageUrl!: string;
+  duplicateImageLoaded = signal(false);  
   duplicateImageRetryCounter: number = 0;
+  duplicateImageUrl!: string;
+  duplicateImagePostUrl!: string;
 
   ngOnInit(): void {
     this.loadNewVotes();
@@ -75,7 +77,11 @@ export class VoteCompare implements OnInit {
       this.duplicateImageLoaded.set(false);
 
     this.originalImageUrl = this.joyReactorMediaMetadataService.createImageUrl(newVote.originalPictureAttributeId);
+    this.originalImagePostUrl = this.joyReactorMediaMetadataService.getPostUrl(newVote.originalPostId);
+
     this.duplicateImageUrl = this.joyReactorMediaMetadataService.createImageUrl(newVote.duplicatePictureAttributeId);
+    this.duplicateImagePostUrl = this.joyReactorMediaMetadataService.getPostUrl(newVote.duplicatePostId);
+
     this.vote = newVote;
 
     if (this.votes.length === 0)
