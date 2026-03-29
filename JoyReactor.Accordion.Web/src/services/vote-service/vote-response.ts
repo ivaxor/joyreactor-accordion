@@ -3,9 +3,11 @@ export interface VoteResponse {
 
   originalPictureAttributeId: number,
   originalPostId: number,
+  originalPostPictureCount: number,
 
   duplicatePictureAttributeId: number,
   duplicatePostId: number,
+  duplicatePostPictureCount: number,
 
   yesVotes: number,
   noVotes: number,

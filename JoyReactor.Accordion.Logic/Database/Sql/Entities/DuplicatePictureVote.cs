@@ -109,3 +109,21 @@ public class DuplicatePictureVoteTypeConfiguration : IEntityTypeConfiguration<Du
             .IsRequired(true);
     }
 }
+
+public record DuplicatePictureVoteExtended : DuplicatePictureVote
+{
+    public DuplicatePictureVoteExtended() { }
+    public DuplicatePictureVoteExtended(DuplicatePictureVote baseVote, int originalPostId, int originalCount, int duplicatePostId, int duplicateCount) : base(baseVote)
+    {
+        OriginalPostNumberId = originalPostId;
+        OriginalPostPictureCount = originalCount;
+        DuplicatePostNumberId = duplicatePostId;
+        DuplicatePostPictureCount = duplicateCount;
+    }
+
+    public int OriginalPostNumberId { get; set; }
+    public int OriginalPostPictureCount { get; set; }
+
+    public int DuplicatePostNumberId { get; set; }
+    public int DuplicatePostPictureCount { get; set; }
+}

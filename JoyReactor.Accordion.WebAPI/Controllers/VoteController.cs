@@ -1,4 +1,5 @@
 ﻿using JoyReactor.Accordion.Logic.Database.Sql;
+using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using JoyReactor.Accordion.Logic.Extensions;
 using JoyReactor.Accordion.WebAPI.Models.Requests;
 using JoyReactor.Accordion.WebAPI.Models.Responses;
@@ -32,6 +33,12 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
             .ThenBy(dpv => dpv.OriginalPictureId)
             .Skip(PageSize * page)
             .Take(PageSize)
+            .Select(dpv => new DuplicatePictureVoteExtended(
+                dpv,
+                dpv.OriginalPicture.Post.NumberId,
+                dpv.OriginalPicture.Post.AttributePictures.Count,
+                dpv.DuplicatePicture.Post.NumberId,
+                dpv.DuplicatePicture.Post.AttributePictures.Count))
             .ToArrayAsync(cancellationToken);
 
         var votesThin = votes
@@ -76,6 +83,12 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
             .OrderBy(dpv => dpv.DuplicatePictureId)
             .ThenBy(dpv => dpv.OriginalPictureId)
             .Take(PageSize)
+            .Select(dpv => new DuplicatePictureVoteExtended(
+                dpv,
+                dpv.OriginalPicture.Post.NumberId,
+                dpv.OriginalPicture.Post.AttributePictures.Count,
+                dpv.DuplicatePicture.Post.NumberId,
+                dpv.DuplicatePicture.Post.AttributePictures.Count))
             .ToArrayAsync(cancellationToken);
 
         var votesThin = votes
