@@ -124,7 +124,24 @@ public class DuplicatePictureDetector(
                     .GroupBy(p => p.PostId, (key, collection) => collection.OrderByDescending(e => e.ContentVersion).First())
                     .ToArray();
 
+                var similarPointPostAttributeIds = similarPoints
+                    .Select(p => p.PostAttributeId)
+                    .ToArray();
+
+                var existingSimilarPointPostAttributeIds = await sqlDatabaseContext.ParsedPostAttributePictures
+                    .AsNoTracking()
+                    .Where(p => similarPointPostAttributeIds.Contains(p.AttributeId))
+                    .Select(p => p.Id)
+                    .ToArrayAsync(cancellationToken);
+
+                if (similarPointPostAttributeIds.Length != existingSimilarPointPostAttributeIds.Length)
+                {
+                    var missingSimilarPoints = similarPointPostAttributeIds.Length - existingSimilarPointPostAttributeIds.Length;
+                    logger.LogWarning("{PointCount} similar point(s) no longer exists in SQL database.", missingSimilarPoints);
+                }
+
                 var votes = similarPoints
+                    .Where(similarPoint => existingSimilarPointPostAttributeIds.Contains(similarPoint.PointId))
                     .Select(similarPoint => initialPoint.PostId < similarPoint.PostId
                         ? new DuplicatePictureVote(initialPoint, similarPoint)
                         : new DuplicatePictureVote(similarPoint, initialPoint))
