@@ -1,5 +1,4 @@
 ﻿using JoyReactor.Accordion.Logic.Database.Sql.Entities;
-using JoyReactor.Accordion.Logic.Extensions;
 
 namespace JoyReactor.Accordion.WebAPI.Models.Responses;
 

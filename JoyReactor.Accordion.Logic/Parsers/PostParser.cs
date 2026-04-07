@@ -19,7 +19,7 @@ public class PostParser(
 
     public async Task ParseAsync(Api api, IEnumerable<Post> posts, CancellationToken cancellationToken)
     {
-        if (posts.Count() == 0)
+        if (!posts.Any())
             return;
 
         await using var transaction = await sqlDatabaseContext.Database.BeginTransactionAsync(cancellationToken);
@@ -27,13 +27,14 @@ public class PostParser(
         var existingPostContentVersions = await sqlDatabaseContext.ParsedPosts
             .AsNoTracking()
             .Where(post => postNumberIds.Contains(post.NumberId))
+            .Select(post => new { post.NumberId, post.ContentVersion })
             .ToDictionaryAsync(post => post.NumberId, post => post.ContentVersion, cancellationToken);
         foreach (var post in posts)
         {
             if (!existingPostContentVersions.TryGetValue(post.NumberId, out var contentVersion) || post.ContentVersion == contentVersion)
                 continue;
 
-            logger.LogInformation("Post {PostNubmerId} content version changed. Deleting old post information.", post.NumberId);
+            logger.LogDebug("Post {PostNubmerId} content version changed. Deleting old post information.", post.NumberId);
             await sqlDatabaseContext.ParsedPosts.Where(p => p.NumberId == post.NumberId).ExecuteDeleteAsync(cancellationToken);
         }
         await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
