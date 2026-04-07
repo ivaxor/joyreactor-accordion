@@ -2,10 +2,13 @@
 using JoyReactor.Accordion.Logic.ApiClient.Models;
 using JoyReactor.Accordion.Logic.ApiClient.Responses;
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace JoyReactor.Accordion.Logic.ApiClient;
 
-public class ChangedPostClient(IApiClientProvider apiClientProvider)
+public class ChangedPostClient(
+    IApiClientProvider apiClientProvider,
+    ILogger<ChangedPostClient> logger)
     : IChangedPostClient
 {
     public async Task<Post[]> GetAsync(Api api, DateOnly day, CancellationToken cancellationToken)
@@ -37,6 +40,12 @@ query {{nameof(ChangedPostClient)}}_{{nameof(GetAsync)}}($day: Date!) {
 
         var request = new GraphQLRequest(query, new { day });
         var response = await apiClient.SendAsync<ChangedPostsResponse>(request, cancellationToken);
+        if (response == null)
+        {
+            logger.LogWarning("Changed posts response is empty for {Day}.", day);
+            return [];
+        }
+
         return response.ChangedPosts;
     }
 }
