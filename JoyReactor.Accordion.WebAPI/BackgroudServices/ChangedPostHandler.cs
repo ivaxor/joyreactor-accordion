@@ -42,7 +42,7 @@ public class ChangedPostHandler(
             foreach (var api in apis)
             {
                 var changedPosts = await changedPostClient.GetAsync(api, startDay, cancellationToken);
-                logger.LogInformation("Found {PostCount} changed posts at {Day}.", changedPosts.Length, startDay);
+                logger.LogInformation("Found {PostCount} changed post(s) at {Day}.", changedPosts.Length, startDay);
 
                 await postParser.ParseAsync(api, changedPosts, cancellationToken);
             }
