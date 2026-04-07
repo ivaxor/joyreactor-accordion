@@ -22,6 +22,8 @@ public class PostParser(
         if (!posts.Any())
             return;
 
+        var updatedPosts = 0;
+
         await using var transaction = await sqlDatabaseContext.Database.BeginTransactionAsync(cancellationToken);
         var postNumberIds = posts.Select(p => p.NumberId).ToArray();
         var existingPostContentVersions = await sqlDatabaseContext.ParsedPosts
@@ -36,6 +38,7 @@ public class PostParser(
 
             logger.LogDebug("Post {PostNubmerId} content version changed. Deleting old post information.", post.NumberId);
             await sqlDatabaseContext.ParsedPosts.Where(p => p.NumberId == post.NumberId).ExecuteDeleteAsync(cancellationToken);
+            updatedPosts++;
         }
         await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
 
@@ -76,6 +79,8 @@ public class PostParser(
 
         await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+
+        logger.LogInformation("Updated {PostCount} posts with newest content version.", updatedPosts);
     }
 
     protected async Task UpsertRangeAsync(IEnumerable<IParsedAttributeEmbedded> parsedAttributeEmbeds, CancellationToken cancellationToken)

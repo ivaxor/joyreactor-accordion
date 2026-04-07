@@ -1,5 +1,4 @@
 ﻿using JoyReactor.Accordion.Logic.ApiClient;
-using JoyReactor.Accordion.Logic.ApiClient.Models;
 using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Parsers;
 using JoyReactor.Accordion.WebAPI.Models;
@@ -15,6 +14,7 @@ public class ChangedPostHandler(
     : RobustBackgroundService(settings, logger)
 {
     protected override bool IsIndefinite => true;
+    protected bool IsFirstRun = true;
 
     protected override async Task RunAsync(CancellationToken cancellationToken)
     {
@@ -29,29 +29,28 @@ public class ChangedPostHandler(
             .Distinct()
             .ToArrayAsync(cancellationToken);
 
-        var previousDay = DateOnly.FromDateTime(DateTime.UtcNow - TimeSpan.FromHours(12));
         var currentDay = DateOnly.FromDateTime(DateTime.UtcNow);
-        var nextDay = DateOnly.FromDateTime(DateTime.UtcNow + TimeSpan.FromHours(12));
 
-        var queryPreviousDay = previousDay != currentDay;
-        var queryNextDay = nextDay != currentDay;
+        var startDay = IsFirstRun
+            ? currentDay.AddDays(-29)
+            : currentDay.AddDays(-1);
 
-        foreach (var api in apis)
+        var endDay = currentDay.AddDays(1);
+
+        do
         {
-            var previousDayChangedPosts = queryPreviousDay
-                ? await changedPostClient.GetAsync(api, previousDay, cancellationToken)
-                : [];
+            foreach (var api in apis)
+            {
+                var changedPosts = await changedPostClient.GetAsync(api, startDay, cancellationToken);
+                logger.LogInformation("Found {PostCount} changed posts at {Day}.", changedPosts.Length, startDay);
 
-            var currentDayChangedPosts = await changedPostClient.GetAsync(api, currentDay, cancellationToken);
+                await postParser.ParseAsync(api, changedPosts, cancellationToken);
+            }
 
-            var nextDayChangedPosts = queryNextDay
-                ? await changedPostClient.GetAsync(api, nextDay, cancellationToken)
-                : [];
+            startDay = startDay.AddDays(1);
+        } while (startDay <= endDay);
 
-            Post[] changedPosts = [.. previousDayChangedPosts, .. currentDayChangedPosts, .. nextDayChangedPosts];
-            logger.LogInformation("Found {PostCount} changed posts.", changedPosts.Length);
-
-            await postParser.ParseAsync(api, changedPosts, cancellationToken);
-        }
+        if (IsFirstRun)
+            IsFirstRun = false;
     }
 }
