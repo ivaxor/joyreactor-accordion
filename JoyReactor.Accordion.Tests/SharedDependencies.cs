@@ -42,7 +42,7 @@ public static class SharedDependencies
 
         services.Configure<MediaSettings>(options =>
         {
-            options.CdnHostName = "https://img0.joyreactor.cc";
+            options.CdnHostNames = Enumerable.Range(0, 10).Select(i => $"https://img{i}.joyreactor.cc").ToArray();
             options.BatchSize = 10;
             options.SubsequentBatchDelay = TimeSpan.FromSeconds(1);
             options.SubsequentCallDelay = TimeSpan.FromSeconds(1);

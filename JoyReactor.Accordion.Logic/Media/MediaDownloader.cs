@@ -19,6 +19,7 @@ public class MediaDownloader(
     ILogger<MediaDownloader> logger)
     : IMediaDownloader
 {
+    private static readonly Random Random = new Random();
     private static readonly ResiliencePropertyKey<string> UrlKey = new("RequestUrl");
 
     protected readonly SemaphoreSlim Semaphore = new SemaphoreSlim(settings.Value.BatchSize, settings.Value.BatchSize);
@@ -89,7 +90,8 @@ public class MediaDownloader(
             await Semaphore.WaitAsync(cancellationToken);
             await Task.Delay(settings.Value.SubsequentCallDelay, cancellationToken);
 
-            var url = $"{settings.Value.CdnHostName}/pics/post/picture-{picture.AttributeId}.{PictureTypeToExtensions[picture.ImageType]}";
+            var cdnHostName = settings.Value.CdnHostNames.ElementAt(Random.Next(0, settings.Value.CdnHostNames.Count()));
+            var url = $"{cdnHostName}/pics/post/picture-{picture.AttributeId}.{PictureTypeToExtensions[picture.ImageType]}";
 
             var context = ResilienceContextPool.Shared.Get(cancellationToken);
             context.Properties.Set(UrlKey, url);

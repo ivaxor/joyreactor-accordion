@@ -1,5 +1,6 @@
 ﻿using JoyReactor.Accordion.Logic.ApiClient;
 using JoyReactor.Accordion.Logic.Database.Sql;
+using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using JoyReactor.Accordion.Logic.Parsers;
 using JoyReactor.Accordion.WebAPI.Models;
 using Microsoft.EntityFrameworkCore;
@@ -20,8 +21,6 @@ public class ChangedPostHandler(
     {
         await using var serviceScope = serviceScopeFactory.CreateAsyncScope();
         await using var sqlDatabaseContext = serviceScope.ServiceProvider.GetRequiredService<SqlDatabaseContext>();
-        var changedPostClient = serviceScope.ServiceProvider.GetRequiredService<IChangedPostClient>();
-        var postParser = serviceScope.ServiceProvider.GetRequiredService<IPostParser>();
 
         var apis = await sqlDatabaseContext.CrawlerTasks
             .AsNoTracking()
@@ -41,10 +40,7 @@ public class ChangedPostHandler(
         {
             foreach (var api in apis)
             {
-                var changedPosts = await changedPostClient.GetAsync(api, startDay, cancellationToken);
-                logger.LogInformation("Found {PostCount} changed post(s) at {Day}.", changedPosts.Length, startDay);
-
-                await postParser.ParseAsync(api, changedPosts, cancellationToken);
+                await ParseAsync(api, startDay, cancellationToken);
             }
 
             startDay = startDay.AddDays(1);
@@ -52,5 +48,17 @@ public class ChangedPostHandler(
 
         if (IsFirstRun)
             IsFirstRun = false;
+    }
+
+    protected async Task ParseAsync(Api api, DateOnly day, CancellationToken cancellationToken)
+    {
+        await using var serviceScope = serviceScopeFactory.CreateAsyncScope();
+        var changedPostClient = serviceScope.ServiceProvider.GetRequiredService<IChangedPostClient>();
+        var postParser = serviceScope.ServiceProvider.GetRequiredService<IPostParser>();
+
+        var changedPosts = await changedPostClient.GetAsync(api, day, cancellationToken);
+        logger.LogInformation("Found {PostCount} changed post(s) at {Day} for {Api}.", changedPosts.Length, day, api.HostName);
+
+        await postParser.ParseAsync(api, changedPosts, cancellationToken);
     }
 }

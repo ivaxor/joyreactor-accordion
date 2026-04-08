@@ -2,7 +2,7 @@
 
 public record MediaSettings
 {
-    public string CdnHostName { get; set; }
+    public string[] CdnHostNames { get; set; }
     public int BatchSize { get; set; }
     public TimeSpan SubsequentBatchDelay { get; set; }
     public TimeSpan SubsequentCallDelay { get; set; }
