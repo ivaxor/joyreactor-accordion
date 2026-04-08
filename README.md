@@ -23,7 +23,11 @@
 
 ### GraphQL
 - [joyreactor.cc](https://api.joyreactor.cc/graphql-playground)
+- [safereactor.cc](https://api.safereactor.cc/graphql-playground)
 - [joyreactor.com](https://api.joyreactor.com/graphql-playground)
+- [purepervert.com](https://api.purepervert.com/graphql-playground)
+- [jrproxy.com](https://api.jrproxy.com/graphql-playground)
+- [jr-proxy.com](https://api.jr-proxy.com/graphql-playground)
 
 ### Media
 Examples of post and comment media URLs using only `PostAttributeId`:
