@@ -42,7 +42,7 @@ public class MediaDownloader(
                 switch (args.Outcome.Exception)
                 {
                     case HttpRequestException ex:
-                        if (ex.Message.StartsWith("No such host is known.") || ex.Message.StartsWith("The requested name is valid, but no data of the requested type was found."))
+                        if (ex.Message.StartsWith("No such host is known.") || ex.Message.StartsWith("Name or service not known") || ex.Message.StartsWith("The requested name is valid, but no data of the requested type was found."))
                             logger.LogWarning("Failed to download media from {Url} due to DNS issues. Attempt: {Attempt}/{MaxAttempts}. ", url, args.AttemptNumber + 1, maxRetryAttrempts);
                         else if (ex.StatusCode != null)
                             logger.LogWarning("Failed to download media from {Url} due to unsuccesfull status code. Status code: {StatusCode}. Attempt: {Attempt}/{MaxAttempts}. ", url, ex.StatusCode, args.AttemptNumber + 1, maxRetryAttrempts);

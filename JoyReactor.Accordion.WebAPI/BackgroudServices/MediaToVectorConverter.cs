@@ -113,7 +113,7 @@ public class MediaToVectorConverter(
             pictureImages.TryAdd(picture, image);
         }
         catch (HttpRequestException ex)
-        when (ex.Message.StartsWith("No such host is known.") || ex.Message.StartsWith("The requested name is valid, but no data of the requested type was found."))
+        when (ex.Message.StartsWith("No such host is known.") || ex.Message.StartsWith("Name or service not known") || ex.Message.StartsWith("The requested name is valid, but no data of the requested type was found."))
         {
             logger.LogWarning(ex, "Failed to download {PictureAttributeId} post attribute picture due DNS issues.", picture.AttributeId);
         }
