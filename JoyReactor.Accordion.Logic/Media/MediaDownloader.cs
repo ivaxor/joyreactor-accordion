@@ -19,7 +19,6 @@ public class MediaDownloader(
     ILogger<MediaDownloader> logger)
     : IMediaDownloader
 {
-    private static readonly Random Random = new Random();
     private static readonly ResiliencePropertyKey<string> UrlKey = new("RequestUrl");
 
     protected readonly SemaphoreSlim Semaphore = new SemaphoreSlim(settings.Value.BatchSize, settings.Value.BatchSize);
@@ -30,22 +29,29 @@ public class MediaDownloader(
             ShouldHandle = new PredicateBuilder()
                 .Handle<TimeoutRejectedException>()
                 .Handle<HttpRequestException>(),
-            MaxRetryAttempts = settings.Value.MaxRetryAttempts,
+            MaxRetryAttempts = Math.Max(settings.Value.CdnHostNames.Length - 1, settings.Value.MaxRetryAttempts),
             Delay = settings.Value.RetryDelay,
             BackoffType = DelayBackoffType.Exponential,
             UseJitter = true,
             OnRetry = async args =>
             {
+                var maxRetryAttrempts = Math.Max(settings.Value.CdnHostNames.Length, settings.Value.MaxRetryAttempts + 1);
+
                 args.Context.Properties.TryGetValue(UrlKey, out var url);
 
                 switch (args.Outcome.Exception)
                 {
                     case HttpRequestException ex:
-                        logger.LogWarning("Failed to download media from {Url}. Status code: {StatusCode}. Attempt: {Attempt}/{MaxAttempts}. ", url, ex.StatusCode, args.AttemptNumber + 1, settings.Value.MaxRetryAttempts + 1);
+                        if (ex.Message.StartsWith("No such host is known.") || ex.Message.StartsWith("The requested name is valid, but no data of the requested type was found."))
+                            logger.LogWarning("Failed to download media from {Url} due to DNS issues. Attempt: {Attempt}/{MaxAttempts}. ", url, args.AttemptNumber + 1, maxRetryAttrempts);
+                        else if (ex.StatusCode != null)
+                            logger.LogWarning("Failed to download media from {Url} due to unsuccesfull status code. Status code: {StatusCode}. Attempt: {Attempt}/{MaxAttempts}. ", url, ex.StatusCode, args.AttemptNumber + 1, maxRetryAttrempts);
+                        else
+                            logger.LogWarning("Failed to download media from {Url}. Message: {Message}. Attempt: {Attempt}/{MaxAttempts}. ", url, ex.Message, args.AttemptNumber + 1, maxRetryAttrempts);
                         break;
 
                     default:
-                        logger.LogWarning("Failed to download media from {Url}. Message: {Message}.  Attempt: {Attempt}/{MaxAttempts}.", url, args.Outcome.Exception.Message, args.AttemptNumber + 1, settings.Value.MaxRetryAttempts + 1);
+                        logger.LogWarning("Failed to download media from {Url}. Message: {Message}. Attempt: {Attempt}/{MaxAttempts}.", url, args.Outcome.Exception.Message, args.AttemptNumber + 1, maxRetryAttrempts);
                         break;
                 }
             },
@@ -90,16 +96,24 @@ public class MediaDownloader(
             await Semaphore.WaitAsync(cancellationToken);
             await Task.Delay(settings.Value.SubsequentCallDelay, cancellationToken);
 
-            var cdnHostName = settings.Value.CdnHostNames.ElementAt(Random.Next(0, settings.Value.CdnHostNames.Count()));
-            var url = $"{cdnHostName}/pics/post/picture-{picture.AttributeId}.{PictureTypeToExtensions[picture.ImageType]}";
-
-            var context = ResilienceContextPool.Shared.Get(cancellationToken);
-            context.Properties.Set(UrlKey, url);
+            var random = new Random();
+            var initialOffset = random.Next(0, settings.Value.CdnHostNames.Length);
+            var retryOffset = 0;
 
             return await ResiliencePipeline.ExecuteAsync(
-                async (ctx, state) => await DownloadAsync(state.url, state.picture, ctx.CancellationToken),
-                context,
-                (url, picture));
+                async (ResilienceContext context, ParsedPostAttributePicture state) =>
+                {
+                    var index = (initialOffset + retryOffset) % settings.Value.CdnHostNames.Length;
+                    var cdnHostName = settings.Value.CdnHostNames[index];
+                    var url = $"{cdnHostName}/pics/post/picture-{state.AttributeId}.{PictureTypeToExtensions[state.ImageType]}";
+
+                    context.Properties.Set(UrlKey, url);
+                    retryOffset++;
+
+                    return await DownloadAsync(url, state, context.CancellationToken);
+                },
+                ResilienceContextPool.Shared.Get(cancellationToken),
+                picture);
         }
         finally
         {
@@ -111,7 +125,6 @@ public class MediaDownloader(
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-
         switch (response.StatusCode)
         {
             case HttpStatusCode.ServiceUnavailable:
