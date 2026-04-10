@@ -76,7 +76,8 @@ public class CrawlerTaskHandler(
             var crawlerTask = await sqlDatabaseContext.CrawlerTasks
                 .Include(task => task.Tag)
                 .ThenInclude(tag => tag.Api)
-                .FirstAsync(task => task.Id == crawlerTaskId, cancellationToken);
+                .Where(task => task.Id == crawlerTaskId)
+                .FirstAsync(cancellationToken);
             crawlerTask.StartedAt = DateTime.UtcNow;
             crawlerTask.UpdatedAt = DateTime.UtcNow;
             sqlDatabaseContext.CrawlerTasks.Update(crawlerTask);

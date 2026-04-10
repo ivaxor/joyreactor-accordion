@@ -33,7 +33,7 @@ public class PostParser(
             .ToDictionaryAsync(post => post.NumberId, post => post.ContentVersion, cancellationToken);
         foreach (var post in posts)
         {
-            if (!existingPostContentVersions.TryGetValue(post.NumberId, out var contentVersion) || post.ContentVersion == contentVersion)
+            if (!existingPostContentVersions.TryGetValue(post.NumberId, out var contentVersion) || post.ContentVersion >= contentVersion)
                 continue;
 
             logger.LogDebug("Post {PostNubmerId} content version changed. Deleting old post information.", post.NumberId);
@@ -47,7 +47,7 @@ public class PostParser(
         var parsedAttributeEmbeds = new List<IParsedAttributeEmbedded>();
         foreach (var post in posts)
         {
-            if (existingPostContentVersions.TryGetValue(post.NumberId, out var contentVersion) && post.ContentVersion == contentVersion)
+            if (existingPostContentVersions.TryGetValue(post.NumberId, out var contentVersion) && post.ContentVersion >= contentVersion)
             {
                 logger.LogDebug("Post {PostNumberId} content version change didn't changed. Skipping post.", post.NumberId);
                 continue;
