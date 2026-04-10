@@ -31,7 +31,7 @@ public class MediaDownloader(
                 .Handle<HttpRequestException>(),
             MaxRetryAttempts = Math.Max(settings.Value.CdnHostNames.Length - 1, settings.Value.MaxRetryAttempts),
             Delay = settings.Value.RetryDelay,
-            BackoffType = DelayBackoffType.Exponential,
+            BackoffType = DelayBackoffType.Constant,
             UseJitter = true,
             OnRetry = async args =>
             {
