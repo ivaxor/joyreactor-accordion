@@ -42,16 +42,21 @@ public class MediaDownloader(
                 switch (args.Outcome.Exception)
                 {
                     case HttpRequestException ex:
-                        if (ex.Message.StartsWith("No such host is known.") || ex.Message.StartsWith("Name or service not known") || ex.Message.StartsWith("The requested name is valid, but no data of the requested type was found."))
+                        var isDnsIssues =
+                        ex.Message.StartsWith("No such host is known.", StringComparison.Ordinal) ||
+                        ex.Message.StartsWith("Name or service not known", StringComparison.Ordinal) ||
+                        ex.Message.StartsWith("The requested name is valid, but no data of the requested type was found.", StringComparison.Ordinal);
+
+                        if (isDnsIssues)
                             logger.LogWarning("Failed to download media from {Url} due to DNS issues. Attempt: {Attempt}/{MaxAttempts}. ", url, args.AttemptNumber + 1, maxRetryAttrempts);
                         else if (ex.StatusCode != null)
                             logger.LogWarning("Failed to download media from {Url} due to unsuccesfull status code. Status code: {StatusCode}. Attempt: {Attempt}/{MaxAttempts}. ", url, ex.StatusCode, args.AttemptNumber + 1, maxRetryAttrempts);
                         else
-                            logger.LogWarning("Failed to download media from {Url}. Message: {Message}. Attempt: {Attempt}/{MaxAttempts}. ", url, ex.Message, args.AttemptNumber + 1, maxRetryAttrempts);
+                            logger.LogWarning(ex, "Failed to download media from {Url}. Attempt: {Attempt}/{MaxAttempts}. ", url, args.AttemptNumber + 1, maxRetryAttrempts);
                         break;
 
                     default:
-                        logger.LogWarning("Failed to download media from {Url}. Message: {Message}. Attempt: {Attempt}/{MaxAttempts}.", url, args.Outcome.Exception.Message, args.AttemptNumber + 1, maxRetryAttrempts);
+                        logger.LogWarning(args.Outcome.Exception, "Failed to download media from {Url}. Attempt: {Attempt}/{MaxAttempts}.", url, args.AttemptNumber + 1, maxRetryAttrempts);
                         break;
                 }
             },

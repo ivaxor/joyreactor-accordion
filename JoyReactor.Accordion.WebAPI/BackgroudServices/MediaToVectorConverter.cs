@@ -113,9 +113,13 @@ public class MediaToVectorConverter(
             pictureImages.TryAdd(picture, image);
         }
         catch (HttpRequestException ex)
-        when (ex.Message.StartsWith("No such host is known.") || ex.Message.StartsWith("Name or service not known") || ex.Message.StartsWith("The requested name is valid, but no data of the requested type was found."))
+        when (
+        ex.Message.StartsWith("No such host is known.", StringComparison.Ordinal) ||
+        ex.Message.StartsWith("Name or service not known", StringComparison.Ordinal) ||
+        ex.Message.StartsWith("The requested name is valid, but no data of the requested type was found.", StringComparison.Ordinal))
         {
-            logger.LogWarning(ex, "Failed to download {PictureAttributeId} post attribute picture due DNS issues.", picture.AttributeId);
+            failedPictureAttributeIds.Add(picture.Id);
+            logger.LogWarning("Failed to download {PictureAttributeId} post attribute picture due DNS issues. Adding it to temporary ignore list.", picture.AttributeId);
         }
         catch (HttpRequestException ex)
         when (ex.StatusCode != null)
@@ -126,13 +130,13 @@ public class MediaToVectorConverter(
                     // TODO: Try to download mp4/webm if download failed and type is GIF
                     picture.NoContent = true;
                     picture.UpdatedAt = DateTime.UtcNow;
-                    logger.LogWarning(ex, "Failed to download {PictureAttributeId} post attribute picture due to no content.", picture.AttributeId);
+                    logger.LogWarning("Failed to download {PictureAttributeId} post attribute picture due to no content.", picture.AttributeId);
                     break;
 
                 case HttpStatusCode.Forbidden:
                     picture.NoContent = true;
                     picture.UpdatedAt = DateTime.UtcNow;
-                    logger.LogWarning(ex, "Failed to download {PictureAttributeId} post attribute picture due inaccessible content.", picture.AttributeId);
+                    logger.LogWarning("Failed to download {PictureAttributeId} post attribute picture due inaccessible content.", picture.AttributeId);
                     break;
 
                 default:
@@ -143,28 +147,28 @@ public class MediaToVectorConverter(
         {
             picture.UnsupportedContent = true;
             picture.UpdatedAt = DateTime.UtcNow;
-            logger.LogWarning(ex, "Failed to create image for {PictureAttributeId} post attribute picture due to invalid image content.", picture.AttributeId);
+            logger.LogWarning("Failed to create image for {PictureAttributeId} post attribute picture due to invalid image content.", picture.AttributeId);
         }
         catch (UnknownImageFormatException ex)
         {
             picture.UnsupportedContent = true;
             picture.UpdatedAt = DateTime.UtcNow;
-            logger.LogWarning(ex, "Failed to create image for {PictureAttributeId} post attribute picture due to unknown image format.", picture.AttributeId);
+            logger.LogWarning("Failed to create image for {PictureAttributeId} post attribute picture due to unknown image format.", picture.AttributeId);
         }
         catch (NotSupportedException ex)
         {
             picture.UnsupportedContent = true;
             picture.UpdatedAt = DateTime.UtcNow;
-            logger.LogWarning(ex, "Failed to create image for {PictureAttributeId} post attribute picture due to unsupported content.", picture.AttributeId);
+            logger.LogWarning("Failed to create image for {PictureAttributeId} post attribute picture due to unsupported content.", picture.AttributeId);
         }
         catch (ArgumentOutOfRangeException ex)
         when (
         (ex.Source == "SixLabors.ImageSharp" && ex.Message.Contains("DangerousGetRowSpan", StringComparison.Ordinal)) ||
-        (ex.Source == "System.Private.CoreLib" && ex.Message == "Specified argument was out of the range of valid values."))
+        (ex.Source == "System.Private.CoreLib" && ex.Message.Equals("Specified argument was out of the range of valid values.", StringComparison.Ordinal)))
         {
             picture.UnsupportedContent = true;
             picture.UpdatedAt = DateTime.UtcNow;
-            logger.LogWarning(ex, "Failed to create image for {PictureAttributeId} post attribute picture due to broken content.", picture.AttributeId);
+            logger.LogWarning("Failed to create image for {PictureAttributeId} post attribute picture due to broken content.", picture.AttributeId);
         }
         catch (Exception ex)
         {
