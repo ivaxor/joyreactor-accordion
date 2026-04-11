@@ -112,9 +112,6 @@ public class MediaDownloader(
                     var cdnHostName = settings.Value.CdnHostNames[index];
                     var url = $"{cdnHostName}/pics/post/picture-{state.AttributeId}.{PictureTypeToExtensions[state.ImageType]}";
 
-                    if (url.Contains("9311444"))
-                        logger.LogInformation(url);
-
                     context.Properties.Set(UrlKey, url);
                     retryOffset++;
 
