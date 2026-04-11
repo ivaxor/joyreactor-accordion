@@ -1,5 +1,6 @@
 ﻿using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace JoyReactor.Accordion.Logic.Database.Sql;
 
@@ -36,5 +37,18 @@ public partial class SqlDatabaseContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(SqlDatabaseContext).Assembly);
+
+        if (Database.IsSqlite())
+        {
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                var constraints = entityType.GetCheckConstraints().ToArray();
+                foreach (var constraint in constraints)
+                {
+                    if (constraint.Sql.Contains("is_array_unique"))
+                        entityType.RemoveCheckConstraint(constraint.Name);
+                }
+            }
+        }
     }
 }
