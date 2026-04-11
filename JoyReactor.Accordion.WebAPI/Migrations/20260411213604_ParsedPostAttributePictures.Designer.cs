@@ -6,30 +6,115 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using System;
+using System;
 
 #nullable disable
 
 namespace JoyReactor.Accordion.Workers.Migrations
 {
     [DbContext(typeof(SqlDatabaseContext))]
-    [Migration("20260109221136_ParsedPostAttributeEmbeddedFix")]
-    partial class ParsedPostAttributeEmbeddedFix
+    [Migration("20260411213604_ParsedPostAttributePictures")]
+    partial class ParsedPostAttributePictures
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.1")
+                .HasAnnotation("ProductVersion", "10.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("JoyReactor.Accordion.Logic.Database.Sql.Entities.Api", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("GraphQlEndpointUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("HostName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("integer");
+
+                    b.PrimitiveCollection<string[]>("RootTagNames")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GraphQlEndpointUrl")
+                        .IsUnique();
+
+                    b.HasIndex("HostName")
+                        .IsUnique();
+
+                    b.HasIndex("Priority")
+                        .IsUnique();
+
+                    b.ToTable("Apis");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("00000001-0000-0000-0000-000000000000"),
+                            GraphQlEndpointUrl = "https://api.joyreactor.cc/graphql",
+                            HostName = "joyreactor.cc",
+                            Priority = 0,
+                            RootTagNames = new[] { "общее", "Комиксы", "гифки", "art", "песочница", "котэ", "story", "geek", "видео", "фэндомы", "Эротика", "Игры", "anon", "политика", "разное", "секретные разделы", "artist", "Мемы", "Азиатка", "Porn Model", "cosplay" }
+                        },
+                        new
+                        {
+                            Id = new Guid("00000002-0000-0000-0000-000000000000"),
+                            GraphQlEndpointUrl = "https://api.joyreactor.com/graphql",
+                            HostName = "joyreactor.com",
+                            Priority = -1,
+                            RootTagNames = new[] { "general", "comics", "gif", "art", "sandbox", "cats", "story", "geek", "video", "fandoms", "erotic", "games", "anon", "politics", "artist", "memes", "asian girl", "Porn Model", "cosplay" }
+                        });
+                });
+
+            modelBuilder.Entity("JoyReactor.Accordion.Logic.Database.Sql.Entities.Config", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Configs");
+                });
 
             modelBuilder.Entity("JoyReactor.Accordion.Logic.Database.Sql.Entities.CrawlerTask", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -37,19 +122,12 @@ namespace JoyReactor.Accordion.Workers.Migrations
                     b.Property<DateTime?>("FinishedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("IsCompleted")
-                        .HasColumnType("boolean");
+                    b.Property<int>("PageCurrent")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
 
-                    b.Property<bool>("IsIndefinite")
-                        .HasColumnType("boolean");
-
-                    b.Property<int?>("PageCurrent")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("PageFrom")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("PageTo")
+                    b.Property<int?>("PageLast")
                         .HasColumnType("integer");
 
                     b.Property<int>("PostLineType")
@@ -71,10 +149,61 @@ namespace JoyReactor.Accordion.Workers.Migrations
                     b.ToTable("CrawlerTasks");
                 });
 
+            modelBuilder.Entity("JoyReactor.Accordion.Logic.Database.Sql.Entities.DuplicatePictureVote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DuplicatePictureId")
+                        .HasColumnType("uuid");
+
+                    b.PrimitiveCollection<string[]>("NoVotes")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<Guid>("OriginalPictureId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("VotingClosed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.PrimitiveCollection<string[]>("YesVotes")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DuplicatePictureId");
+
+                    b.HasIndex("OriginalPictureId", "DuplicatePictureId")
+                        .IsUnique();
+
+                    b.ToTable("DuplicatePictureVotes", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_DuplicatePictureVotes_NoVotes", "is_array_unique(\"NoVotes\")");
+
+                            t.HasCheckConstraint("CK_DuplicatePictureVotes_YesVotes", "is_array_unique(\"YesVotes\")");
+                        });
+                });
+
             modelBuilder.Entity("JoyReactor.Accordion.Logic.Database.Sql.Entities.EmptyTag", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid>("ApiId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
@@ -84,6 +213,8 @@ namespace JoyReactor.Accordion.Workers.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApiId");
 
                     b.HasIndex("NumberId")
                         .IsUnique();
@@ -95,7 +226,8 @@ namespace JoyReactor.Accordion.Workers.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -119,7 +251,8 @@ namespace JoyReactor.Accordion.Workers.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -143,6 +276,10 @@ namespace JoyReactor.Accordion.Workers.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid>("ApiId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("ContentVersion")
@@ -159,17 +296,20 @@ namespace JoyReactor.Accordion.Workers.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ApiId");
+
                     b.HasIndex("NumberId")
                         .IsUnique();
 
-                    b.ToTable("ParsedPost");
+                    b.ToTable("ParsedPosts");
                 });
 
             modelBuilder.Entity("JoyReactor.Accordion.Logic.Database.Sql.Entities.ParsedPostAttributeEmbedded", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
 
                     b.Property<Guid?>("BandCampId")
                         .HasColumnType("uuid");
@@ -197,22 +337,17 @@ namespace JoyReactor.Accordion.Workers.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BandCampId")
-                        .IsUnique();
+                    b.HasIndex("BandCampId");
 
-                    b.HasIndex("CoubId")
-                        .IsUnique();
+                    b.HasIndex("CoubId");
 
                     b.HasIndex("PostId");
 
-                    b.HasIndex("SoundCloudId")
-                        .IsUnique();
+                    b.HasIndex("SoundCloudId");
 
-                    b.HasIndex("VimeoId")
-                        .IsUnique();
+                    b.HasIndex("VimeoId");
 
-                    b.HasIndex("YouTubeId")
-                        .IsUnique();
+                    b.HasIndex("YouTubeId");
 
                     b.ToTable("ParsedPostAttributeEmbeds");
                 });
@@ -221,7 +356,8 @@ namespace JoyReactor.Accordion.Workers.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
 
                     b.Property<int>("AttributeId")
                         .HasColumnType("integer");
@@ -232,18 +368,48 @@ namespace JoyReactor.Accordion.Workers.Migrations
                     b.Property<int>("ImageType")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("IsVectorCheckedForDuplicates")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<bool>("IsVectorCreated")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("NoContent")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("NoContentDueToDns")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<Guid>("PostId")
                         .HasColumnType("uuid");
+
+                    b.Property<bool>("UnsupportedContent")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("IsVectorCheckedForDuplicates");
+
                     b.HasIndex("IsVectorCreated");
+
+                    b.HasIndex("NoContent");
+
+                    b.HasIndex("NoContentDueToDns");
+
+                    b.HasIndex("UnsupportedContent");
 
                     b.HasIndex("PostId", "AttributeId")
                         .IsUnique();
@@ -255,7 +421,8 @@ namespace JoyReactor.Accordion.Workers.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -279,6 +446,10 @@ namespace JoyReactor.Accordion.Workers.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid>("ApiId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
@@ -311,6 +482,8 @@ namespace JoyReactor.Accordion.Workers.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ApiId");
+
                     b.HasIndex("MainTagId");
 
                     b.HasIndex("Name")
@@ -328,7 +501,8 @@ namespace JoyReactor.Accordion.Workers.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -352,7 +526,8 @@ namespace JoyReactor.Accordion.Workers.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -377,10 +552,51 @@ namespace JoyReactor.Accordion.Workers.Migrations
                     b.HasOne("JoyReactor.Accordion.Logic.Database.Sql.Entities.ParsedTag", "Tag")
                         .WithMany("CrawlerTasks")
                         .HasForeignKey("TagId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Tag");
+                });
+
+            modelBuilder.Entity("JoyReactor.Accordion.Logic.Database.Sql.Entities.DuplicatePictureVote", b =>
+                {
+                    b.HasOne("JoyReactor.Accordion.Logic.Database.Sql.Entities.ParsedPostAttributePicture", "DuplicatePicture")
+                        .WithMany("VotesAsDuplicate")
+                        .HasForeignKey("DuplicatePictureId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("JoyReactor.Accordion.Logic.Database.Sql.Entities.ParsedPostAttributePicture", "OriginalPicture")
+                        .WithMany("VotesAsOriginal")
+                        .HasForeignKey("OriginalPictureId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DuplicatePicture");
+
+                    b.Navigation("OriginalPicture");
+                });
+
+            modelBuilder.Entity("JoyReactor.Accordion.Logic.Database.Sql.Entities.EmptyTag", b =>
+                {
+                    b.HasOne("JoyReactor.Accordion.Logic.Database.Sql.Entities.Api", "Api")
+                        .WithMany("EmptyTags")
+                        .HasForeignKey("ApiId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Api");
+                });
+
+            modelBuilder.Entity("JoyReactor.Accordion.Logic.Database.Sql.Entities.ParsedPost", b =>
+                {
+                    b.HasOne("JoyReactor.Accordion.Logic.Database.Sql.Entities.Api", "Api")
+                        .WithMany("Posts")
+                        .HasForeignKey("ApiId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Api");
                 });
 
             modelBuilder.Entity("JoyReactor.Accordion.Logic.Database.Sql.Entities.ParsedPostAttributeEmbedded", b =>
@@ -388,12 +604,12 @@ namespace JoyReactor.Accordion.Workers.Migrations
                     b.HasOne("JoyReactor.Accordion.Logic.Database.Sql.Entities.ParsedBandCamp", "BandCamp")
                         .WithOne("PostAttributeEmbedded")
                         .HasForeignKey("JoyReactor.Accordion.Logic.Database.Sql.Entities.ParsedPostAttributeEmbedded", "BandCampId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("JoyReactor.Accordion.Logic.Database.Sql.Entities.ParsedCoub", "Coub")
                         .WithOne("PostAttributeEmbedded")
                         .HasForeignKey("JoyReactor.Accordion.Logic.Database.Sql.Entities.ParsedPostAttributeEmbedded", "CoubId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("JoyReactor.Accordion.Logic.Database.Sql.Entities.ParsedPost", "Post")
                         .WithMany("AttributeEmbeds")
@@ -404,17 +620,17 @@ namespace JoyReactor.Accordion.Workers.Migrations
                     b.HasOne("JoyReactor.Accordion.Logic.Database.Sql.Entities.ParsedSoundCloud", "SoundCloud")
                         .WithOne("PostAttributeEmbedded")
                         .HasForeignKey("JoyReactor.Accordion.Logic.Database.Sql.Entities.ParsedPostAttributeEmbedded", "SoundCloudId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("JoyReactor.Accordion.Logic.Database.Sql.Entities.ParsedVimeo", "Vimeo")
                         .WithOne("PostAttributeEmbedded")
                         .HasForeignKey("JoyReactor.Accordion.Logic.Database.Sql.Entities.ParsedPostAttributeEmbedded", "VimeoId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("JoyReactor.Accordion.Logic.Database.Sql.Entities.ParsedYouTube", "YouTube")
                         .WithOne("PostAttributeEmbedded")
                         .HasForeignKey("JoyReactor.Accordion.Logic.Database.Sql.Entities.ParsedPostAttributeEmbedded", "YouTubeId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("BandCamp");
 
@@ -442,19 +658,36 @@ namespace JoyReactor.Accordion.Workers.Migrations
 
             modelBuilder.Entity("JoyReactor.Accordion.Logic.Database.Sql.Entities.ParsedTag", b =>
                 {
+                    b.HasOne("JoyReactor.Accordion.Logic.Database.Sql.Entities.Api", "Api")
+                        .WithMany("Tags")
+                        .HasForeignKey("ApiId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("JoyReactor.Accordion.Logic.Database.Sql.Entities.ParsedTag", "MainTag")
                         .WithMany("Synonyms")
                         .HasForeignKey("MainTagId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("JoyReactor.Accordion.Logic.Database.Sql.Entities.ParsedTag", "Parent")
                         .WithMany("SubTags")
                         .HasForeignKey("ParentId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Api");
 
                     b.Navigation("MainTag");
 
                     b.Navigation("Parent");
+                });
+
+            modelBuilder.Entity("JoyReactor.Accordion.Logic.Database.Sql.Entities.Api", b =>
+                {
+                    b.Navigation("EmptyTags");
+
+                    b.Navigation("Posts");
+
+                    b.Navigation("Tags");
                 });
 
             modelBuilder.Entity("JoyReactor.Accordion.Logic.Database.Sql.Entities.ParsedBandCamp", b =>
@@ -474,6 +707,13 @@ namespace JoyReactor.Accordion.Workers.Migrations
                     b.Navigation("AttributeEmbeds");
 
                     b.Navigation("AttributePictures");
+                });
+
+            modelBuilder.Entity("JoyReactor.Accordion.Logic.Database.Sql.Entities.ParsedPostAttributePicture", b =>
+                {
+                    b.Navigation("VotesAsDuplicate");
+
+                    b.Navigation("VotesAsOriginal");
                 });
 
             modelBuilder.Entity("JoyReactor.Accordion.Logic.Database.Sql.Entities.ParsedSoundCloud", b =>

@@ -31,11 +31,11 @@ public class MediaDownloader(
                 .Handle<HttpRequestException>(),
             MaxRetryAttempts = Math.Max(settings.Value.CdnHostNames.Length - 1, settings.Value.MaxRetryAttempts),
             Delay = settings.Value.RetryDelay,
-            BackoffType = DelayBackoffType.Exponential,
+            BackoffType = DelayBackoffType.Linear,
             UseJitter = true,
             OnRetry = async args =>
             {
-                var maxRetryAttrempts = Math.Max(settings.Value.CdnHostNames.Length, settings.Value.MaxRetryAttempts + 1);
+                var maxRetryAttrempts = Math.Max(settings.Value.CdnHostNames.Length, settings.Value.MaxRetryAttempts);
 
                 args.Context.Properties.TryGetValue(UrlKey, out var url);
 
@@ -111,6 +111,9 @@ public class MediaDownloader(
                     var index = (initialOffset + retryOffset) % settings.Value.CdnHostNames.Length;
                     var cdnHostName = settings.Value.CdnHostNames[index];
                     var url = $"{cdnHostName}/pics/post/picture-{state.AttributeId}.{PictureTypeToExtensions[state.ImageType]}";
+
+                    if (url.Contains("9311444"))
+                        logger.LogInformation(url);
 
                     context.Properties.Set(UrlKey, url);
                     retryOffset++;

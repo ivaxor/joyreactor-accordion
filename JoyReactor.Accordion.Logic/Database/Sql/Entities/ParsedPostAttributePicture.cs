@@ -41,6 +41,7 @@ public record ParsedPostAttributePicture : ISqlUpdatedAtEntity, IParsedPostAttri
     public virtual ParsedPost Post { get; set; }
 
     public bool NoContent { get; set; }
+    public bool NoContentDueToDns { get; set; }
     public bool UnsupportedContent { get; set; }
     public bool IsVectorCreated { get; set; }
     public bool IsVectorCheckedForDuplicates { get; set; }
@@ -90,6 +91,13 @@ public class ParsedPostAttributePictureEntityTypeConfiguration : IEntityTypeConf
             .HasIndex(e => e.NoContent);
         builder
             .Property(e => e.NoContent)
+            .HasDefaultValue(false)
+            .IsRequired(true);
+
+        builder
+            .HasIndex(e => e.NoContentDueToDns);
+        builder
+            .Property(e => e.NoContentDueToDns)
             .HasDefaultValue(false)
             .IsRequired(true);
 

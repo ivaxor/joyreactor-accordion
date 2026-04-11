@@ -52,7 +52,8 @@ public class MediaToVectorConverter(
             unprocessedPictures = await sqlDatabaseContext.ParsedPostAttributePictures
                 .Include(picture => picture.Post)
                 .ThenInclude(post => post.Api)
-                .Where(picture => picture.NoContent == false && picture.UnsupportedContent == false && picture.IsVectorCreated == false)
+                .Where(picture => picture.IsVectorCreated == false)
+                .Where(picture => picture.NoContent == false && picture.NoContentDueToDns == false && picture.UnsupportedContent == false)                
                 .Where(picture => SupportedImageTypes.Contains(picture.ImageType))
                 .Where(picture => !failedPictureAttributeIds.Contains(picture.Id))
                 .OrderBy(picture => picture.AttributeId)
@@ -120,6 +121,9 @@ public class MediaToVectorConverter(
         ex.Message.StartsWith("Name or service not known", StringComparison.Ordinal) ||
         ex.Message.StartsWith("The requested name is valid, but no data of the requested type was found.", StringComparison.Ordinal))
         {
+            picture.NoContentDueToDns = true;
+            picture.UpdatedAt = DateTime.UtcNow;
+
             failedPictureAttributeIds.Add(picture.Id);
             logger.LogWarning("Failed to download {PictureAttributeId} post attribute picture due DNS issues. Adding it to temporary ignore list.", picture.AttributeId);
         }
