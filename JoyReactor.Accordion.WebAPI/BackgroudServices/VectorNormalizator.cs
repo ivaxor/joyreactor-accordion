@@ -1,5 +1,4 @@
-﻿using JoyReactor.Accordion.Logic.ApiClient.Models;
-using JoyReactor.Accordion.Logic.Database.Sql;
+﻿using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using JoyReactor.Accordion.Logic.Database.Vector;
 using JoyReactor.Accordion.Logic.Database.Vector.Entities;
@@ -133,7 +132,14 @@ public class VectorNormalizator(
 
             if (updatedPostAttributes.Count != 0)
             {
-                sqlDatabaseContext.UpdateRange(updatedPostAttributes);
+                foreach (var updatedPostAttribute in updatedPostAttributes)
+                {
+                    var entry = sqlDatabaseContext.Entry(updatedPostAttribute);
+                    entry.State = EntityState.Unchanged;
+                    entry.Property(p => p.IsVectorCreated).IsModified = true;
+                    entry.Property(p => p.UpdatedAt).IsModified = true;
+                }
+
                 await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
                 logger.LogInformation("Updated {SqlCount} SQL record(s).", updatedPostAttributes.Count);
             }
