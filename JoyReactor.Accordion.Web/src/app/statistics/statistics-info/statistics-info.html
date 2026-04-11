@@ -74,9 +74,17 @@
       </div>
 
       <div class="row">
-        <label i18n for="parsedPostAttributePictures" class="col-8 col-sm-6 col-form-label">Без векторов</label>
+        <label i18n for="parsedPostAttributePicturesWithoutVector" class="col-8 col-sm-6 col-form-label">Без векторов</label>
         <div class="col-4 col-sm-6 placeholder-glow">
           @if (statistics) { <input readonly [value]="statistics.parsedPostAttributePicturesWithoutVector" id="parsedPostAttributePicturesWithoutVector" class="form-control-plaintext"> }
+          @else {<span class="placeholder col-12 col-sm-7"></span> }
+        </div>
+      </div>
+
+      <div class="row">
+        <label i18n for="parsedPostAttributePicturesCheckedForDuplicates" class="col-8 col-sm-6 col-form-label">Проверенных на дубликаты</label>
+        <div class="col-4 col-sm-6 placeholder-glow">
+          @if (statistics) { <input readonly [value]="statistics.parsedPostAttributePicturesCheckedForDuplicates" id="parsedPostAttributePicturesCheckedForDuplicates" class="form-control-plaintext"> }
           @else {<span class="placeholder col-12 col-sm-7"></span> }
         </div>
       </div>

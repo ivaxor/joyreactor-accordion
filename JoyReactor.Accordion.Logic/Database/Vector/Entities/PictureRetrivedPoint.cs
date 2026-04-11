@@ -29,14 +29,6 @@ public record PictureRetrivedPoint
         PostAttributeId = payload.TryGetValue("postAttributeId", out var postAttributeId) && postAttributeId.KindCase == Value.KindOneofCase.IntegerValue
             ? Convert.ToInt32(postAttributeId.IntegerValue)
             : null;
-
-        CommentId = payload.TryGetValue("commentId", out var commentIdValue) && commentIdValue.KindCase == Value.KindOneofCase.IntegerValue
-            ? Convert.ToInt32(commentIdValue.IntegerValue)
-            : null;
-
-        CommentAttributeId = payload.TryGetValue("commentAttributeId", out var commentAttributeIdValue) && commentAttributeIdValue.KindCase == Value.KindOneofCase.IntegerValue
-            ? Convert.ToInt32(commentAttributeIdValue.IntegerValue)
-            : null;
     }
 
     public Guid PointId { get; set; }
@@ -47,7 +39,4 @@ public record PictureRetrivedPoint
 
     public int? PostId { get; set; }
     public int? PostAttributeId { get; set; }
-
-    public int? CommentId { get; set; }
-    public int? CommentAttributeId { get; set; }
 }

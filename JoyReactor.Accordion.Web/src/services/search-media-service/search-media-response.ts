@@ -3,6 +3,4 @@ export interface SearchMediaResponse {
   hostName: string,
   postId?: number,
   postAttributeId?: number,
-  commentId?: number,
-  commentAttributeId?: number,
 }

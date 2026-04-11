@@ -1,6 +1,7 @@
 ﻿using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Vector;
 using JoyReactor.Accordion.Logic.Database.Vector.Extensions;
+using JoyReactor.Accordion.Logic.Extensions;
 using JoyReactor.Accordion.WebAPI.Models.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -39,57 +40,39 @@ public class StatisticsController(
 
     protected async Task<StatisticsResponse> GetStatisticsAsync(CancellationToken cancellationToken)
     {
-        var statitics = new StatisticsResponse();
+        const string statisticsSql = @"
+SET LOCAL jit = off;
+SELECT
+    0 AS ""Vectors"",
 
-        var vectors = qdrantClient.CountAsync(qdrantSettings.Value.CollectionName, cancellationToken);
-        statitics.Vectors = Convert.ToInt32(await vectors);
+    (SELECT COUNT(*) FROM ""ParsedTags"") AS ""ParsedTags"",
+    (SELECT COUNT(*) FROM ""EmptyTags"") AS ""EmptyTags"",
 
-        var sqlResults = await sqlDatabaseContext.Apis
-            .GroupBy(_ => 1)
-            .Select(g => new
-            {
-                ParsedTags = sqlDatabaseContext.ParsedTags.Count(),
-                EmptyTags = sqlDatabaseContext.EmptyTags.Count(),
+    (SELECT COUNT(*) FROM ""ParsedPosts"") AS ""ParsedPosts"",
 
-                ParsedPosts = sqlDatabaseContext.ParsedPosts.Count(),
+    (SELECT COUNT(*) FROM ""ParsedPostAttributePictures"") AS ""ParsedPostAttributePictures"",
+    (SELECT COUNT(*) FROM ""ParsedPostAttributePictures"" WHERE ""NoContent"") AS ""ParsedPostAttributePicturesNoContent"",
+    (SELECT COUNT(*) FROM ""ParsedPostAttributePictures"" WHERE ""NoContentDueToDns"") AS ""ParsedPostAttributePicturesNoContentDueToDns"",
+    (SELECT COUNT(*) FROM ""ParsedPostAttributePictures"" WHERE ""UnsupportedContent"") AS ""ParsedPostAttributePicturesUnsupported"",
+    (SELECT COUNT(*) FROM ""ParsedPostAttributePictures"" WHERE ""IsVectorCreated"") AS ""ParsedPostAttributePicturesWithVector"",
+    (SELECT COUNT(*) FROM ""ParsedPostAttributePictures"" WHERE NOT ""IsVectorCreated"" AND NOT ""NoContent"" AND NOT ""NoContentDueToDns"" AND NOT ""UnsupportedContent"") AS ""ParsedPostAttributePicturesWithoutVector"",
+    (SELECT COUNT(*) FROM ""ParsedPostAttributePictures"" WHERE ""IsVectorCheckedForDuplicates"") AS ""ParsedPostAttributePicturesCheckedForDuplicates"",
 
-                ParsedPostAttributePictures = sqlDatabaseContext.ParsedPostAttributePictures.Count(),
-                ParsedPostAttributePicturesNoContent = sqlDatabaseContext.ParsedPostAttributePictures.Count(p => p.NoContent == true),
-                ParsedPostAttributePicturesNoContentDueToDns = sqlDatabaseContext.ParsedPostAttributePictures.Count(p => p.NoContentDueToDns == true),
-                ParsedPostAttributePicturesUnsupported = sqlDatabaseContext.ParsedPostAttributePictures.Count(p => p.UnsupportedContent == true),
-                ParsedPostAttributePicturesWithVector = sqlDatabaseContext.ParsedPostAttributePictures.Count(p => p.IsVectorCreated == true),
-                ParsedPostAttributePicturesWithoutVector = sqlDatabaseContext.ParsedPostAttributePictures.Count(p => p.IsVectorCreated == false && p.NoContent == false && p.NoContentDueToDns == false && p.UnsupportedContent == false),
+    (SELECT COUNT(*) FROM ""ParsedPostAttributeEmbeds"") AS ""ParsedPostAttributeEmbeds"",
 
-                ParsedPostAttributeEmbeds = sqlDatabaseContext.ParsedPostAttributeEmbeds.Count(),
+    (SELECT COUNT(*) FROM ""ParsedBandCamps"") AS ""ParsedBandCamps"",
+    (SELECT COUNT(*) FROM ""ParsedCoubs"") AS ""ParsedCoubs"",
+    (SELECT COUNT(*) FROM ""ParsedSoundClouds"") AS ""ParsedSoundClouds"",
+    (SELECT COUNT(*) FROM ""ParsedVimeos"") AS ""ParsedVimeos"",
+    (SELECT COUNT(*) FROM ""ParsedYouTubes"") AS ""ParsedYouTubes""
+";
 
-                ParsedBandCamps = sqlDatabaseContext.ParsedBandCamps.Count(),
-                ParsedCoubs = sqlDatabaseContext.ParsedCoubs.Count(),
-                ParsedSoundClouds = sqlDatabaseContext.ParsedSoundClouds.Count(),
-                ParsedVimeos = sqlDatabaseContext.ParsedVimeos.Count(),
-                ParsedYouTubes = sqlDatabaseContext.ParsedYouTubes.Count(),
-            })
-            .FirstAsync(cancellationToken);
+        var (vectors, statistics) = await TaskTyped.WhenAll(
+            qdrantClient.CountAsync(qdrantSettings.Value.CollectionName, cancellationToken),
+            sqlDatabaseContext.Database.SqlQueryRaw<StatisticsResponse>(statisticsSql).AsAsyncEnumerable().FirstAsync(cancellationToken).AsTask());
 
-        statitics.ParsedTags = sqlResults.ParsedTags;
-        statitics.EmptyTags = sqlResults.EmptyTags;
+        statistics.Vectors = Convert.ToInt32(vectors);
 
-        statitics.ParsedPosts = sqlResults.ParsedPosts;
-
-        statitics.ParsedPostAttributePictures = sqlResults.ParsedPostAttributePictures;
-        statitics.ParsedPostAttributePicturesNoContent = sqlResults.ParsedPostAttributePicturesNoContent;
-        statitics.ParsedPostAttributePicturesNoContentDueToDns = sqlResults.ParsedPostAttributePicturesNoContentDueToDns;
-        statitics.ParsedPostAttributePicturesUnsupported = sqlResults.ParsedPostAttributePicturesUnsupported;
-        statitics.ParsedPostAttributePicturesWithVector = sqlResults.ParsedPostAttributePicturesWithVector;
-        statitics.ParsedPostAttributePicturesWithoutVector = sqlResults.ParsedPostAttributePicturesWithoutVector;
-
-        statitics.ParsedPostAttributeEmbeds = sqlResults.ParsedPostAttributeEmbeds;
-
-        statitics.ParsedBandCamps = sqlResults.ParsedBandCamps;
-        statitics.ParsedCoubs = sqlResults.ParsedCoubs;
-        statitics.ParsedSoundClouds = sqlResults.ParsedSoundClouds;
-        statitics.ParsedVimeos = sqlResults.ParsedVimeos;
-        statitics.ParsedYouTubes = sqlResults.ParsedYouTubes;
-
-        return statitics;
+        return statistics;
     }
 }

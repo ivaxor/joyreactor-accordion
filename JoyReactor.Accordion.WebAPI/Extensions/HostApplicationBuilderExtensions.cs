@@ -69,7 +69,11 @@ public static class HostApplicationBuilderExtensions
             });
 
             if (builder.Environment.IsDevelopment())
-                options.EnableSensitiveDataLogging();
+            {
+                options
+                    .EnableDetailedErrors()
+                    .EnableSensitiveDataLogging();
+            }
         });
 
         builder.Services.AddSingleton<IQdrantClient, QdrantClient>(serviceProvider =>
@@ -117,11 +121,6 @@ public static class HostApplicationBuilderExtensions
 
             if (!collectionInfo.PayloadSchema.ContainsKey("createdAt"))
                 client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "createdAt", schemaType: PayloadSchemaType.Datetime).GetAwaiter().GetResult();
-
-            /*
-            client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "commentId", schemaType: PayloadSchemaType.Integer).GetAwaiter().GetResult();
-            client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "commentAttributeId", schemaType: PayloadSchemaType.Integer).GetAwaiter().GetResult();
-            */
 
             return client;
         });
