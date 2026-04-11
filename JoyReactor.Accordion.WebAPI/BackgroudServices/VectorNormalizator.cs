@@ -37,6 +37,7 @@ public class VectorNormalizator(
         {
             var postAttributesChangeCount = 0;
             postAttributeByAttributeId = await sqlDatabaseContext.ParsedPostAttributePictures
+                .AsNoTracking()
                 .Include(picture => picture.Post)
                 .Where(picture => picture.AttributeId >= fromAttributeId && picture.AttributeId < toAttributeId)
                 .OrderBy(picture => picture.AttributeId)
