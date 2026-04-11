@@ -80,7 +80,7 @@ public class PostParser(
         await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        logger.LogInformation("Added {PostCount} post(s) with {PostCount} post(s) updated to newest content version.", parsedPosts.Count, postsWithNewestContentVersion);
+        logger.LogInformation("Added {PostCount} post(s) with {PostWithNewestContentVersionCount} post(s) updated to newest content version.", parsedPosts.Count, postsWithNewestContentVersion);
     }
 
     protected async Task UpsertRangeAsync(IEnumerable<IParsedAttributeEmbedded> parsedAttributeEmbeds, CancellationToken cancellationToken)
