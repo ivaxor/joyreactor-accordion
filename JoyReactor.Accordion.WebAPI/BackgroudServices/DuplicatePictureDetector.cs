@@ -32,8 +32,7 @@ public class DuplicatePictureDetector(
         do
         {
             pictures = await sqlDatabaseContext.ParsedPostAttributePictures
-                .Where(ppap => ppap.IsVectorCreated == true)
-                .Where(ppap => ppap.IsVectorCheckedForDuplicates == false)
+                .Where(ppap => ppap.IsVectorCreated == true && ppap.IsVectorCheckedForDuplicates == false)
                 .OrderBy(ppap => ppap.AttributeId)
                 .Take(BatchSize)
                 .ToArrayAsync(cancellationToken);

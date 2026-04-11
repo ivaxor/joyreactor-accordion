@@ -14,6 +14,7 @@ public class ChangedPostHandler(
     ILogger<ChangedPostHandler> logger)
     : RobustBackgroundService(settings, logger)
 {
+    protected override TimeSpan SubsequentRunDelay => settings.Value.SubsequentRunDelay * 3;
     protected override bool IsIndefinite => true;
     protected bool IsFirstRun = true;
 
