@@ -1,4 +1,5 @@
-﻿using JoyReactor.Accordion.Logic.Database.Sql;
+﻿using JoyReactor.Accordion.Logic.ApiClient.Models;
+using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using JoyReactor.Accordion.Logic.Database.Vector;
 using JoyReactor.Accordion.Logic.Database.Vector.Entities;
@@ -26,8 +27,8 @@ public class VectorNormalizator(
     protected override async Task RunAsync(CancellationToken cancellationToken)
     {
         await using var serviceScope = serviceScopeFactory.CreateAsyncScope();
-        using var sqlDatabaseContext = serviceScope.ServiceProvider.GetRequiredService<SqlDatabaseContext>();
         var qdrantClient = serviceScope.ServiceProvider.GetRequiredService<IQdrantClient>();
+        using var sqlDatabaseContext = serviceScope.ServiceProvider.GetRequiredService<SqlDatabaseContext>();
 
         var fromAttributeId = 0;
         var toAttributeId = BatchSize;
@@ -35,7 +36,8 @@ public class VectorNormalizator(
         Dictionary<int, ParsedPostAttributePicture> postAttributeByAttributeId = null;
         do
         {
-            var postAttributesChangeCount = 0;
+            var updatedPostAttributes = new List<ParsedPostAttributePicture>();
+
             postAttributeByAttributeId = await sqlDatabaseContext.ParsedPostAttributePictures
                 .AsNoTracking()
                 .Include(picture => picture.Post)
@@ -110,13 +112,13 @@ public class VectorNormalizator(
                     oldContentVersionPointIds.Add(latestContentVersionRetrivedPoint.PointId);
                     postAttribute.IsVectorCreated = false;
                     postAttribute.UpdatedAt = DateTime.UtcNow;
-                    postAttributesChangeCount++;
+                    updatedPostAttributes.Add(postAttribute);
                 }
                 else
                 {
                     postAttribute.IsVectorCreated = false;
                     postAttribute.UpdatedAt = DateTime.UtcNow;
-                    postAttributesChangeCount++;
+                    updatedPostAttributes.Add(postAttribute);
                 }
             }
 
@@ -129,11 +131,14 @@ public class VectorNormalizator(
                 logger.LogInformation("Deleted {VectorCount} vector(s).", oldContentVersionPointIds.Count);
             }
 
-            if (postAttributesChangeCount > 0)
+            if (updatedPostAttributes.Count != 0)
             {
+                sqlDatabaseContext.UpdateRange(updatedPostAttributes);
                 await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
-                logger.LogInformation("Updated {SqlCount} SQL record(s).", postAttributesChangeCount);
+                logger.LogInformation("Updated {SqlCount} SQL record(s).", updatedPostAttributes.Count);
             }
+
+            sqlDatabaseContext.ChangeTracker.Clear();
 
             fromAttributeId += BatchSize;
             toAttributeId += BatchSize;

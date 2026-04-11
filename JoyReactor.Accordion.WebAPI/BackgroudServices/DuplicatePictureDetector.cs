@@ -159,6 +159,7 @@ public class DuplicatePictureDetector(
             }
 
             await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
+            sqlDatabaseContext.ChangeTracker.Clear();
 
             logger.LogInformation("Found {DuplicatesCount} and upserted {DuplicatesCount} post attribute picture duplicate(s) as votes.", foundTotal, upsertedTotal);
         } while (pictures.Length > 0);

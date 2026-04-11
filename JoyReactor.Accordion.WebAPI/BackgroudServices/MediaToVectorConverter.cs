@@ -93,6 +93,8 @@ public class MediaToVectorConverter(
             await qdrantClient.UpsertAsync(qdrantSettings.Value.CollectionName, pictureVectors, cancellationToken);
             await transaction.CommitAsync(cancellationToken);
 
+            sqlDatabaseContext.ChangeTracker.Clear();
+
             logger.LogInformation("{PicturesCount} picture post attribute(s) were converted and saved as vector(s).", pictureVectors.Count);
         } while (unprocessedPictures.Length != 0);
     }

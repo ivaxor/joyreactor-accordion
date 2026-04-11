@@ -22,6 +22,8 @@ public class ChangedPostHandler(
     {
         await using var serviceScope = serviceScopeFactory.CreateAsyncScope();
         await using var sqlDatabaseContext = serviceScope.ServiceProvider.GetRequiredService<SqlDatabaseContext>();
+        var postParser = serviceScope.ServiceProvider.GetRequiredService<IPostParser>();
+        var changedPostClient = serviceScope.ServiceProvider.GetRequiredService<IChangedPostClient>();
 
         var apis = await sqlDatabaseContext.CrawlerTasks
             .AsNoTracking()
@@ -41,7 +43,11 @@ public class ChangedPostHandler(
         {
             foreach (var api in apis)
             {
-                await ParseAsync(api, startDay, cancellationToken);
+                var changedPosts = await changedPostClient.GetAsync(api, currentDay, cancellationToken);
+                logger.LogInformation("Found {PostCount} changed post(s) at {Day} for {Api}.", changedPosts.Length, currentDay, api.HostName);
+
+                await postParser.ParseAsync(api, changedPosts, cancellationToken);
+                sqlDatabaseContext.ChangeTracker.Clear();
             }
 
             startDay = startDay.AddDays(1);
@@ -49,17 +55,5 @@ public class ChangedPostHandler(
 
         if (IsFirstRun)
             IsFirstRun = false;
-    }
-
-    protected async Task ParseAsync(Api api, DateOnly day, CancellationToken cancellationToken)
-    {
-        await using var serviceScope = serviceScopeFactory.CreateAsyncScope();
-        var changedPostClient = serviceScope.ServiceProvider.GetRequiredService<IChangedPostClient>();
-        var postParser = serviceScope.ServiceProvider.GetRequiredService<IPostParser>();
-
-        var changedPosts = await changedPostClient.GetAsync(api, day, cancellationToken);
-        logger.LogInformation("Found {PostCount} changed post(s) at {Day} for {Api}.", changedPosts.Length, day, api.HostName);
-
-        await postParser.ParseAsync(api, changedPosts, cancellationToken);
     }
 }
