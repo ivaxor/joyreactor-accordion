@@ -11,8 +11,6 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Scalar.AspNetCore;
 using Serilog;
 using System.Collections.Frozen;
-using System.Net;
-using System.Net.Security;
 using System.Reflection;
 using System.Text;
 
@@ -42,12 +40,6 @@ builder.Services
     {
         httpClient.DefaultRequestHeaders.Add("Referer", "https://joyreactor.cc/");
         httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
-    })
-    .ConfigurePrimaryHttpMessageHandler(serviceProvider => new SocketsHttpHandler
-    {
-        AutomaticDecompression = DecompressionMethods.All,
-        PooledConnectionLifetime = TimeSpan.FromMinutes(1),
-        EnableMultipleHttp2Connections = true,
     });
 builder.Services
     .AddHttpClient<SearchMediaController>(httpClient =>
