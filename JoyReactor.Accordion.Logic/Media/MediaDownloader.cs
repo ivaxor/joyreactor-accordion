@@ -50,7 +50,19 @@ public class MediaDownloader(
                         if (isDnsIssues)
                             logger.LogWarning("Failed to download media from {Url} due to DNS issues. Attempt: {Attempt}/{MaxAttempts}. ", url, args.AttemptNumber + 1, maxRetryAttrempts);
                         else if (ex.StatusCode != null)
-                            logger.LogWarning("Failed to download media from {Url} due to unsuccesfull status code. Status code: {StatusCode}. Attempt: {Attempt}/{MaxAttempts}. ", url, ex.StatusCode, args.AttemptNumber + 1, maxRetryAttrempts);
+                        {
+                            switch (ex.StatusCode)
+                            {
+                                case HttpStatusCode.ServiceUnavailable:
+                                    logger.LogWarning("Failed to download media from {Url} due to unavailable CDN service. Attempt: {Attempt}/{MaxAttempts}. Making a pause.", url, args.AttemptNumber + 1, maxRetryAttrempts);
+                                    await Task.Delay(TimeSpan.FromMinutes(1), args.Context.CancellationToken);
+                                    break;
+
+                                default:
+                                    logger.LogWarning("Failed to download media from {Url} due to unsuccesfull status code. Status code: {StatusCode}. Attempt: {Attempt}/{MaxAttempts}. ", url, ex.StatusCode, args.AttemptNumber + 1, maxRetryAttrempts);
+                                    break;
+                            }
+                        }
                         else
                             logger.LogWarning(ex, "Failed to download media from {Url}. Attempt: {Attempt}/{MaxAttempts}. ", url, args.AttemptNumber + 1, maxRetryAttrempts);
                         break;
@@ -101,8 +113,7 @@ public class MediaDownloader(
             await Semaphore.WaitAsync(cancellationToken);
             await Task.Delay(settings.Value.SubsequentCallDelay, cancellationToken);
 
-            var random = new Random();
-            var initialOffset = random.Next(0, settings.Value.CdnHostNames.Length);
+            var initialOffset = Random.Shared.Next(0, settings.Value.CdnHostNames.Length);
             var retryOffset = 0;
 
             return await ResiliencePipeline.ExecuteAsync(
@@ -130,14 +141,6 @@ public class MediaDownloader(
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        switch (response.StatusCode)
-        {
-            case HttpStatusCode.ServiceUnavailable:
-                logger.LogWarning("CDN service unavailable. Making a pause.");
-                await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken);
-                break;
-        }
-
         response.EnsureSuccessStatusCode();
 
         var mimeType = response.Content.Headers.ContentType?.MediaType;

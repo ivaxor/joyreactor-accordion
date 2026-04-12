@@ -53,7 +53,7 @@ public class MediaToVectorConverter(
                 .Include(picture => picture.Post)
                 .ThenInclude(post => post.Api)
                 .Where(picture => picture.IsVectorCreated == false)
-                .Where(picture => picture.NoContent == false && picture.NoContentDueToDns == false && picture.UnsupportedContent == false)                
+                .Where(picture => picture.NoContent == false && picture.NoContentDueToDns == false && picture.UnsupportedContent == false)
                 .Where(picture => SupportedImageTypes.Contains(picture.ImageType))
                 .Where(picture => !failedPictureAttributeIds.Contains(picture.Id))
                 .OrderBy(picture => picture.AttributeId)
@@ -84,7 +84,9 @@ public class MediaToVectorConverter(
             }
             logger.LogInformation("{PicturesCount} picture post attribute(s) were converted to vector(s).", pictureVectors.Count);
 
-            var failedPictureVectors = unprocessedPictures.Where(picture => picture.NoContent || picture.UnsupportedContent).ToArray();
+            var failedPictureVectors = unprocessedPictures
+                .Where(picture => picture.NoContent || picture.NoContentDueToDns || picture.UnsupportedContent)
+                .ToArray();
 
             await using var transaction = await sqlDatabaseContext.Database.BeginTransactionAsync(cancellationToken);
             sqlDatabaseContext.ParsedPostAttributePictures.UpdateRange(pictureVectors.Keys);
@@ -109,6 +111,9 @@ public class MediaToVectorConverter(
     {
         if (failedPictureAttributeIds.Contains(picture.Id))
             return;
+
+        // Jitter
+        await Task.Delay(Random.Shared.Next(mediaSettings.Value.SubsequentCallDelay.Milliseconds, mediaSettings.Value.SubsequentCallDelay.Milliseconds * 3), cancellationToken);
 
         try
         {

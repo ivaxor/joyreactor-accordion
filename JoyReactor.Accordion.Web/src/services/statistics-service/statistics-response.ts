@@ -8,6 +8,7 @@ export interface StatisticsResponse {
 
   parsedPostAttributePictures: number,
   parsedPostAttributePicturesNoContent: number,
+  parsedPostAttributePicturesNoContentDueToDns: number,
   parsedPostAttributePicturesUnsupported: number,
   parsedPostAttributePicturesWithVector: number,
   parsedPostAttributePicturesWithoutVector: number,
