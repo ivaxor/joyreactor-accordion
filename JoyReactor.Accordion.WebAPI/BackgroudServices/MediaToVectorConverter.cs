@@ -82,7 +82,6 @@ public class MediaToVectorConverter(
             {
                 await CreateVectorAsync(onnxVectorConverter, failedPictureAttributeIds, pictureVectors, picture, image);
             }
-            logger.LogInformation("{PicturesCount} picture post attribute(s) were converted to vector(s).", pictureVectors.Count);
 
             var failedPictureVectors = unprocessedPictures
                 .Where(picture => picture.NoContent || picture.NoContentDueToDns || picture.UnsupportedContent)
