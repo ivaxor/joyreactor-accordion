@@ -29,7 +29,6 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
             .Include(dpv => dpv.OriginalPicture)
             .Include(dpv => dpv.DuplicatePicture)
             .Where(dpv => dpv.VotingClosed == false)
-            .Where(dpv => dpv.DuplicatePicture.Post.AttributePictures.Count <= dpv.OriginalPicture.Post.AttributePictures.Count)
             .OrderBy(dpv => dpv.DuplicatePictureId)
             .ThenBy(dpv => dpv.OriginalPictureId)
             .Skip(PageSize * page)
@@ -81,7 +80,6 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
         var votes = await votesQuery
             .Include(dpv => dpv.OriginalPicture)
             .Include(dpv => dpv.DuplicatePicture)
-            .Where(dpv => dpv.DuplicatePicture.Post.AttributePictures.Count <= dpv.OriginalPicture.Post.AttributePictures.Count)
             .OrderBy(dpv => dpv.DuplicatePictureId)
             .ThenBy(dpv => dpv.OriginalPictureId)
             .Take(PageSize)
