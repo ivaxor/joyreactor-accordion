@@ -6,7 +6,7 @@ public record PictureScoredPoint : PictureRetrivedPoint
 {
     public PictureScoredPoint() { }
 
-    public PictureScoredPoint(ScoredPoint scoredPoint) : base(scoredPoint.Payload)
+    public PictureScoredPoint(ScoredPoint scoredPoint) : base(scoredPoint.Id, scoredPoint.Payload)
     {
         Score = scoredPoint.Score;
     }

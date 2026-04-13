@@ -7,13 +7,12 @@ public record PictureRetrivedPoint
 {
     public PictureRetrivedPoint() { }
 
-    public PictureRetrivedPoint(RetrievedPoint retrievedPoint) : this(retrievedPoint.Payload)
-    {
-        PointId = new Guid(retrievedPoint.Id.Uuid);
-    }
+    public PictureRetrivedPoint(RetrievedPoint retrievedPoint) : this(retrievedPoint.Id, retrievedPoint.Payload) { }
 
-    public PictureRetrivedPoint(MapField<string, Value> payload)
+    public PictureRetrivedPoint(PointId pointId, MapField<string, Value> payload)
     {
+        PointId = new Guid(pointId.Uuid);
+
         HostName = payload.TryGetValue("hostName", out var hostNameValue) && hostNameValue.KindCase == Value.KindOneofCase.StringValue
             ? hostNameValue.StringValue
             : null;

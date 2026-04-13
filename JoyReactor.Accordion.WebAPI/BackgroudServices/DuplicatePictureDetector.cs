@@ -55,24 +55,24 @@ public class DuplicatePictureDetector(
                     continue;
 
                 var response = await qdrantClient.ScrollAsync(
-                qdrantSettings.Value.CollectionName,
-                filter: new Filter()
-                {
-                    Must =
+                    qdrantSettings.Value.CollectionName,
+                    filter: new Filter()
                     {
-                        new Condition()
+                        Must =
                         {
-                            Field = new FieldCondition()
+                            new Condition()
                             {
-                                Key = "postAttributeId",
-                                Match = new Match() { Integer = picture.AttributeId }
+                                Field = new FieldCondition()
+                                {
+                                    Key = "postAttributeId",
+                                    Match = new Match() { Integer = picture.AttributeId }
+                                },
                             },
                         },
                     },
-                },
-                vectorsSelector: new WithVectorsSelector() { Enable = false },
-                payloadSelector: new WithPayloadSelector() { Enable = true },
-                cancellationToken: cancellationToken);
+                    vectorsSelector: new WithVectorsSelector() { Enable = false },
+                    payloadSelector: new WithPayloadSelector() { Enable = true },
+                    cancellationToken: cancellationToken);
 
                 if (response.Result.Count == 0)
                     logger.LogError("Failed to find vector for {PictureAttributeId} post attribute picture.", picture.AttributeId);
@@ -104,7 +104,7 @@ public class DuplicatePictureDetector(
                                     Key = "postAttributeId",
                                     Match = new Match() { Integer = initialPoint.PostAttributeId.Value }
                                 }
-                            }
+                            },
                         }
                     },
                     scoreThreshold: 0.99f,
@@ -130,7 +130,7 @@ public class DuplicatePictureDetector(
                 var existingSimilarPointPostAttributeIds = await sqlDatabaseContext.ParsedPostAttributePictures
                     .AsNoTracking()
                     .Where(p => similarPointPostAttributeIds.Contains(p.AttributeId))
-                    .Select(p => p.Id)
+                    .Select(p => p.AttributeId)
                     .ToArrayAsync(cancellationToken);
 
                 if (similarPointPostAttributeIds.Length != existingSimilarPointPostAttributeIds.Length)
@@ -140,7 +140,7 @@ public class DuplicatePictureDetector(
                 }
 
                 var votes = similarPoints
-                    .Where(similarPoint => existingSimilarPointPostAttributeIds.Contains(similarPoint.PointId))
+                    .Where(similarPoint => existingSimilarPointPostAttributeIds.Contains(similarPoint.PostAttributeId.Value))
                     .Select(similarPoint => initialPoint.PostId < similarPoint.PostId
                         ? new DuplicatePictureVote(initialPoint, similarPoint)
                         : new DuplicatePictureVote(similarPoint, initialPoint))
