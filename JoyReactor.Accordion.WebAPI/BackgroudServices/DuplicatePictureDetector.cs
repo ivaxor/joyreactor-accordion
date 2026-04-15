@@ -120,6 +120,7 @@ public class DuplicatePictureDetector(
                     .Select(v => new PictureScoredPoint(v))
                     .Where(p => p.PostId != initialPoint.PostId)
                     .Where(p => p.PostAttributeId != initialPoint.PostAttributeId)
+                    .Where(p => Math.Abs(p.PostId.Value - initialPoint.PostId.Value) >= 10)
                     .GroupBy(p => p.PostId, (key, collection) => collection.OrderByDescending(e => e.ContentVersion).First())
                     .ToArray();
 
