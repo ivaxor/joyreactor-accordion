@@ -16,7 +16,7 @@
     @if (historyRecordExtended.url) { <i class="bi bi-link-45deg"></i> }
     @else if(historyRecordExtended.fileName) {<i class="bi bi-file-earmark-image"></i>}
     |
-    {{historyRecordExtended.createdAt | date:'short'}}
+    {{historyRecordExtended.createdAt | date:'short':'':'ru-RU'}}
     @if (historyRecordExtended.results.length > 0) {
     |
     {{historyRecordExtended.results.length}}🪗

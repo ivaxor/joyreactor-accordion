@@ -9,6 +9,8 @@
   <table class="table table-sm table-light table-striped table-hover">
     <thead>
       <tr>
+        <th class="text-end">Дата</th>
+
         <th class="text-end">Дубликат (пост)</th>
         <th class="text-end">Оригинал (пост)</th>
         <th class="text-end">Разница (пост)</th>
@@ -32,6 +34,10 @@
       }
       @for (vote of votes(); track $index) {
       <tr>
+        <td class="text-end">
+          {{ vote.createdAt | date:'short':'':'ru-RU' }}
+        </td>
+
         <td class="text-end">
           <a [href]="joyReactorMediaMetadataService.getPostUrl(vote.duplicatePostId)" target="_blank">
             {{vote.duplicatePostId}}

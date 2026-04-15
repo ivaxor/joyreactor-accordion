@@ -4,10 +4,11 @@ import { VoteResponse } from '../../../services/vote-service/vote-response';
 import { JoyReactorMediaMetadataService } from '../../../services/joyreactor-media-metadata-service/joyreactor-media-metadata-service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiKeyService } from '../../../services/api-key-service/api-key-service';
+import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-vote-pager',
-  imports: [],
+  imports: [DatePipe],
   templateUrl: './vote-pager.html',
   styleUrl: './vote-pager.scss',
 })

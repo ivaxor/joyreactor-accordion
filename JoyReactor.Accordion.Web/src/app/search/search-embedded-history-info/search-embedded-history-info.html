@@ -6,7 +6,7 @@
   }
 
   <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-info" [class.bg-info]="historyRecord.postIds.length === 0" [class.bg-danger]="historyRecord.postIds.length > 0">
-    {{historyRecord.createdAt | date:'short'}}
+    {{historyRecord.createdAt | date:'short':'':'ru-RU'}}
     @if (historyRecord.postIds.length > 0) {
     |
     {{historyRecord.postIds.length}}🪗
