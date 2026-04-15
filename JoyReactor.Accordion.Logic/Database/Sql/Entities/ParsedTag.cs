@@ -42,6 +42,7 @@ public record ParsedTag : ISqlUpdatedAtEntity
     public int PostCount { get; set; }
     public int SubscriberCount { get; set; }
     public int SubTagsCount { get; set; }
+    public bool IgnoreAsOriginalPostReference { get; set; }
 
     public virtual ICollection<CrawlerTask>? CrawlerTasks { get; set; }
 
@@ -102,6 +103,11 @@ public class ParsedTagEntityTypeConfiguration : IEntityTypeConfiguration<ParsedT
 
         builder
             .Property(e => e.SubTagsCount)
+            .IsRequired(true);
+
+        builder
+            .Property(e => e.IgnoreAsOriginalPostReference)
+            .HasDefaultValue(false)
             .IsRequired(true);
 
         builder

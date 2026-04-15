@@ -40,6 +40,9 @@ public record ParsedPostAttributePicture : ISqlUpdatedAtEntity, IParsedPostAttri
     public Guid PostId { get; set; }
     public virtual ParsedPost Post { get; set; }
 
+    public int Pixels { get; set; }
+    public int Bytes { get; set; }
+
     public bool NoContent { get; set; }
     public bool NoContentDueToDns { get; set; }
     public bool UnsupportedContent { get; set; }
@@ -86,6 +89,16 @@ public class ParsedPostAttributePictureEntityTypeConfiguration : IEntityTypeConf
             .HasPrincipalKey(e => e.Id)
             .HasForeignKey(e => e.PostId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder
+            .Property(e => e.Pixels)
+            .HasDefaultValue(0)
+            .IsRequired(true);
+
+        builder
+            .Property(e => e.Bytes)
+            .HasDefaultValue(0)
+            .IsRequired(true);
 
         builder
             .HasIndex(e => e.NoContent);
