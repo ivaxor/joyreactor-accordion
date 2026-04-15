@@ -9,7 +9,7 @@
   <table class="table table-sm table-light table-striped table-hover">
     <thead>
       <tr>
-        <th class="text-end">Дата</th>
+        <th class="text-center">Дата</th>
 
         <th class="text-end">Дубликат (пост)</th>
         <th class="text-end">Оригинал (пост)</th>
@@ -34,7 +34,7 @@
       }
       @for (vote of votes(); track $index) {
       <tr>
-        <td class="text-end">
+        <td class="text-center">
           {{ vote.createdAt | date:'short':'':'ru-RU' }}
         </td>
 
