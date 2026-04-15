@@ -7,12 +7,15 @@ using JoyReactor.Accordion.WebAPI.Auth;
 using JoyReactor.Accordion.WebAPI.BackgroudServices;
 using JoyReactor.Accordion.WebAPI.Controllers;
 using JoyReactor.Accordion.WebAPI.Extensions;
+using JoyReactor.Accordion.WebAPI.Models;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Options;
 using Scalar.AspNetCore;
 using Serilog;
 using System.Collections.Frozen;
 using System.Reflection;
 using System.Text;
+using Telegram.Bot;
 
 Console.OutputEncoding = Encoding.UTF8;
 
@@ -47,6 +50,14 @@ builder.Services
         httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
     });
 
+builder.Services
+    .AddHttpClient(nameof(TelegramBotClient))
+    .AddTypedClient<ITelegramBotClient>((httpClient, serviceProvider) =>
+    {
+        var settings = serviceProvider.GetRequiredService<IOptions<TelegramBotSettings>>();
+        return new TelegramBotClient(settings.Value.Token, httpClient);
+    });
+
 builder.Services.AddSingleton<IApiClientProvider, ApiClientProvider>();
 builder.Services.AddSingleton<ITagClient, TagClient>();
 builder.Services.AddScoped<ITagCrawler, TagCrawler>();
@@ -63,7 +74,7 @@ builder.Services.AddHostedService<MediaToVectorConverter>();
 builder.Services.AddHostedService<RootTagsCrawler>();
 builder.Services.AddHostedService<TagSubTagsCrawler>();
 builder.Services.AddHostedService<VectorNormalizator>();
-builder.Services.AddHostedService<VoteCleaner>();
+builder.Services.AddHostedService<DuplicateVoteCleaner>();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddAuthentication()

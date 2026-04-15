@@ -56,6 +56,7 @@ public static class HostApplicationBuilderExtensions
         builder.Services.Configure<QdrantSettings>(builder.Configuration.GetSection(nameof(QdrantSettings)));
         builder.Services.Configure<BackgroundServiceSettings>(builder.Configuration.GetSection(nameof(BackgroundServiceSettings)));
         builder.Services.Configure<RateLimiterSettings>(builder.Configuration.GetSection(nameof(RateLimiterSettings)));
+        builder.Services.Configure<TelegramBotSettings>(builder.Configuration.GetSection(nameof(TelegramBotSettings)));
     }
 
     public static void AddDatabases(this IHostApplicationBuilder builder)
