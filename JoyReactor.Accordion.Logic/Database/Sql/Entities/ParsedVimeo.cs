@@ -31,6 +31,10 @@ public class ParsedVimeoEntityTypeConfiguration : IEntityTypeConfiguration<Parse
     public void Configure(EntityTypeBuilder<ParsedVimeo> builder)
     {
         builder
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+
+        builder
             .HasIndex(e => e.VideoId)
             .IsUnique();
         builder

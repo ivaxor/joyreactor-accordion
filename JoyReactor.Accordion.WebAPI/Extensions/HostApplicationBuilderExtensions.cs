@@ -56,6 +56,7 @@ public static class HostApplicationBuilderExtensions
         builder.Services.Configure<QdrantSettings>(builder.Configuration.GetSection(nameof(QdrantSettings)));
         builder.Services.Configure<BackgroundServiceSettings>(builder.Configuration.GetSection(nameof(BackgroundServiceSettings)));
         builder.Services.Configure<RateLimiterSettings>(builder.Configuration.GetSection(nameof(RateLimiterSettings)));
+        builder.Services.Configure<TelegramBotSettings>(builder.Configuration.GetSection(nameof(TelegramBotSettings)));
     }
 
     public static void AddDatabases(this IHostApplicationBuilder builder)
@@ -69,13 +70,17 @@ public static class HostApplicationBuilderExtensions
             });
 
             if (builder.Environment.IsDevelopment())
-                options.EnableSensitiveDataLogging();
+            {
+                options
+                    .EnableDetailedErrors()
+                    .EnableSensitiveDataLogging();
+            }
         });
 
         builder.Services.AddSingleton<IQdrantClient, QdrantClient>(serviceProvider =>
         {
             var settings = serviceProvider.GetRequiredService<IOptions<QdrantSettings>>();
-            var client = new QdrantClient(settings.Value.Host);
+            var client = new QdrantClient(settings.Value.Host, settings.Value.Port);
 
             var isCollectionExists = client.CollectionExistsAsync(settings.Value.CollectionName).GetAwaiter().GetResult();
             if (!isCollectionExists)
@@ -102,17 +107,21 @@ public static class HostApplicationBuilderExtensions
                     {
                         OnDisk = false,
                     }).GetAwaiter().GetResult();
+            }
 
+            var collectionInfo = client.GetCollectionInfoAsync(settings.Value.CollectionName).GetAwaiter().GetResult();
+
+            if (!collectionInfo.PayloadSchema.ContainsKey("contentVersion"))
+                client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "contentVersion", schemaType: PayloadSchemaType.Integer).GetAwaiter().GetResult();
+
+            if (!collectionInfo.PayloadSchema.ContainsKey("postId"))
+                client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "postId", schemaType: PayloadSchemaType.Integer).GetAwaiter().GetResult();
+
+            if (!collectionInfo.PayloadSchema.ContainsKey("postAttributeId"))
                 client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "postAttributeId", schemaType: PayloadSchemaType.Integer).GetAwaiter().GetResult();
 
-                /*
-                client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "contentVersion", schemaType: PayloadSchemaType.Integer).GetAwaiter().GetResult();
-                client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "postId", schemaType: PayloadSchemaType.Integer).GetAwaiter().GetResult();                
-                client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "commentId", schemaType: PayloadSchemaType.Integer).GetAwaiter().GetResult();
-                client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "commentAttributeId", schemaType: PayloadSchemaType.Integer).GetAwaiter().GetResult();
+            if (!collectionInfo.PayloadSchema.ContainsKey("createdAt"))
                 client.CreatePayloadIndexAsync(collectionName: settings.Value.CollectionName, fieldName: "createdAt", schemaType: PayloadSchemaType.Datetime).GetAwaiter().GetResult();
-                */
-            }
 
             return client;
         });

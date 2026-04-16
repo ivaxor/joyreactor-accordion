@@ -10,15 +10,22 @@ using System.Reflection;
 
 namespace JoyReactor.Accordion.Logic.Media;
 
-public class MediaReducer(IOptions<MediaSettings> settings)
-    : IMediaReducer
+public class MediaReducer : IMediaReducer
 {
-    protected readonly ResizeOptions ResizeOptions = new()
+    protected readonly ResizeOptions ResizeOptions;
+    protected readonly string TempFolderPath = Path.Combine(Path.GetTempPath(), Assembly.GetEntryAssembly().GetName().Name);
+
+    public MediaReducer(IOptions<MediaSettings> settings)
     {
-        Size = new Size(settings.Value.ResizedSize, settings.Value.ResizedSize),
-        Mode = ResizeMode.Pad,
-        Sampler = KnownResamplers.Lanczos3,
-    };
+        ResizeOptions = new()
+        {
+            Size = new Size(settings.Value.ResizedSize, settings.Value.ResizedSize),
+            Mode = ResizeMode.Pad,
+            Sampler = KnownResamplers.Lanczos3,
+        };
+
+        Directory.CreateDirectory(TempFolderPath);
+    }
 
     public Task<Image<Rgb24>> ReduceAsync(ParsedPostAttributePicture picture, Stream stream, CancellationToken cancellationToken)
     {
@@ -50,6 +57,7 @@ public class MediaReducer(IOptions<MediaSettings> settings)
             case MediaTypeNames.Image.Gif:
             case MediaTypeNames.Image.Bmp:
             case MediaTypeNames.Image.Tiff:
+            case MediaTypeNames.Image.Webp:
                 return ReducePictureAsync(stream, cancellationToken);
 
             case "video/mp4":
@@ -89,13 +97,11 @@ public class MediaReducer(IOptions<MediaSettings> settings)
 
     protected async Task<Image<Rgb24>> ReduceVideoAsync(Stream stream, CancellationToken cancellationToken)
     {
-        var folderPath = Path.Combine(Path.GetTempPath(), Assembly.GetEntryAssembly().GetName().Name);
-        Directory.CreateDirectory(folderPath);
-        var filePath = Path.Combine(folderPath, Guid.NewGuid().ToString());
+        var filePath = Path.Combine(TempFolderPath, Guid.NewGuid().ToString());
 
         try
         {
-            await using var fileStream = File.Create(filePath);
+            await using var fileStream = File.Open(filePath, FileMode.CreateNew);
             await stream.CopyToAsync(fileStream, cancellationToken);
             await fileStream.FlushAsync(cancellationToken);
             fileStream.Close();

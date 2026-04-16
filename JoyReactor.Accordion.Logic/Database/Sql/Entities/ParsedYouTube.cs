@@ -31,6 +31,10 @@ public class ParsedYouTubeEntityTypeConfiguration : IEntityTypeConfiguration<Par
     public void Configure(EntityTypeBuilder<ParsedYouTube> builder)
     {
         builder
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+
+        builder
             .HasIndex(e => e.VideoId)
             .IsUnique();
         builder

@@ -1,5 +1,4 @@
-﻿using JoyReactor.Accordion.Logic.Extensions;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace JoyReactor.Accordion.Logic.Database.Sql.Entities;
@@ -20,6 +19,10 @@ public class ConfigTypeConfiguration : IEntityTypeConfiguration<Config>
     public void Configure(EntityTypeBuilder<Config> builder)
     {
         builder
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+
+        builder
             .HasIndex(e => e.Name)
             .IsUnique();
         builder
@@ -37,16 +40,6 @@ public class ConfigTypeConfiguration : IEntityTypeConfiguration<Config>
         builder
             .Property(e => e.UpdatedAt)
             .IsRequired(true);
-
-        builder.HasData(
-           new Config
-           {
-               Id = 1.ToGuid(),
-               Name = ConfigConstants.DuplicatePictureIdIndex,
-               Value = "",
-               CreatedAt = new DateTime(2026, 03, 02, 0, 0, 0, DateTimeKind.Utc),
-               UpdatedAt = new DateTime(2026, 03, 02, 0, 0, 0, DateTimeKind.Utc),
-           });
     }
 }
 

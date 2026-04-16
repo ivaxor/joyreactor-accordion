@@ -27,6 +27,7 @@ public record ParsedPostAttributePicture : ISqlUpdatedAtEntity, IParsedPostAttri
         };
         PostId = post.Id;
         IsVectorCreated = false;
+        IsVectorCheckedForDuplicates = false;
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
@@ -39,9 +40,16 @@ public record ParsedPostAttributePicture : ISqlUpdatedAtEntity, IParsedPostAttri
     public Guid PostId { get; set; }
     public virtual ParsedPost Post { get; set; }
 
+    /*
+    public int Pixels { get; set; }
+    public int Bytes { get; set; }
+    */
+
     public bool NoContent { get; set; }
+    public bool NoContentDueToDns { get; set; }
     public bool UnsupportedContent { get; set; }
     public bool IsVectorCreated { get; set; }
+    public bool IsVectorCheckedForDuplicates { get; set; }
 
     public virtual IEnumerable<DuplicatePictureVote> VotesAsOriginal { get; set; }
     public virtual IEnumerable<DuplicatePictureVote> VotesAsDuplicate { get; set; }
@@ -67,6 +75,10 @@ public class ParsedPostAttributePictureEntityTypeConfiguration : IEntityTypeConf
     public void Configure(EntityTypeBuilder<ParsedPostAttributePicture> builder)
     {
         builder
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+
+        builder
             .HasIndex(e => new { e.PostId, e.AttributeId })
             .IsUnique();
         builder
@@ -80,10 +92,29 @@ public class ParsedPostAttributePictureEntityTypeConfiguration : IEntityTypeConf
             .HasForeignKey(e => e.PostId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        /*
+        builder
+            .Property(e => e.Pixels)
+            .HasDefaultValue(0)
+            .IsRequired(true);
+
+        builder
+            .Property(e => e.Bytes)
+            .HasDefaultValue(0)
+            .IsRequired(true);
+        */
+
         builder
             .HasIndex(e => e.NoContent);
         builder
             .Property(e => e.NoContent)
+            .HasDefaultValue(false)
+            .IsRequired(true);
+
+        builder
+            .HasIndex(e => e.NoContentDueToDns);
+        builder
+            .Property(e => e.NoContentDueToDns)
             .HasDefaultValue(false)
             .IsRequired(true);
 
@@ -100,6 +131,27 @@ public class ParsedPostAttributePictureEntityTypeConfiguration : IEntityTypeConf
             .Property(e => e.IsVectorCreated)
             .HasDefaultValue(false)
             .IsRequired(true);
+
+        builder
+           .HasIndex(e => e.IsVectorCheckedForDuplicates);
+        builder
+            .Property(e => e.IsVectorCheckedForDuplicates)
+            .HasDefaultValue(false)
+            .IsRequired(true);
+
+        builder
+            .HasMany(e => e.VotesAsOriginal)
+            .WithOne(e => e.OriginalPicture)
+            .HasPrincipalKey(e => e.Id)
+            .HasForeignKey(e => e.OriginalPictureId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder
+            .HasMany(e => e.VotesAsDuplicate)
+            .WithOne(e => e.DuplicatePicture)
+            .HasPrincipalKey(e => e.Id)
+            .HasForeignKey(e => e.DuplicatePictureId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder
             .Property(e => e.CreatedAt)

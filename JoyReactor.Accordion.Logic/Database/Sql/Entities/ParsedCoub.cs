@@ -31,6 +31,10 @@ public class ParsedCoubEntityTypeConfiguration : IEntityTypeConfiguration<Parsed
     public void Configure(EntityTypeBuilder<ParsedCoub> builder)
     {
         builder
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+
+        builder
             .HasIndex(e => e.VideoId)
             .IsUnique();
         builder

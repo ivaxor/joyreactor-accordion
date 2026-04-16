@@ -14,7 +14,17 @@ public record DuplicatePictureVote : ISqlUpdatedAtEntity
         Id = Guid.NewGuid();
         OriginalPictureId = original.PostAttributeId.Value.ToGuid();
         DuplicatePictureId = duplicate.PostAttributeId.Value.ToGuid();
-        Score = duplicate.Score;
+        YesVotes = [];
+        NoVotes = [];
+        CreatedAt = DateTime.UtcNow;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public DuplicatePictureVote(PictureScoredPoint original, PictureRetrivedPoint duplicate)
+    {
+        Id = Guid.NewGuid();
+        OriginalPictureId = original.PostAttributeId.Value.ToGuid();
+        DuplicatePictureId = duplicate.PostAttributeId.Value.ToGuid();
         YesVotes = [];
         NoVotes = [];
         CreatedAt = DateTime.UtcNow;
@@ -28,8 +38,6 @@ public record DuplicatePictureVote : ISqlUpdatedAtEntity
 
     public Guid DuplicatePictureId { get; set; }
     public virtual ParsedPostAttributePicture DuplicatePicture { get; set; }
-
-    public float Score { get; set; }
 
     public string[] YesVotes { get; set; }
     public string[] NoVotes { get; set; }
@@ -45,20 +53,26 @@ public class DuplicatePictureVoteTypeConfiguration : IEntityTypeConfiguration<Du
     public void Configure(EntityTypeBuilder<DuplicatePictureVote> builder)
     {
         builder
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+
+        builder
             .HasOne(e => e.OriginalPicture)
             .WithMany(e => e.VotesAsOriginal)
             .HasPrincipalKey(e => e.Id)
             .HasForeignKey(e => e.OriginalPictureId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder
             .HasOne(e => e.DuplicatePicture)
             .WithMany(e => e.VotesAsDuplicate)
             .HasPrincipalKey(e => e.Id)
             .HasForeignKey(e => e.DuplicatePictureId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder
+            .HasIndex(e => new { e.OriginalPictureId, e.DuplicatePictureId })
+            .IsUnique();
 
         builder
             .Property(u => u.YesVotes)
@@ -94,4 +108,22 @@ public class DuplicatePictureVoteTypeConfiguration : IEntityTypeConfiguration<Du
             .Property(e => e.UpdatedAt)
             .IsRequired(true);
     }
+}
+
+public record DuplicatePictureVoteExtended : DuplicatePictureVote
+{
+    public DuplicatePictureVoteExtended() { }
+    public DuplicatePictureVoteExtended(DuplicatePictureVote baseVote, int originalPostId, int originalCount, int duplicatePostId, int duplicateCount) : base(baseVote)
+    {
+        OriginalPostNumberId = originalPostId;
+        OriginalPostPictureCount = originalCount;
+        DuplicatePostNumberId = duplicatePostId;
+        DuplicatePostPictureCount = duplicateCount;
+    }
+
+    public int OriginalPostNumberId { get; set; }
+    public int OriginalPostPictureCount { get; set; }
+
+    public int DuplicatePostNumberId { get; set; }
+    public int DuplicatePostPictureCount { get; set; }
 }

@@ -36,6 +36,10 @@ public class ParsedSoundCloudEntityTypeConfiguration : IEntityTypeConfiguration<
     public void Configure(EntityTypeBuilder<ParsedSoundCloud> builder)
     {
         builder
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+
+        builder
             .HasIndex(e => e.UrlPath)
             .IsUnique();
         builder

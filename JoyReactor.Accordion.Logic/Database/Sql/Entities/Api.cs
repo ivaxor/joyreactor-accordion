@@ -23,6 +23,10 @@ public class ApiEntityTypeConfiguration : IEntityTypeConfiguration<Api>
     public void Configure(EntityTypeBuilder<Api> builder)
     {
         builder
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+
+        builder
             .HasMany(e => e.Tags)
             .WithOne(e => e.Api)
             .HasPrincipalKey(e => e.Id)
@@ -72,65 +76,69 @@ public class ApiEntityTypeConfiguration : IEntityTypeConfiguration<Api>
             .IsRequired(true);
 
         builder.HasData(
-            new Api
-            {
-                Id = 1.ToGuid(),
-                Priority = 0,
-                HostName = "joyreactor.cc",
-                GraphQlEndpointUrl = "https://api.joyreactor.cc/graphql",
-                RootTagNames = [
-                    "общее",
-                    "Комиксы",
-                    "гифки",
-                    "art",
-                    "песочница",
-                    "котэ",
-                    "story",
-                    "geek",
-                    "видео",
-                    "фэндомы",
-                    "Эротика",
-                    "Игры",
-                    "anon",
-                    "политика",
-                    "разное",
-                    "секретные разделы",
-                    "artist",
-                    "Мемы",
-                    "Азиатка",
-                    "Porn Model",
-                    "cosplay",
-                ],
-            },
-            new Api
-            {
-                Id = 2.ToGuid(),
-                Priority = -1,
-                HostName = "joyreactor.com",
-                GraphQlEndpointUrl = "https://api.joyreactor.com/graphql",
-                RootTagNames = [
-                    "general",
-                    "comics",
-                    "gif",
-                    "art",
-                    "sandbox",
-                    "cats",
-                    "story",
-                    "geek",
-                    "video",
-                    "fandoms",
-                    "erotic",
-                    "games",
-                    "anon",
-                    "politics",
-                    // разное (?)
-                    // секретные разделы (xxx-file -> fandoms)
-                    "artist",
-                    "memes",
-                    "asian girl",
-                    "Porn Model",
-                    "cosplay",
-                ],
-            });
+            JoyreactorCc,
+            JoyreactorCom);
     }
+
+    public static readonly Api JoyreactorCc = new Api()
+    {
+        Id = 1.ToGuid(),
+        Priority = 0,
+        HostName = "joyreactor.cc",
+        GraphQlEndpointUrl = "https://api.joyreactor.cc/graphql",
+        RootTagNames = [
+        "общее",
+            "Комиксы",
+            "гифки",
+            "art",
+            "песочница",
+            "котэ",
+            "story",
+            "geek",
+            "видео",
+            "фэндомы",
+            "Эротика",
+            "Игры",
+            "anon",
+            "политика",
+            "разное",
+            "секретные разделы",
+            "artist",
+            "Мемы",
+            "Азиатка",
+            "Porn Model",
+            "cosplay",
+        ],
+    };
+
+    public static readonly Api JoyreactorCom = new Api
+    {
+        Id = 2.ToGuid(),
+        Priority = -1,
+        HostName = "joyreactor.com",
+        GraphQlEndpointUrl = "https://api.joyreactor.com/graphql",
+        RootTagNames = [
+            "general",
+            "comics",
+            "gif",
+            "art",
+            "sandbox",
+            "cats",
+            "story",
+            "geek",
+            "video",
+            "fandoms",
+            "erotic",
+            "games",
+            "anon",
+            "politics",
+            // разное (?)
+            // секретные разделы (xxx-file -> fandoms)
+            "artist",
+            "memes",
+            "asian girl",
+            "Porn Model",
+            "cosplay",
+        ],
+    };
 }

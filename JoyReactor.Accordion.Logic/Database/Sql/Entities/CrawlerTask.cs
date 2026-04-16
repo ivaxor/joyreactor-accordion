@@ -27,6 +27,10 @@ public class CrawlerTaskEntityTypeConfiguration : IEntityTypeConfiguration<Crawl
     public void Configure(EntityTypeBuilder<CrawlerTask> builder)
     {
         builder
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+
+        builder
             .HasOne(e => e.Tag)
             .WithMany(e => e.CrawlerTasks)
             .HasPrincipalKey(e => e.Id)

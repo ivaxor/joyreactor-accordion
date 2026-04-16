@@ -7,10 +7,12 @@ public record PictureRetrivedPoint
 {
     public PictureRetrivedPoint() { }
 
-    public PictureRetrivedPoint(RetrievedPoint retrievedPoint) : this(retrievedPoint.Payload) { }
+    public PictureRetrivedPoint(RetrievedPoint retrievedPoint) : this(retrievedPoint.Id, retrievedPoint.Payload) { }
 
-    public PictureRetrivedPoint(MapField<string, Value> payload)
+    public PictureRetrivedPoint(PointId pointId, MapField<string, Value> payload)
     {
+        PointId = new Guid(pointId.Uuid);
+
         HostName = payload.TryGetValue("hostName", out var hostNameValue) && hostNameValue.KindCase == Value.KindOneofCase.StringValue
             ? hostNameValue.StringValue
             : null;
@@ -26,15 +28,9 @@ public record PictureRetrivedPoint
         PostAttributeId = payload.TryGetValue("postAttributeId", out var postAttributeId) && postAttributeId.KindCase == Value.KindOneofCase.IntegerValue
             ? Convert.ToInt32(postAttributeId.IntegerValue)
             : null;
-
-        CommentId = payload.TryGetValue("commentId", out var commentIdValue) && commentIdValue.KindCase == Value.KindOneofCase.IntegerValue
-            ? Convert.ToInt32(commentIdValue.IntegerValue)
-            : null;
-
-        CommentAttributeId = payload.TryGetValue("commentAttributeId", out var commentAttributeIdValue) && commentAttributeIdValue.KindCase == Value.KindOneofCase.IntegerValue
-            ? Convert.ToInt32(commentAttributeIdValue.IntegerValue)
-            : null;
     }
+
+    public Guid PointId { get; set; }
 
     public string HostName { get; set; }
 
@@ -42,7 +38,4 @@ public record PictureRetrivedPoint
 
     public int? PostId { get; set; }
     public int? PostAttributeId { get; set; }
-
-    public int? CommentId { get; set; }
-    public int? CommentAttributeId { get; set; }
 }

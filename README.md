@@ -10,13 +10,24 @@
    ``` ps1
    winget install ffmpeg
    ```
+- .NET EF CLI
+
+  Windows installation via PowerShell:
+  ``` ps1
+  dotnet tool install --global dotnet-ef
+  ```
+- [clip-ViT-B-32-vision](https://huggingface.co/Qdrant/clip-ViT-B-32-vision/blob/main/model.onnx)
 - Fuckton of free time and CPU/GPU/IO resources
 
 ## Documentation
 
 ### GraphQL
 - [joyreactor.cc](https://api.joyreactor.cc/graphql-playground)
+- [safereactor.cc](https://api.safereactor.cc/graphql-playground)
 - [joyreactor.com](https://api.joyreactor.com/graphql-playground)
+- [purepervert.com](https://api.purepervert.com/graphql-playground)
+- [jrproxy.com](https://api.jrproxy.com/graphql-playground)
+- [jr-proxy.com](https://api.jr-proxy.com/graphql-playground)
 
 ### Media
 Examples of post and comment media URLs using only `PostAttributeId`:

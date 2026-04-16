@@ -47,7 +47,11 @@ public class SearchEmbeddedController(SqlDatabaseContext sqlDatabaseContext)
             _ => query
         };
 
-        var postIds = await query.Select(postAttribute => postAttribute.PostId).ToArrayAsync(cancellationToken);
+        var postIds = await query
+            .Select(postAttribute => postAttribute.PostId)
+            .Order()
+            .Take(request.Limit)
+            .ToArrayAsync(cancellationToken);
 
         var response = new SearchEmbeddedResponse(postIds);
         return Ok(response);

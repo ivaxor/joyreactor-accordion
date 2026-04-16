@@ -19,22 +19,26 @@ public class PostParser(
 
     public async Task ParseAsync(Api api, IEnumerable<Post> posts, CancellationToken cancellationToken)
     {
-        if (posts.Count() == 0)
+        if (!posts.Any())
             return;
+
+        var postsWithNewestContentVersion = 0;
 
         await using var transaction = await sqlDatabaseContext.Database.BeginTransactionAsync(cancellationToken);
         var postNumberIds = posts.Select(p => p.NumberId).ToArray();
         var existingPostContentVersions = await sqlDatabaseContext.ParsedPosts
             .AsNoTracking()
             .Where(post => postNumberIds.Contains(post.NumberId))
+            .Select(post => new { post.NumberId, post.ContentVersion })
             .ToDictionaryAsync(post => post.NumberId, post => post.ContentVersion, cancellationToken);
         foreach (var post in posts)
         {
-            if (!existingPostContentVersions.TryGetValue(post.NumberId, out var contentVersion) || post.ContentVersion == contentVersion)
+            if (!existingPostContentVersions.TryGetValue(post.NumberId, out var currentContentVersion) || post.ContentVersion <= currentContentVersion)
                 continue;
 
-            logger.LogInformation("Post {PostNubmerId} content version changed. Deleting old post information.", post.NumberId);
+            logger.LogDebug("Post {PostNubmerId} content version changed. Deleting old post information.", post.NumberId);
             await sqlDatabaseContext.ParsedPosts.Where(p => p.NumberId == post.NumberId).ExecuteDeleteAsync(cancellationToken);
+            postsWithNewestContentVersion++;
         }
         await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
 
@@ -43,7 +47,7 @@ public class PostParser(
         var parsedAttributeEmbeds = new List<IParsedAttributeEmbedded>();
         foreach (var post in posts)
         {
-            if (existingPostContentVersions.TryGetValue(post.NumberId, out var contentVersion) && post.ContentVersion == contentVersion)
+            if (existingPostContentVersions.TryGetValue(post.NumberId, out var currentContentVersion) && post.ContentVersion <= currentContentVersion)
             {
                 logger.LogDebug("Post {PostNumberId} content version change didn't changed. Skipping post.", post.NumberId);
                 continue;
@@ -75,6 +79,8 @@ public class PostParser(
 
         await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+
+        logger.LogInformation("Added {PostCount} post(s) with {PostWithNewestContentVersionCount} post(s) updated to newest content version.", parsedPosts.Count, postsWithNewestContentVersion);
     }
 
     protected async Task UpsertRangeAsync(IEnumerable<IParsedAttributeEmbedded> parsedAttributeEmbeds, CancellationToken cancellationToken)

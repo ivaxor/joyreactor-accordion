@@ -6,13 +6,16 @@ public record StatisticsResponse
 
     public int ParsedTags { get; set; }
     public int EmptyTags { get; set; }
+
     public int ParsedPosts { get; set; }
 
     public int ParsedPostAttributePictures { get; set; }
     public int ParsedPostAttributePicturesNoContent { get; set; }
+    public int ParsedPostAttributePicturesNoContentDueToDns { get; set; }
     public int ParsedPostAttributePicturesUnsupported { get; set; }
-    public int ParsedPostAttributePicturesWithoutVector { get; set; }
     public int ParsedPostAttributePicturesWithVector { get; set; }
+    public int ParsedPostAttributePicturesWithoutVector { get; set; }
+    public int ParsedPostAttributePicturesCheckedForDuplicates { get; set; }
 
     public int ParsedPostAttributeEmbeds { get; set; }
 

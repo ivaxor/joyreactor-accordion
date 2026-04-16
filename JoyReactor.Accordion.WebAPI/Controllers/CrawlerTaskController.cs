@@ -92,7 +92,8 @@ public class CrawlerTaskController(
     {
         var crawlerTask = await sqlDatabaseContext.CrawlerTasks
             .AsNoTracking()
-            .FirstOrDefaultAsync(task => task.Id == id, cancellationToken);
+            .Where(task => task.Id == id)
+            .FirstOrDefaultAsync(cancellationToken);
         if (crawlerTask == null)
             return NotFound();
 

@@ -58,6 +58,14 @@
       </div>
 
       <div class="row">
+        <label i18n for="parsedPostAttributePicturesNoContentDueToDns" class="col-8 col-sm-6 col-form-label">Без контента (из-за DNS)</label>
+        <div class="col-4 col-sm-6 placeholder-glow">
+          @if (statistics) { <input readonly [value]="statistics.parsedPostAttributePicturesNoContentDueToDns" id="parsedPostAttributePicturesNoContentDueToDns" class="form-control-plaintext"> }
+          @else {<span class="placeholder col-12 col-sm-7"></span> }
+        </div>
+      </div>
+
+      <div class="row">
         <label i18n for="parsedPostAttributePicturesUnsupported" class="col-8 col-sm-6 col-form-label">Неподдерживаемый контент</label>
         <div class="col-4 col-sm-6 placeholder-glow">
           @if (statistics) { <input readonly [value]="statistics.parsedPostAttributePicturesUnsupported" id="parsedPostAttributePicturesUnsupported" class="form-control-plaintext"> }
@@ -74,9 +82,17 @@
       </div>
 
       <div class="row">
-        <label i18n for="parsedPostAttributePictures" class="col-8 col-sm-6 col-form-label">Без векторов</label>
+        <label i18n for="parsedPostAttributePicturesWithoutVector" class="col-8 col-sm-6 col-form-label">Без векторов</label>
         <div class="col-4 col-sm-6 placeholder-glow">
           @if (statistics) { <input readonly [value]="statistics.parsedPostAttributePicturesWithoutVector" id="parsedPostAttributePicturesWithoutVector" class="form-control-plaintext"> }
+          @else {<span class="placeholder col-12 col-sm-7"></span> }
+        </div>
+      </div>
+
+      <div class="row">
+        <label i18n for="parsedPostAttributePicturesCheckedForDuplicates" class="col-8 col-sm-6 col-form-label">Проверенных на дубликаты</label>
+        <div class="col-4 col-sm-6 placeholder-glow">
+          @if (statistics) { <input readonly [value]="statistics.parsedPostAttributePicturesCheckedForDuplicates" id="parsedPostAttributePicturesCheckedForDuplicates" class="form-control-plaintext"> }
           @else {<span class="placeholder col-12 col-sm-7"></span> }
         </div>
       </div>

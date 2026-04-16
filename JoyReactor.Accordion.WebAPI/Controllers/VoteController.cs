@@ -1,4 +1,6 @@
 ﻿using JoyReactor.Accordion.Logic.Database.Sql;
+using JoyReactor.Accordion.Logic.Database.Sql.Entities;
+using JoyReactor.Accordion.Logic.Extensions;
 using JoyReactor.Accordion.WebAPI.Models.Requests;
 using JoyReactor.Accordion.WebAPI.Models.Responses;
 using Microsoft.AspNetCore.Authorization;
@@ -12,49 +14,81 @@ namespace JoyReactor.Accordion.WebAPI.Controllers;
 [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
 public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerBase
 {
+    protected const int PageSize = 100;
     protected static readonly SemaphoreSlim VoteSemaphore = new SemaphoreSlim(1, 1);
 
     [HttpGet("pager")]
     [AllowAnonymous]
-    [ProducesResponseType<DuplicatePictureVoteThinResponse[]>(StatusCodes.Status200OK)]
+    [ProducesResponseType<PagedResponse<DuplicatePictureVoteThinResponse>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> ListAsync(
         [FromQuery] int page = 0,
         CancellationToken cancellationToken = default)
     {
-        const int pageSize = 100;
-
         var votes = await sqlDatabaseContext.DuplicatePictureVotes
             .AsNoTracking()
-            .Where(dpv => dpv.VotingClosed == false)
             .Include(dpv => dpv.OriginalPicture)
             .Include(dpv => dpv.DuplicatePicture)
-            .OrderBy(dpv => dpv.CreatedAt)
-            .Skip(pageSize * page)
-            .Take(pageSize)
+            .Where(dpv => dpv.VotingClosed == false)
+            .OrderBy(dpv => dpv.DuplicatePictureId)
+            .ThenBy(dpv => dpv.OriginalPictureId)
+            .Skip(PageSize * page)
+            .Take(PageSize)
+            .Select(dpv => new DuplicatePictureVoteExtended(
+                dpv,
+                dpv.OriginalPicture.Post.NumberId,
+                dpv.OriginalPicture.Post.AttributePictures.Count,
+                dpv.DuplicatePicture.Post.NumberId,
+                dpv.DuplicatePicture.Post.AttributePictures.Count))
             .ToArrayAsync(cancellationToken);
 
         var votesThin = votes
             .Select(v => new DuplicatePictureVoteThinResponse(v))
             .ToArray();
 
-        return Ok(votesThin);
+        var votesTotal = await sqlDatabaseContext.DuplicatePictureVotes
+            .AsNoTracking()
+            .Where(dpv => dpv.VotingClosed == false)
+            .CountAsync(cancellationToken);
+
+        var paged = new PagedResponse<DuplicatePictureVoteThinResponse>()
+        {
+            Values = votesThin,
+            Pages = Convert.ToInt32(Math.Ceiling((decimal)votesTotal / PageSize)),
+        };
+
+        return Ok(paged);
     }
 
     [HttpGet]
     [AllowAnonymous]
     [ProducesResponseType<DuplicatePictureVoteThinResponse[]>(StatusCodes.Status200OK)]
     public async Task<IActionResult> ListAsync(
-        [FromQuery] DateTime createdAfter,
+        [FromQuery] int? duplicatePictureId,
+        [FromQuery] DateTime? createdAt,
         CancellationToken cancellationToken = default)
     {
-        var votes = await sqlDatabaseContext.DuplicatePictureVotes
+        var votesQuery = sqlDatabaseContext.DuplicatePictureVotes
             .AsNoTracking()
-            .Where(dpv => dpv.VotingClosed == false)
-            .Where(dpv => dpv.CreatedAt > createdAfter)
+            .Where(dpv => dpv.VotingClosed == false);
+
+        if (duplicatePictureId != null)
+            votesQuery = votesQuery.Where(dpv => dpv.DuplicatePictureId > duplicatePictureId.Value.ToGuid());
+
+        if (createdAt != null)
+            votesQuery = votesQuery.Where(dpv => dpv.CreatedAt > createdAt);
+
+        var votes = await votesQuery
             .Include(dpv => dpv.OriginalPicture)
             .Include(dpv => dpv.DuplicatePicture)
-            .OrderBy(dpv => dpv.CreatedAt)
-            .Take(10)
+            .OrderBy(dpv => dpv.DuplicatePictureId)
+            .ThenBy(dpv => dpv.OriginalPictureId)
+            .Take(PageSize)
+            .Select(dpv => new DuplicatePictureVoteExtended(
+                dpv,
+                dpv.OriginalPicture.Post.NumberId,
+                dpv.OriginalPicture.Post.AttributePictures.Count,
+                dpv.DuplicatePicture.Post.NumberId,
+                dpv.DuplicatePicture.Post.AttributePictures.Count))
             .ToArrayAsync(cancellationToken);
 
         var votesThin = votes
@@ -123,6 +157,32 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
             return Conflict();
 
         vote.VotingClosed = true;
+        await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
+
+        return Ok();
+    }
+
+    [HttpDelete]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> CloseAllAsync(
+        [FromQuery] int duplicatePostId,
+        CancellationToken cancellationToken = default)
+    {
+        var votes = await sqlDatabaseContext.DuplicatePictureVotes
+            .Where(dpv => dpv.DuplicatePicture.Post.NumberId == duplicatePostId)
+            .Where(dpv => dpv.VotingClosed == false)
+            .ToArrayAsync(cancellationToken);
+
+        if (votes.Length == 0)
+            return NotFound();
+
+        foreach (var vote in votes)
+        {
+            vote.VotingClosed = true;
+        }
         await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
 
         return Ok();

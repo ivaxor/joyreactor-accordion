@@ -4,10 +4,11 @@ import { VoteResponse } from '../../../services/vote-service/vote-response';
 import { JoyReactorMediaMetadataService } from '../../../services/joyreactor-media-metadata-service/joyreactor-media-metadata-service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiKeyService } from '../../../services/api-key-service/api-key-service';
+import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-vote-pager',
-  imports: [],
+  imports: [DatePipe],
   templateUrl: './vote-pager.html',
   styleUrl: './vote-pager.scss',
 })
@@ -21,6 +22,7 @@ export class VotePager implements OnInit {
 
   apiKeySet = false;
   page = signal<number>(0);
+  pages = signal<number>(0);
   votes = signal<VoteResponse[] | null>(null);
 
   ngOnInit(): void {
@@ -46,24 +48,35 @@ export class VotePager implements OnInit {
   }
 
   open(vote: VoteResponse): void {
-    const originalUrl = this.joyReactorMediaMetadataService.createImageUrl(vote.originalPictureAttributeId);
-    window.open(originalUrl, "_blank");
+    const originalUrl = this.joyReactorMediaMetadataService.getPostUrl(vote.originalPostId);
+    const duplicateUrl = this.joyReactorMediaMetadataService.getPostUrl(vote.duplicatePostId);
 
-    const duplicateUrl = this.joyReactorMediaMetadataService.createImageUrl(vote.duplicatePictureAttributeId);
     window.open(duplicateUrl, "_blank");
+    window.open(originalUrl, "_blank");
   }
 
   close(vote: VoteResponse): void {
-    if (!confirm('Вы точно хотите окончить голосование?'))
+    if (!confirm('Вы точно хотите окончить это голосование?'))
       return;
 
     this.voteService.close(vote)
       .subscribe(() => this.loadVotes());
   }
 
+  closeAll(duplicatePostId: number): void {
+    if (!confirm('Вы точно хотите окончить все голосования?'))
+      return;
+
+    this.voteService.closeAll(duplicatePostId)
+      .subscribe(() => this.loadVotes());
+  }
+
   private loadVotes(): void {
     this.voteService
       .getPage(this.page())
-      .subscribe(votes => this.votes.set(votes));
+      .subscribe(paged => {
+        this.votes.set(paged.values);
+        this.pages.set(paged.pages);
+      });
   }
 }

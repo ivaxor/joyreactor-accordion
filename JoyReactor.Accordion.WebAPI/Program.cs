@@ -7,12 +7,15 @@ using JoyReactor.Accordion.WebAPI.Auth;
 using JoyReactor.Accordion.WebAPI.BackgroudServices;
 using JoyReactor.Accordion.WebAPI.Controllers;
 using JoyReactor.Accordion.WebAPI.Extensions;
+using JoyReactor.Accordion.WebAPI.Models;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Options;
 using Scalar.AspNetCore;
 using Serilog;
 using System.Collections.Frozen;
 using System.Reflection;
 using System.Text;
+using Telegram.Bot;
 
 Console.OutputEncoding = Encoding.UTF8;
 
@@ -38,13 +41,21 @@ builder.Services.AddHttpClient();
 builder.Services
     .AddHttpClient<IMediaDownloader, MediaDownloader>(httpClient =>
     {
-        httpClient.DefaultRequestHeaders.Add("Referer", "https://joyreactor.cc");
+        httpClient.DefaultRequestHeaders.Add("Referer", "https://joyreactor.cc/");
         httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
     });
 builder.Services
     .AddHttpClient<SearchMediaController>(httpClient =>
     {
         httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
+    });
+
+builder.Services
+    .AddHttpClient(nameof(TelegramBotClient))
+    .AddTypedClient<ITelegramBotClient>((httpClient, serviceProvider) =>
+    {
+        var settings = serviceProvider.GetRequiredService<IOptions<TelegramBotSettings>>();
+        return new TelegramBotClient(settings.Value.Token, httpClient);
     });
 
 builder.Services.AddSingleton<IApiClientProvider, ApiClientProvider>();
@@ -54,14 +65,16 @@ builder.Services.AddSingleton<IPostClient, PostClient>();
 builder.Services.AddScoped<IPostParser, PostParser>();
 builder.Services.AddSingleton<IMediaReducer, MediaReducer>();
 builder.Services.AddSingleton<IOnnxVectorConverter, OnnxVectorConverter>();
+builder.Services.AddSingleton<IChangedPostClient, ChangedPostClient>();
 
+builder.Services.AddHostedService<ChangedPostHandler>();
 builder.Services.AddHostedService<CrawlerTaskHandler>();
 builder.Services.AddHostedService<DuplicatePictureDetector>();
 builder.Services.AddHostedService<MediaToVectorConverter>();
 builder.Services.AddHostedService<RootTagsCrawler>();
 builder.Services.AddHostedService<TagSubTagsCrawler>();
 builder.Services.AddHostedService<VectorNormalizator>();
-builder.Services.AddHostedService<VectorPostAttributeCleaner>();
+builder.Services.AddHostedService<DuplicateVoteCleaner>();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddAuthentication()

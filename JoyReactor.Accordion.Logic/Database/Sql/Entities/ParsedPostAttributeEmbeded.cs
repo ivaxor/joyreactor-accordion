@@ -68,6 +68,10 @@ public class ParsedPostAttributeEmbeddedEntityTypeConfiguration : IEntityTypeCon
     public void Configure(EntityTypeBuilder<ParsedPostAttributeEmbedded> builder)
     {
         builder
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+
+        builder
             .HasOne(e => e.Post)
             .WithMany(e => e.AttributeEmbeds)
             .HasPrincipalKey(e => e.Id)
