@@ -70,11 +70,13 @@ builder.Services.AddSingleton<IChangedPostClient, ChangedPostClient>();
 builder.Services.AddHostedService<ChangedPostHandler>();
 builder.Services.AddHostedService<CrawlerTaskHandler>();
 builder.Services.AddHostedService<DuplicatePictureDetector>();
+builder.Services.AddHostedService<DuplicateVoteCleaner>();
 builder.Services.AddHostedService<MediaToVectorConverter>();
 builder.Services.AddHostedService<RootTagsCrawler>();
 builder.Services.AddHostedService<TagSubTagsCrawler>();
+builder.Services.AddHostedService<TelegramBotReceiver>();
+builder.Services.AddHostedService<TelegramBotSender>();
 builder.Services.AddHostedService<VectorNormalizator>();
-builder.Services.AddHostedService<DuplicateVoteCleaner>();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddAuthentication()
