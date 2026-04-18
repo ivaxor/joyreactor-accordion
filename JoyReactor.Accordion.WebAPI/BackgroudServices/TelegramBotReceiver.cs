@@ -66,20 +66,25 @@ public class TelegramBotReceiver(
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToArray();
 
-                var entry = sqlDatabaseContext.Entry<DuplicatePictureVote>(vote);
-                entry.State = EntityState.Unchanged;
-                entry.Property(p => p.YesVotes).IsModified = true;
+                vote.NoVotes = vote.NoVotes.Except([userId], StringComparer.OrdinalIgnoreCase)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
             }
             else
             {
-                vote.NoVotes = vote.NoVotes.Append(userId)
+                vote.YesVotes = vote.YesVotes.Except([userId], StringComparer.OrdinalIgnoreCase)
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToArray();
 
-                var entry = sqlDatabaseContext.Entry<DuplicatePictureVote>(vote);
-                entry.State = EntityState.Unchanged;
-                entry.Property(p => p.NoVotes).IsModified = true;
+                vote.NoVotes = vote.NoVotes.Append(userId)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
             }
+
+            var entry = sqlDatabaseContext.Entry<DuplicatePictureVote>(vote);
+            entry.State = EntityState.Unchanged;
+            entry.Property(p => p.YesVotes).IsModified = true;
+            entry.Property(p => p.NoVotes).IsModified = true;
 
             await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
             sqlDatabaseContext.ChangeTracker.Clear();
@@ -93,6 +98,7 @@ public class TelegramBotReceiver(
             text,
             ParseMode.MarkdownV2,
             replyMarkup: inlineKeyboardMarkup,
+            linkPreviewOptions: new LinkPreviewOptions() { IsDisabled = true },
             cancellationToken: cancellationToken);
     }
 

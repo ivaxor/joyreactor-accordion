@@ -1,5 +1,6 @@
 ﻿using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
+using JoyReactor.Accordion.Logic.Media;
 using JoyReactor.Accordion.WebAPI.Models;
 using JoyReactor.Accordion.WebAPI.Models.Requests;
 using Microsoft.EntityFrameworkCore;
@@ -22,30 +23,44 @@ public class TelegramBotSender(
 {
     protected override bool IsIndefinite => true;
     protected readonly ChatId ChatId = new ChatId(telegramBotSettings.Value.ChatId);
+    protected readonly ParsedPostAttributePictureType[] AllowedImageTypes = [
+        ParsedPostAttributePictureType.PNG,
+        ParsedPostAttributePictureType.JPEG,
+        ParsedPostAttributePictureType.BMP,
+        ParsedPostAttributePictureType.TIFF,
+        ParsedPostAttributePictureType.WEBP,
+    ];
 
     protected override async Task RunAsync(CancellationToken cancellationToken)
     {
-        await using var scope = serviceScopeFactory.CreateAsyncScope();
-        using var sqlDatabaseContext = scope.ServiceProvider.GetRequiredService<SqlDatabaseContext>();
-        var telegramBotClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
+        await using var serviceScope = serviceScopeFactory.CreateAsyncScope();
+        using var sqlDatabaseContext = serviceScope.ServiceProvider.GetRequiredService<SqlDatabaseContext>();
+        var telegramBotClient = serviceScope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
+        var mediaDownloader = serviceScope.ServiceProvider.GetRequiredService<IMediaDownloader>();
 
         var vote = await sqlDatabaseContext.DuplicatePictureVotes
             .AsNoTracking()
             .Include(dpv => dpv.OriginalPicture)
             .Include(dpv => dpv.DuplicatePicture)
             .Where(dpv => dpv.VotingClosed == false)
+            .Where(dpv => dpv.DuplicatePicture.ImageType == dpv.OriginalPicture.ImageType)
+            .Where(dpv => AllowedImageTypes.Contains(dpv.DuplicatePicture.ImageType))
             .Where(dpv => dpv.DuplicatePicture.Post.AttributePictures.Count == 1)
+            .OrderByDescending(dpv => dpv.DuplicatePictureId)
             .Select(dpv => new DuplicatePictureVoteExtended(
                 dpv,
                 dpv.OriginalPicture.Post.NumberId,
                 dpv.OriginalPicture.Post.AttributePictures.Count,
                 dpv.DuplicatePicture.Post.NumberId,
                 dpv.DuplicatePicture.Post.AttributePictures.Count))
-            .OrderBy(dpv => dpv.DuplicatePictureId)
-            .LastAsync(cancellationToken);
+            .FirstAsync(cancellationToken);
 
-        var duplicateMedia = new InputMediaPhoto(InputFile.FromUri(GeneratePostAttributePictureUrl(vote.DuplicatePicture)));
-        var originalMedia = new InputMediaPhoto(InputFile.FromUri(GeneratePostAttributePictureUrl(vote.OriginalPicture)));
+        using var duplicateMediaStream = await mediaDownloader.DownloadRawAsync(vote.DuplicatePicture, cancellationToken);
+        using var originalMediaStrem = await mediaDownloader.DownloadRawAsync(vote.OriginalPicture, cancellationToken);
+
+        var duplicateMedia = new InputMediaPhoto(InputFile.FromStream(duplicateMediaStream));
+        var originalMedia = new InputMediaPhoto(InputFile.FromStream(originalMediaStrem));
+
         var mediaGroupMessages = await telegramBotClient.SendMediaGroup(
             ChatId,
             [duplicateMedia, originalMedia],
@@ -57,6 +72,7 @@ public class TelegramBotSender(
             ChatId, text,
             ParseMode.MarkdownV2,
             replyMarkup: inlineKeyboardMarkup,
+            linkPreviewOptions: new LinkPreviewOptions() { IsDisabled = true },
             cancellationToken: cancellationToken);
     }
 
@@ -70,30 +86,12 @@ public class TelegramBotSender(
         stringBuilder.AppendFormat("Оригинал: [{0}](https://joyreactor.cc/post/{1})", vote.OriginalPostNumberId, vote.OriginalPostNumberId);
 
         stringBuilder.AppendLine();
-        stringBuilder.AppendFormat("Медиа: {0} / {1}", vote.DuplicatePostPictureCount, vote.OriginalPostPictureCount);
-
-        stringBuilder.AppendLine();
-        stringBuilder.AppendFormat("Голосование: {0} 🪗 / {1} ✅", vote.YesVotes.Length, vote.NoVotes.Length);
+        if (!vote.VotingClosed)
+            stringBuilder.AppendFormat("Голосование: {0} 🪗 / {1} ✅", vote.YesVotes.Length, vote.NoVotes.Length);
+        else
+            stringBuilder.AppendFormat("Результаты голосования: {0} 🪗 / {1} ✅", vote.YesVotes.Length, vote.NoVotes.Length);
 
         return stringBuilder.ToString();
-    }
-
-    public static string GeneratePostAttributePictureUrl(ParsedPostAttributePicture postAttributePicture)
-    {
-        var extension = postAttributePicture.ImageType switch
-        {
-            ParsedPostAttributePictureType.PNG => "png",
-            ParsedPostAttributePictureType.JPEG => "jpeg",
-            ParsedPostAttributePictureType.GIF => "gif",
-            ParsedPostAttributePictureType.BMP => "bmp",
-            ParsedPostAttributePictureType.TIFF => "tiff",
-            ParsedPostAttributePictureType.MP4 => "mp4",
-            ParsedPostAttributePictureType.WEBM => "webm",
-            ParsedPostAttributePictureType.WEBP => "webp",
-            _ => throw new NotImplementedException(),
-        };
-
-        return $"https://img10.joyreactor.cc/pics/post/picture-${postAttributePicture.AttributeId}.{extension}";
     }
 
     public static InlineKeyboardMarkup? GenerateInlineKeyboardMarkup(DuplicatePictureVote vote)

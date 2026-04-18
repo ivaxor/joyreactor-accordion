@@ -116,7 +116,7 @@ public class MediaToVectorConverter(
 
         try
         {
-            var image = await mediaDownloader.DownloadAsync(picture, cancellationToken);
+            var image = await mediaDownloader.DownloadReducedAsync(picture, cancellationToken);
             pictureImages.TryAdd(picture, image);
         }
         catch (HttpRequestException ex)

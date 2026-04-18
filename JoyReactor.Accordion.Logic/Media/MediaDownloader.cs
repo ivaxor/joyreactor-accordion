@@ -103,7 +103,7 @@ public class MediaDownloader(
         MediaTypeNames.Image.Webp,
     }.ToFrozenSet();
 
-    public async Task<Image<Rgb24>> DownloadAsync(ParsedPostAttributePicture picture, CancellationToken cancellationToken)
+    public async Task<Image<Rgb24>> DownloadReducedAsync(ParsedPostAttributePicture picture, CancellationToken cancellationToken)
     {
         if (!PictureTypes.Contains(picture.ImageType))
             throw new ArgumentOutOfRangeException(nameof(picture), "Unsupported media type");
@@ -126,7 +126,7 @@ public class MediaDownloader(
                     context.Properties.Set(UrlKey, url);
                     retryOffset++;
 
-                    return await DownloadAsync(url, state, context.CancellationToken);
+                    return await DownloadAndReduceAsync(url, state, context.CancellationToken);
                 },
                 ResilienceContextPool.Shared.Get(cancellationToken),
                 picture);
@@ -137,7 +137,48 @@ public class MediaDownloader(
         }
     }
 
-    protected async Task<Image<Rgb24>> DownloadAsync(string url, ParsedPostAttributePicture picture, CancellationToken cancellationToken)
+    public async Task<Stream> DownloadRawAsync(ParsedPostAttributePicture picture, CancellationToken cancellationToken)
+    {
+        if (!PictureTypes.Contains(picture.ImageType))
+            throw new ArgumentOutOfRangeException(nameof(picture), "Unsupported media type");
+
+        try
+        {
+            await Semaphore.WaitAsync(cancellationToken);
+            await Task.Delay(settings.Value.SubsequentCallDelay, cancellationToken);
+
+            var initialOffset = Random.Shared.Next(0, settings.Value.CdnHostNames.Length);
+            var retryOffset = 0;
+
+            return await ResiliencePipeline.ExecuteAsync(
+                async (ResilienceContext context, ParsedPostAttributePicture state) =>
+                {
+                    var index = (initialOffset + retryOffset) % settings.Value.CdnHostNames.Length;
+                    var cdnHostName = settings.Value.CdnHostNames[index];
+                    var url = $"{cdnHostName}/pics/post/picture-{state.AttributeId}.{PictureTypeToExtensions[state.ImageType]}";
+
+                    context.Properties.Set(UrlKey, url);
+                    retryOffset++;
+
+                    return await DownloadRawAsync(url, context.CancellationToken);
+                },
+                ResilienceContextPool.Shared.Get(cancellationToken),
+                picture);
+        }
+        finally
+        {
+            Semaphore.Release();
+        }
+    }
+
+    protected async Task<Image<Rgb24>> DownloadAndReduceAsync(string url, ParsedPostAttributePicture picture, CancellationToken cancellationToken)
+    {
+        await using var stream = await DownloadRawAsync(url, cancellationToken);
+        var image = await mediaReducer.ReduceAsync(picture, stream, cancellationToken);
+        return image;
+    }
+
+    protected async Task<Stream> DownloadRawAsync(string url, CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
@@ -150,13 +191,16 @@ public class MediaDownloader(
             throw new NotSupportedException("Unsupported MIME type received.");
         }
 
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        var image = await mediaReducer.ReduceAsync(picture, stream, cancellationToken);
-        return image;
+        var memoryStream = new MemoryStream();
+        await response.Content.CopyToAsync(memoryStream, cancellationToken);
+        memoryStream.Position = 0;
+
+        return memoryStream;
     }
 }
 
 public interface IMediaDownloader
 {
-    Task<Image<Rgb24>> DownloadAsync(ParsedPostAttributePicture picture, CancellationToken cancellationToken);
+    Task<Image<Rgb24>> DownloadReducedAsync(ParsedPostAttributePicture picture, CancellationToken cancellationToken);
+    Task<Stream> DownloadRawAsync(ParsedPostAttributePicture picture, CancellationToken cancellationToken);
 }
