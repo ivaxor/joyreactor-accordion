@@ -42,56 +42,69 @@ public class TelegramBotReceiver(
         if (update.Type != UpdateType.CallbackQuery)
             throw new ArgumentOutOfRangeException(nameof(update.Type), "Unsupported update type recieved.");
 
-        var voteRequest = JsonSerializer.Deserialize<DuplicatePictureVoteRequest>(update.CallbackQuery.Data);
+        var voteRequest = JsonSerializer.Deserialize<DuplicatePictureTelegramVoteRequest>(update.CallbackQuery.Data);
         if (voteRequest == null)
             throw new ArgumentNullException(nameof(update.CallbackQuery.Data), "Invalid or empty callback data recieved.");
 
-        var vote = await sqlDatabaseContext.DuplicatePictureVotes
+        var votes = await sqlDatabaseContext.DuplicatePictureVotes
             .AsNoTracking()
-            .Where(dpv => dpv.Id == voteRequest.Id)
+            .Where(dpv => dpv.VotingClosed == false)
+            .Where(dpv => dpv.DuplicatePicture.ImageType == dpv.OriginalPicture.ImageType)
+            .Where(dpv => TelegramBotSender.AllowedImageTypes.Contains(dpv.DuplicatePicture.ImageType))
+            .Where(dpv => dpv.DuplicatePicture.Post.AttributePictures.Count == 1)
+            .Where(dpv => dpv.DuplicatePictureId == voteRequest.DuplicatePictureId)
+            .OrderBy(dpv => dpv.DuplicatePictureId)
+            .ThenBy(dpv => dpv.OriginalPictureId)
             .Select(dpv => new DuplicatePictureVoteExtended(
                 dpv,
                 dpv.OriginalPicture.Post.NumberId,
                 dpv.OriginalPicture.Post.AttributePictures.Count,
                 dpv.DuplicatePicture.Post.NumberId,
                 dpv.DuplicatePicture.Post.AttributePictures.Count))
-            .SingleAsync(cancellationToken);
+            .ToArrayAsync(cancellationToken);
 
-        if (!vote.VotingClosed)
+        var filteredVotes = votes
+            .Where(dpv => dpv.VotingClosed == false)
+            .ToArray();
+
+        if (filteredVotes.Length > 0)
         {
-            var userId = $"{update.CallbackQuery.From.Id}";
-            if (voteRequest.Yes)
+            foreach (var vote in filteredVotes)
             {
-                vote.YesVotes = vote.YesVotes.Append(userId)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToArray();
+                var userId = $"{update.CallbackQuery.From.Id}";
+                if (voteRequest.Yes)
+                {
+                    vote.YesVotes = vote.YesVotes.Append(userId)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToArray();
 
-                vote.NoVotes = vote.NoVotes.Except([userId], StringComparer.OrdinalIgnoreCase)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToArray();
+                    vote.NoVotes = vote.NoVotes.Except([userId], StringComparer.OrdinalIgnoreCase)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToArray();
+                }
+                else
+                {
+                    vote.YesVotes = vote.YesVotes.Except([userId], StringComparer.OrdinalIgnoreCase)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToArray();
+
+                    vote.NoVotes = vote.NoVotes.Append(userId)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToArray();
+                }
+
+                var entry = sqlDatabaseContext.Entry<DuplicatePictureVote>(vote);
+                entry.State = EntityState.Unchanged;
+                entry.Property(p => p.YesVotes).IsModified = true;
+                entry.Property(p => p.NoVotes).IsModified = true;
             }
-            else
-            {
-                vote.YesVotes = vote.YesVotes.Except([userId], StringComparer.OrdinalIgnoreCase)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToArray();
-
-                vote.NoVotes = vote.NoVotes.Append(userId)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToArray();
-            }
-
-            var entry = sqlDatabaseContext.Entry<DuplicatePictureVote>(vote);
-            entry.State = EntityState.Unchanged;
-            entry.Property(p => p.YesVotes).IsModified = true;
-            entry.Property(p => p.NoVotes).IsModified = true;
 
             await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
             sqlDatabaseContext.ChangeTracker.Clear();
         }
 
-        var text = TelegramBotSender.GeneratePostText(vote);
-        var inlineKeyboardMarkup = TelegramBotSender.GenerateInlineKeyboardMarkup(vote);
+        var text = TelegramBotSender.GeneratePostText(votes);
+        var inlineKeyboardMarkup = TelegramBotSender.GenerateInlineKeyboardMarkup(votes.First());
         var voteMessage = await telegramBotClient.EditMessageText(
             ChatId,
             update.CallbackQuery.Message.Id,

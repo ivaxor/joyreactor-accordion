@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using JoyReactor.Accordion.Logic.Extensions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace JoyReactor.Accordion.Logic.Database.Sql.Entities;
@@ -40,10 +41,20 @@ public class ConfigTypeConfiguration : IEntityTypeConfiguration<Config>
         builder
             .Property(e => e.UpdatedAt)
             .IsRequired(true);
+
+        builder.HasData(
+            new Config()
+            {
+                Id = 2.ToGuid(),
+                Name = ConfigConstants.TelegramBotDuplicatePictureIdIndex,
+                Value = 0.ToString(),
+                CreatedAt = new DateTime(2026, 04, 19, 0, 0, 0, 0, DateTimeKind.Utc),
+                UpdatedAt = new DateTime(2026, 04, 19, 0, 0, 0, 0, DateTimeKind.Utc),
+            });
     }
 }
 
 public static class ConfigConstants
 {
-    public const string DuplicatePictureIdIndex = nameof(DuplicatePictureIdIndex);
+    public const string TelegramBotDuplicatePictureIdIndex = nameof(TelegramBotDuplicatePictureIdIndex);
 }

@@ -21,15 +21,17 @@ public class TelegramBotSender(
     ILogger<TelegramBotSender> logger)
     : RobustBackgroundService(settings, logger)
 {
-    protected override bool IsIndefinite => true;
-    protected readonly ChatId ChatId = new ChatId(telegramBotSettings.Value.ChatId);
-    protected readonly ParsedPostAttributePictureType[] AllowedImageTypes = [
+    public static readonly ParsedPostAttributePictureType[] AllowedImageTypes = [
         ParsedPostAttributePictureType.PNG,
         ParsedPostAttributePictureType.JPEG,
         ParsedPostAttributePictureType.BMP,
         ParsedPostAttributePictureType.TIFF,
         ParsedPostAttributePictureType.WEBP,
     ];
+
+    protected override bool IsIndefinite => true;
+    protected readonly ChatId ChatId = new ChatId(telegramBotSettings.Value.ChatId);
+
 
     protected override async Task RunAsync(CancellationToken cancellationToken)
     {
@@ -38,58 +40,108 @@ public class TelegramBotSender(
         var telegramBotClient = serviceScope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
         var mediaDownloader = serviceScope.ServiceProvider.GetRequiredService<IMediaDownloader>();
 
-        var vote = await sqlDatabaseContext.DuplicatePictureVotes
-            .AsNoTracking()
-            .Include(dpv => dpv.OriginalPicture)
-            .Include(dpv => dpv.DuplicatePicture)
-            .Where(dpv => dpv.VotingClosed == false)
-            .Where(dpv => dpv.DuplicatePicture.ImageType == dpv.OriginalPicture.ImageType)
-            .Where(dpv => AllowedImageTypes.Contains(dpv.DuplicatePicture.ImageType))
-            .Where(dpv => dpv.DuplicatePicture.Post.AttributePictures.Count == 1)
-            .OrderByDescending(dpv => dpv.DuplicatePictureId)
-            .Select(dpv => new DuplicatePictureVoteExtended(
-                dpv,
-                dpv.OriginalPicture.Post.NumberId,
-                dpv.OriginalPicture.Post.AttributePictures.Count,
-                dpv.DuplicatePicture.Post.NumberId,
-                dpv.DuplicatePicture.Post.AttributePictures.Count))
+        var duplicatePictureIdIndex = await sqlDatabaseContext.Configs
+            .Where(c => c.Name == ConfigConstants.TelegramBotDuplicatePictureIdIndex)
             .FirstAsync(cancellationToken);
 
-        using var duplicateMediaStream = await mediaDownloader.DownloadRawAsync(vote.DuplicatePicture, cancellationToken);
-        using var originalMediaStrem = await mediaDownloader.DownloadRawAsync(vote.OriginalPicture, cancellationToken);
+        if (duplicatePictureIdIndex.Value == 0.ToString())
+        {
+            var latestDuplicatePictureIdIndex = await sqlDatabaseContext.DuplicatePictureVotes
+                .AsNoTracking()
+                .OrderByDescending(dpv => dpv.DuplicatePicture.AttributeId)
+                .Select(dpv => dpv.DuplicatePicture.AttributeId)
+                .FirstAsync(cancellationToken);
 
-        var duplicateMedia = new InputMediaPhoto(InputFile.FromStream(duplicateMediaStream));
-        var originalMedia = new InputMediaPhoto(InputFile.FromStream(originalMediaStrem));
+            duplicatePictureIdIndex.Value = latestDuplicatePictureIdIndex.ToString();
+            await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
+        }
 
-        var mediaGroupMessages = await telegramBotClient.SendMediaGroup(
-            ChatId,
-            [duplicateMedia, originalMedia],
-            cancellationToken: cancellationToken);
+        while (true)
+        {
+            var parsedDuplicatePictureIdIndex = int.Parse(duplicatePictureIdIndex.Value);
 
-        var text = GeneratePostText(vote);
-        var inlineKeyboardMarkup = GenerateInlineKeyboardMarkup(vote);
-        var voteMessage = await telegramBotClient.SendMessage(
-            ChatId, text,
-            ParseMode.MarkdownV2,
-            replyMarkup: inlineKeyboardMarkup,
-            linkPreviewOptions: new LinkPreviewOptions() { IsDisabled = true },
-            cancellationToken: cancellationToken);
+            var vote = await sqlDatabaseContext.DuplicatePictureVotes
+                .AsNoTracking()
+                .Include(dpv => dpv.DuplicatePicture)
+                .Where(dpv => dpv.VotingClosed == false)
+                .Where(dpv => dpv.DuplicatePicture.ImageType == dpv.OriginalPicture.ImageType)
+                .Where(dpv => AllowedImageTypes.Contains(dpv.DuplicatePicture.ImageType))
+                .Where(dpv => dpv.DuplicatePicture.Post.AttributePictures.Count == 1)
+                .Where(dpv => dpv.DuplicatePicture.AttributeId > parsedDuplicatePictureIdIndex)
+                .OrderBy(dpv => dpv.DuplicatePictureId)
+                .Select(dpv => new DuplicatePictureVoteExtended(
+                    dpv,
+                    dpv.OriginalPicture.Post.NumberId,
+                    dpv.OriginalPicture.Post.AttributePictures.Count,
+                    dpv.DuplicatePicture.Post.NumberId,
+                    dpv.DuplicatePicture.Post.AttributePictures.Count))
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (vote == null)
+                return;
+
+            var votes = await sqlDatabaseContext.DuplicatePictureVotes
+                .AsNoTracking()
+                .Include(dpv => dpv.DuplicatePicture)
+                .Where(dpv => dpv.VotingClosed == false)
+                .Where(dpv => dpv.DuplicatePicture.ImageType == dpv.OriginalPicture.ImageType)
+                .Where(dpv => AllowedImageTypes.Contains(dpv.DuplicatePicture.ImageType))
+                .Where(dpv => dpv.DuplicatePicture.Post.AttributePictures.Count == 1)
+                .Where(dpv => dpv.DuplicatePictureId == vote.DuplicatePictureId)
+                .OrderBy(dpv => dpv.DuplicatePictureId)
+                .ThenBy(dpv => dpv.OriginalPictureId)
+                .Select(dpv => new DuplicatePictureVoteExtended(
+                    dpv,
+                    dpv.OriginalPicture.Post.NumberId,
+                    dpv.OriginalPicture.Post.AttributePictures.Count,
+                    dpv.DuplicatePicture.Post.NumberId,
+                    dpv.DuplicatePicture.Post.AttributePictures.Count))
+                .ToArrayAsync(cancellationToken);
+
+            duplicatePictureIdIndex.Value = votes.First().DuplicatePicture.AttributeId.ToString();
+
+            using var duplicateMediaStream = await mediaDownloader.DownloadRawAsync(votes.First().DuplicatePicture, cancellationToken);
+            using var originalMediaStrem = await mediaDownloader.DownloadRawAsync(votes.First().OriginalPicture, cancellationToken);
+
+            var duplicateMedia = new InputMediaPhoto(InputFile.FromStream(duplicateMediaStream));
+            var originalMedia = new InputMediaPhoto(InputFile.FromStream(originalMediaStrem));
+
+            var mediaGroupMessages = await telegramBotClient.SendMediaGroup(
+                ChatId,
+                [duplicateMedia, originalMedia],
+                cancellationToken: cancellationToken);
+
+            var text = GeneratePostText(votes);
+            var inlineKeyboardMarkup = GenerateInlineKeyboardMarkup(votes.First());
+            var voteMessage = await telegramBotClient.SendMessage(
+                ChatId,
+                text,
+                ParseMode.MarkdownV2,
+                replyMarkup: inlineKeyboardMarkup,
+                linkPreviewOptions: new LinkPreviewOptions() { IsDisabled = true },
+                cancellationToken: cancellationToken);
+
+            await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
+            sqlDatabaseContext.ChangeTracker.Clear();
+        }
     }
 
-    public static string GeneratePostText(DuplicatePictureVoteExtended vote)
+    public static string GeneratePostText(IEnumerable<DuplicatePictureVoteExtended> votes)
     {
         var stringBuilder = new StringBuilder();
 
-        stringBuilder.AppendFormat("Дубликат: [{0}](https://joyreactor.cc/post/{1})", vote.DuplicatePostNumberId, vote.DuplicatePostNumberId);
+        stringBuilder.AppendFormat("Дубликат: [{0}](https://joyreactor.cc/post/{1})", votes.First().DuplicatePostNumberId, votes.First().DuplicatePostNumberId);
 
         stringBuilder.AppendLine();
-        stringBuilder.AppendFormat("Оригинал: [{0}](https://joyreactor.cc/post/{1})", vote.OriginalPostNumberId, vote.OriginalPostNumberId);
+        stringBuilder.AppendFormat("{0}:", votes.Count() == 1 ? "Оригинал" : "Оригиналы");
+        foreach (var vote in votes)
+            stringBuilder.AppendFormat(" [{0}](https://joyreactor.cc/post/{1})", vote.OriginalPostNumberId, vote.OriginalPostNumberId);
 
         stringBuilder.AppendLine();
-        if (!vote.VotingClosed)
-            stringBuilder.AppendFormat("Голосование: {0} 🪗 / {1} ✅", vote.YesVotes.Length, vote.NoVotes.Length);
-        else
-            stringBuilder.AppendFormat("Результаты голосования: {0} 🪗 / {1} ✅", vote.YesVotes.Length, vote.NoVotes.Length);
+        stringBuilder.AppendFormat("{0}: {1} 🪗 / {2} ✅",
+            votes.All(dpv => dpv.VotingClosed) ? "Результаты голосования" : "Голосование",
+            votes.Sum(dpv => dpv.YesVotes.Length) / votes.Count(),
+            votes.Sum(dpv => dpv.NoVotes.Length) / votes.Count());
 
         return stringBuilder.ToString();
     }
@@ -105,11 +157,11 @@ public class TelegramBotSender(
             [
                 InlineKeyboardButton.WithCallbackData(
                     "🪗",
-                    JsonSerializer.Serialize(new DuplicatePictureVoteRequest() { Id = vote.Id, Yes = true })),
+                    JsonSerializer.Serialize(new DuplicatePictureTelegramVoteRequest() { DuplicatePictureId = vote.DuplicatePictureId, Yes = true })),
 
                 InlineKeyboardButton.WithCallbackData(
                     "✅",
-                    JsonSerializer.Serialize(new DuplicatePictureVoteRequest() { Id = vote.Id, Yes = false })),
+                    JsonSerializer.Serialize(new DuplicatePictureTelegramVoteRequest() { DuplicatePictureId = vote.DuplicatePictureId, Yes = false })),
                 ],
             ],
         };
