@@ -60,43 +60,32 @@ public class TelegramBotSender(
         {
             var parsedDuplicatePictureIdIndex = int.Parse(duplicatePictureIdIndex.Value);
 
-            var vote = await sqlDatabaseContext.DuplicatePictureVotes
-                .AsNoTracking()
-                .Include(dpv => dpv.DuplicatePicture)
-                .Where(dpv => dpv.VotingClosed == false)
-                .Where(dpv => dpv.DuplicatePicture.ImageType == dpv.OriginalPicture.ImageType)
-                .Where(dpv => AllowedImageTypes.Contains(dpv.DuplicatePicture.ImageType))
-                .Where(dpv => dpv.DuplicatePicture.Post.AttributePictures.Count == 1)
-                .Where(dpv => dpv.DuplicatePicture.AttributeId > parsedDuplicatePictureIdIndex)
-                .OrderBy(dpv => dpv.DuplicatePictureId)
-                .Select(dpv => new DuplicatePictureVoteExtended(
-                    dpv,
-                    dpv.OriginalPicture.Post.NumberId,
-                    dpv.OriginalPicture.Post.AttributePictures.Count,
-                    dpv.DuplicatePicture.Post.NumberId,
-                    dpv.DuplicatePicture.Post.AttributePictures.Count))
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (vote == null)
-                return;
-
             var votes = await sqlDatabaseContext.DuplicatePictureVotes
                 .AsNoTracking()
                 .Include(dpv => dpv.DuplicatePicture)
+                .Include(dpv => dpv.OriginalPicture)
                 .Where(dpv => dpv.VotingClosed == false)
-                .Where(dpv => dpv.DuplicatePicture.ImageType == dpv.OriginalPicture.ImageType)
-                .Where(dpv => AllowedImageTypes.Contains(dpv.DuplicatePicture.ImageType))
                 .Where(dpv => dpv.DuplicatePicture.Post.AttributePictures.Count == 1)
-                .Where(dpv => dpv.DuplicatePictureId == vote.DuplicatePictureId)
+                .Where(dpv => AllowedImageTypes.Contains(dpv.DuplicatePicture.ImageType))
+                .Where(dpv => AllowedImageTypes.Contains(dpv.OriginalPicture.ImageType))
+                .Where(dpv => dpv.DuplicatePicture.AttributeId > parsedDuplicatePictureIdIndex)
                 .OrderBy(dpv => dpv.DuplicatePictureId)
                 .ThenBy(dpv => dpv.OriginalPictureId)
-                .Select(dpv => new DuplicatePictureVoteExtended(
-                    dpv,
-                    dpv.OriginalPicture.Post.NumberId,
-                    dpv.OriginalPicture.Post.AttributePictures.Count,
-                    dpv.DuplicatePicture.Post.NumberId,
-                    dpv.DuplicatePicture.Post.AttributePictures.Count))
-                .ToArrayAsync(cancellationToken);
+                .GroupBy(dpv => dpv.DuplicatePicture.AttributeId)
+                .OrderBy(g => g.Key)
+                .Select(g => g
+                    .OrderBy(dpv => dpv.DuplicatePictureId)
+                    .ThenBy(dpv => dpv.OriginalPictureId)
+                    .Select(dpv => new DuplicatePictureVoteExtended(
+                        dpv,
+                        dpv.OriginalPicture.Post.NumberId,
+                        dpv.OriginalPicture.Post.AttributePictures.Count,
+                        dpv.DuplicatePicture.Post.NumberId,
+                        dpv.DuplicatePicture.Post.AttributePictures.Count)))
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (votes == null)
+                break;
 
             duplicatePictureIdIndex.Value = votes.First().DuplicatePicture.AttributeId.ToString();
 
@@ -122,8 +111,9 @@ public class TelegramBotSender(
                 cancellationToken: cancellationToken);
 
             await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
-            sqlDatabaseContext.ChangeTracker.Clear();
         }
+
+        sqlDatabaseContext.ChangeTracker.Clear();
     }
 
     public static string GeneratePostText(IEnumerable<DuplicatePictureVoteExtended> votes)
@@ -138,7 +128,7 @@ public class TelegramBotSender(
             stringBuilder.AppendFormat(" [{0}](https://joyreactor.cc/post/{1})", vote.OriginalPostNumberId, vote.OriginalPostNumberId);
 
         stringBuilder.AppendLine();
-        stringBuilder.AppendFormat("{0}: {1} 🪗 / {2} ✅",
+        stringBuilder.AppendFormat("{0}: {1} 🪗 / {2} 🆗",
             votes.All(dpv => dpv.VotingClosed) ? "Результаты голосования" : "Голосование",
             votes.Sum(dpv => dpv.YesVotes.Length) / votes.Count(),
             votes.Sum(dpv => dpv.NoVotes.Length) / votes.Count());
@@ -160,7 +150,7 @@ public class TelegramBotSender(
                     JsonSerializer.Serialize(new DuplicatePictureTelegramVoteRequest() { DuplicatePictureId = vote.DuplicatePictureId, Yes = true })),
 
                 InlineKeyboardButton.WithCallbackData(
-                    "✅",
+                    "🆗",
                     JsonSerializer.Serialize(new DuplicatePictureTelegramVoteRequest() { DuplicatePictureId = vote.DuplicatePictureId, Yes = false })),
                 ],
             ],

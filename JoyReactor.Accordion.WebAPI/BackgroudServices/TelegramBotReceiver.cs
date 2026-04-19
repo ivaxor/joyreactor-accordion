@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 using Telegram.Bot;
+using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -49,19 +50,26 @@ public class TelegramBotReceiver(
         var votes = await sqlDatabaseContext.DuplicatePictureVotes
             .AsNoTracking()
             .Where(dpv => dpv.VotingClosed == false)
-            .Where(dpv => dpv.DuplicatePicture.ImageType == dpv.OriginalPicture.ImageType)
-            .Where(dpv => TelegramBotSender.AllowedImageTypes.Contains(dpv.DuplicatePicture.ImageType))
             .Where(dpv => dpv.DuplicatePicture.Post.AttributePictures.Count == 1)
+            .Where(dpv => TelegramBotSender.AllowedImageTypes.Contains(dpv.DuplicatePicture.ImageType))
+            .Where(dpv => TelegramBotSender.AllowedImageTypes.Contains(dpv.OriginalPicture.ImageType))
             .Where(dpv => dpv.DuplicatePictureId == voteRequest.DuplicatePictureId)
-            .OrderBy(dpv => dpv.DuplicatePictureId)
-            .ThenBy(dpv => dpv.OriginalPictureId)
-            .Select(dpv => new DuplicatePictureVoteExtended(
-                dpv,
-                dpv.OriginalPicture.Post.NumberId,
-                dpv.OriginalPicture.Post.AttributePictures.Count,
-                dpv.DuplicatePicture.Post.NumberId,
-                dpv.DuplicatePicture.Post.AttributePictures.Count))
-            .ToArrayAsync(cancellationToken);
+            .GroupBy(dpv => dpv.DuplicatePicture.AttributeId)
+            .OrderBy(g => g.Key)
+            .Select(g => g
+                .Select(dpv => new DuplicatePictureVoteExtended(
+                    dpv,
+                    dpv.OriginalPicture.Post.NumberId,
+                    dpv.OriginalPicture.Post.AttributePictures.Count,
+                    dpv.DuplicatePicture.Post.NumberId,
+                    dpv.DuplicatePicture.Post.AttributePictures.Count)))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (votes == null || votes.Count() == 0)
+        {
+            logger.LogWarning("Failed to find votes for {DuplicatePictureId} duplicate picture id.", voteRequest.DuplicatePictureId);
+            return;
+        }
 
         var filteredVotes = votes
             .Where(dpv => dpv.VotingClosed == false)
@@ -105,14 +113,21 @@ public class TelegramBotReceiver(
 
         var text = TelegramBotSender.GeneratePostText(votes);
         var inlineKeyboardMarkup = TelegramBotSender.GenerateInlineKeyboardMarkup(votes.First());
-        var voteMessage = await telegramBotClient.EditMessageText(
-            ChatId,
-            update.CallbackQuery.Message.Id,
-            text,
-            ParseMode.MarkdownV2,
-            replyMarkup: inlineKeyboardMarkup,
-            linkPreviewOptions: new LinkPreviewOptions() { IsDisabled = true },
-            cancellationToken: cancellationToken);
+
+        try
+        {
+            var voteMessage = await telegramBotClient.EditMessageText(
+                ChatId,
+                update.CallbackQuery.Message.Id,
+                text,
+                ParseMode.MarkdownV2,
+                replyMarkup: inlineKeyboardMarkup,
+                linkPreviewOptions: new LinkPreviewOptions() { IsDisabled = true },
+                cancellationToken: cancellationToken);
+        }
+        catch (ApiRequestException ex)
+        when (ex.Message.StartsWith("Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message"))
+        { }
     }
 
     private Task ErrorHandlerAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
