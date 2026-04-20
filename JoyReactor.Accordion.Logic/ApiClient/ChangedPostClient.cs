@@ -18,6 +18,7 @@ query {{nameof(ChangedPostClient)}}_{{nameof(GetAsync)}}($day: Date!) {
   changedPosts(day: $day) {
     id
     contentVersion
+    nsfw
     attributes {
       type
       ... on PostAttributePicture {

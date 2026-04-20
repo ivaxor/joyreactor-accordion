@@ -8,6 +8,9 @@ public record Post : NodeResponseObject
     [JsonPropertyName("contentVersion")]
     public int? ContentVersion { get; set; }
 
+    [JsonPropertyName("nsfw")]
+    public bool? Nsfw { get; set; }
+
     [JsonPropertyName("attributes")]
     public PostAttribute[]? Attributes { get; set; }
 }

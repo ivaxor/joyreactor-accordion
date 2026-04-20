@@ -25,6 +25,7 @@ query {{nameof(PostClient)}}_{{nameof(GetAsync)}}($nodeId: ID!) {
     ... on Post {
       id
       contentVersion
+      nsfw
       attributes {
         type
         ... on PostAttributePicture {
@@ -64,6 +65,7 @@ query {{nameof(PostClient)}}_{{nameof(GetByTagAsync)}}($nodeId: ID!, $page: Int!
         ... on Post {
           id
           contentVersion
+          nsfw
           attributes {
             type
             ... on PostAttributePicture {
@@ -102,6 +104,7 @@ query {{nameof(PostClient)}}_{{nameof(GetWeekTopPostsAsync)}}($year:Int!, $week:
 ... on Post {
           id
           contentVersion
+          nsfw
           attributes {
             type
             ... on PostAttributePicture {

@@ -15,6 +15,7 @@ public record ParsedPost : ISqlUpdatedAtEntity
         ApiId = api.Id;
         NumberId = post.NumberId;
         ContentVersion = post.ContentVersion.Value;
+        Nsfw = post.Nsfw.Value;
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
@@ -26,6 +27,7 @@ public record ParsedPost : ISqlUpdatedAtEntity
 
     public int NumberId { get; set; }
     public int ContentVersion { get; set; }
+    public bool Nsfw { get; set; }
 
     public virtual ICollection<ParsedPostAttributePicture>? AttributePictures { get; set; }
     public virtual ICollection<ParsedPostAttributeEmbedded>? AttributeEmbeds { get; set; }
@@ -58,6 +60,11 @@ public class ParsedPostEntityTypeConfiguration : IEntityTypeConfiguration<Parsed
 
         builder
             .Property(e => e.ContentVersion)
+            .IsRequired(true);
+
+        builder
+            .Property(e => e.Nsfw)
+            .HasDefaultValue(false)
             .IsRequired(true);
 
         builder
