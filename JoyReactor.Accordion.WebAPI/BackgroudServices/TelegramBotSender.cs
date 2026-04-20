@@ -81,7 +81,8 @@ public class TelegramBotSender(
                         dpv.OriginalPicture.Post.NumberId,
                         dpv.OriginalPicture.Post.AttributePictures.Count,
                         dpv.DuplicatePicture.Post.NumberId,
-                        dpv.DuplicatePicture.Post.AttributePictures.Count)))
+                        dpv.DuplicatePicture.Post.AttributePictures.Count,
+                        dpv.DuplicatePicture.Post.Nsfw || dpv.OriginalPicture.Post.Nsfw)))
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (votes == null)
@@ -92,8 +93,8 @@ public class TelegramBotSender(
             using var duplicateMediaStream = await mediaDownloader.DownloadRawAsync(votes.First().DuplicatePicture, cancellationToken);
             using var originalMediaStrem = await mediaDownloader.DownloadRawAsync(votes.First().OriginalPicture, cancellationToken);
 
-            var duplicateMedia = new InputMediaPhoto(InputFile.FromStream(duplicateMediaStream));
-            var originalMedia = new InputMediaPhoto(InputFile.FromStream(originalMediaStrem));
+            var duplicateMedia = new InputMediaPhoto(InputFile.FromStream(duplicateMediaStream)) { HasSpoiler = votes.First().Nsfw };
+            var originalMedia = new InputMediaPhoto(InputFile.FromStream(originalMediaStrem)) { HasSpoiler = votes.First().Nsfw };
 
             var mediaGroupMessages = await telegramBotClient.SendMediaGroup(
                 ChatId,

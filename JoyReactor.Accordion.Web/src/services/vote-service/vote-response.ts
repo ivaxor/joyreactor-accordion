@@ -9,6 +9,8 @@ export interface VoteResponse {
   duplicatePostId: number,
   duplicatePostPictureCount: number,
 
+  nsfw: boolean,
+
   yesVotes: number,
   noVotes: number,
 

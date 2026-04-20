@@ -10,6 +10,7 @@
     <thead>
       <tr>
         <th class="text-center">Дата</th>
+        <th class="text-center">NSFW</th>
 
         <th class="text-end">Дубликат (пост)</th>
         <th class="text-end">Оригинал (пост)</th>
@@ -29,13 +30,16 @@
     <tbody>
       @if (votes()!.length === 0) {
       <tr>
-        <td class="text-center" [colSpan]="apiKeySet ? 9 : 8">Пустая страница</td>
+        <td class="text-center" [colSpan]="apiKeySet ? 11 : 10">Пустая страница</td>
       </tr>
       }
       @for (vote of votes(); track $index) {
       <tr>
         <td class="text-center">
           {{ vote.createdAt | date:'short':'':'ru-RU' }}
+        </td>
+        <td class="text-center">
+          {{ vote.nsfw ? "🔞" : "👪" }}
         </td>
 
         <td class="text-end">

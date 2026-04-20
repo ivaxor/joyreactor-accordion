@@ -38,7 +38,8 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
                 dpv.OriginalPicture.Post.NumberId,
                 dpv.OriginalPicture.Post.AttributePictures.Count,
                 dpv.DuplicatePicture.Post.NumberId,
-                dpv.DuplicatePicture.Post.AttributePictures.Count))
+                dpv.DuplicatePicture.Post.AttributePictures.Count,
+                dpv.DuplicatePicture.Post.Nsfw || dpv.OriginalPicture.Post.Nsfw))
             .ToArrayAsync(cancellationToken);
 
         var votesThin = votes
@@ -88,7 +89,8 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
                 dpv.OriginalPicture.Post.NumberId,
                 dpv.OriginalPicture.Post.AttributePictures.Count,
                 dpv.DuplicatePicture.Post.NumberId,
-                dpv.DuplicatePicture.Post.AttributePictures.Count))
+                dpv.DuplicatePicture.Post.AttributePictures.Count,
+                dpv.DuplicatePicture.Post.Nsfw || dpv.OriginalPicture.Post.Nsfw))
             .ToArrayAsync(cancellationToken);
 
         var votesThin = votes

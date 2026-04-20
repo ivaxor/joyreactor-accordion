@@ -113,12 +113,19 @@ public class DuplicatePictureVoteTypeConfiguration : IEntityTypeConfiguration<Du
 public record DuplicatePictureVoteExtended : DuplicatePictureVote
 {
     public DuplicatePictureVoteExtended() { }
-    public DuplicatePictureVoteExtended(DuplicatePictureVote baseVote, int originalPostId, int originalCount, int duplicatePostId, int duplicateCount) : base(baseVote)
+    public DuplicatePictureVoteExtended(
+        DuplicatePictureVote baseVote,
+        int originalPostId,
+        int originalCount,
+        int duplicatePostId,
+        int duplicateCount,
+        bool nsfw) : base(baseVote)
     {
         OriginalPostNumberId = originalPostId;
         OriginalPostPictureCount = originalCount;
         DuplicatePostNumberId = duplicatePostId;
         DuplicatePostPictureCount = duplicateCount;
+        Nsfw = nsfw;
     }
 
     public int OriginalPostNumberId { get; set; }
@@ -126,4 +133,6 @@ public record DuplicatePictureVoteExtended : DuplicatePictureVote
 
     public int DuplicatePostNumberId { get; set; }
     public int DuplicatePostPictureCount { get; set; }
+
+    public bool Nsfw { get; set; }
 }

@@ -62,7 +62,8 @@ public class TelegramBotReceiver(
                     dpv.OriginalPicture.Post.NumberId,
                     dpv.OriginalPicture.Post.AttributePictures.Count,
                     dpv.DuplicatePicture.Post.NumberId,
-                    dpv.DuplicatePicture.Post.AttributePictures.Count)))
+                    dpv.DuplicatePicture.Post.AttributePictures.Count,
+                    dpv.DuplicatePicture.Post.Nsfw || dpv.OriginalPicture.Post.Nsfw)))
             .FirstOrDefaultAsync(cancellationToken);
 
         if (votes == null || votes.Count() == 0)
