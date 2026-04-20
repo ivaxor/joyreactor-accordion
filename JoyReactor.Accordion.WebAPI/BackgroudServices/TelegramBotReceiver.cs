@@ -49,7 +49,6 @@ public class TelegramBotReceiver(
 
         var votes = await sqlDatabaseContext.DuplicatePictureVotes
             .AsNoTracking()
-            .Where(dpv => dpv.VotingClosed == false)
             .Where(dpv => dpv.DuplicatePicture.Post.AttributePictures.Count == 1)
             .Where(dpv => TelegramBotSender.AllowedImageTypes.Contains(dpv.DuplicatePicture.ImageType))
             .Where(dpv => TelegramBotSender.AllowedImageTypes.Contains(dpv.OriginalPicture.ImageType))
