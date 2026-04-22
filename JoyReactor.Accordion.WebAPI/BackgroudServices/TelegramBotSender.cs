@@ -32,7 +32,6 @@ public class TelegramBotSender(
     protected override bool IsIndefinite => true;
     protected readonly ChatId ChatId = new ChatId(telegramBotSettings.Value.ChatId);
 
-
     protected override async Task RunAsync(CancellationToken cancellationToken)
     {
         await using var serviceScope = serviceScopeFactory.CreateAsyncScope();
