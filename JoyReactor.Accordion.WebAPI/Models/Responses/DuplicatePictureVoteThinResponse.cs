@@ -17,6 +17,8 @@ public record DuplicatePictureVoteThinResponse
     public int YesVotes { get; set; }
     public int NoVotes { get; set; }
 
+    public bool Nsfw { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DuplicatePictureVoteThinResponse() { }
@@ -35,6 +37,9 @@ public record DuplicatePictureVoteThinResponse
 
         YesVotes = duplicatePictureVote.YesVotes.Length;
         NoVotes = duplicatePictureVote.NoVotes.Length;
+
+        Nsfw = duplicatePictureVote.Nsfw;
+
         CreatedAt = duplicatePictureVote.CreatedAt;
     }
 }
