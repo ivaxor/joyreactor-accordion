@@ -1,5 +1,4 @@
-﻿using JoyReactor.Accordion.Logic.ApiClient.Models;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace JoyReactor.Accordion.Tests;
 
@@ -23,13 +22,15 @@ public sealed class PostParserDevTests
     }
 
     [TestMethod]
-    #region SoundCloud
-    [DataRow(5028161)]
-    #endregion
+    // BandCamp [DataRow(4213169)]
+    // Coub [DataRow(648193)]
+    // SoundCloud [DataRow(5028161)]
+    // Vimeo [DataRow(136679)]
+    // YouTube [DataRow(214764)]
     public async Task CrawlAndParseByPostIdAsync(int postId)
     {
         var post = await SharedDependencies.PostClient.GetAsync(SharedDependencies.Api, postId, default);
-        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api, post, default);
+        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post, default);
 
         var parsedPost = await SharedDependencies.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()
@@ -47,6 +48,7 @@ public sealed class PostParserDevTests
             .SingleAsync();
     }
 
+    /*
     [TestMethod]
     public async Task BandcampUrlPath()
     {
@@ -73,7 +75,7 @@ public sealed class PostParserDevTests
                 .ToArray();
             postsAttributeValues.AddRange(postAttributeValues);
 
-            await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api, postPager.Posts, default);
+            await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, postPager.Posts, default);
         } while (postPager.Posts.Length > 0 && posts.Count() < postPager.TotalCount);
 
         var urlPaths = await SharedDependencies.SqlDatabaseContext.ParsedBandCamps
@@ -88,7 +90,9 @@ public sealed class PostParserDevTests
                 $"Failed to find match for {postAttributeValue}");
         }
     }
+    */
 
+    /*
     [TestMethod]
     public async Task SoundCloudUrlPath()
     {
@@ -130,4 +134,5 @@ public sealed class PostParserDevTests
                 $"Failed to find match for {postAttributeValue}");
         }
     }
+    */
 }

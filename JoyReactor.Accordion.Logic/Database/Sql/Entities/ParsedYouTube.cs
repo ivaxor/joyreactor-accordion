@@ -18,7 +18,7 @@ public record ParsedYouTube : ISqlUpdatedAtEntity, IParsedAttributeEmbedded
 
     public Guid Id { get; set; }
 
-    public string UniqueId => $"{nameof(ParsedVimeo)}:{VideoId}";
+    public string UniqueId => $"{nameof(ParsedYouTube)}:{VideoId}";
 
     public string VideoId { get; set; }
 

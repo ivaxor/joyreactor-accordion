@@ -1,16 +1,17 @@
 ﻿using JoyReactor.Accordion.Logic.ApiClient;
 using JoyReactor.Accordion.Logic.Database.Sql;
-using JoyReactor.Accordion.Logic.Parsers;
+using JoyReactor.Accordion.Logic.MQ.Messages;
 using JoyReactor.Accordion.WebAPI.Models;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace JoyReactor.Accordion.WebAPI.BackgroudServices;
 
-public class ChangedPostHandler(
+public class ChangedApiPostPublisher(
     IServiceScopeFactory serviceScopeFactory,
     IOptions<BackgroundServiceSettings> settings,
-    ILogger<ChangedPostHandler> logger)
+    ILogger<ChangedApiPostPublisher> logger)
     : RobustBackgroundService(settings, logger)
 {
     protected override TimeSpan SubsequentRunDelay => settings.Value.SubsequentRunDelay * 3;
@@ -21,8 +22,8 @@ public class ChangedPostHandler(
     {
         await using var serviceScope = serviceScopeFactory.CreateAsyncScope();
         await using var sqlDatabaseContext = serviceScope.ServiceProvider.GetRequiredService<SqlDatabaseContext>();
-        var postParser = serviceScope.ServiceProvider.GetRequiredService<IPostParser>();
         var changedPostClient = serviceScope.ServiceProvider.GetRequiredService<IChangedPostClient>();
+        var publishEndpoint = serviceScope.ServiceProvider.GetRequiredService<IPublishEndpoint>();
 
         var apis = await sqlDatabaseContext.CrawlerTasks
             .AsNoTracking()
@@ -43,10 +44,13 @@ public class ChangedPostHandler(
             foreach (var api in apis)
             {
                 var changedPosts = await changedPostClient.GetAsync(api, currentDay, cancellationToken);
-                logger.LogInformation("Found {PostCount} changed post(s) at {Day} for {Api}.", changedPosts.Length, currentDay, api.HostName);
 
-                await postParser.ParseAsync(api, changedPosts, cancellationToken);
-                sqlDatabaseContext.ChangeTracker.Clear();
+                var apiPostMessages = changedPosts
+                    .Select(p => new ApiPostMessage() { ApiId = api.Id, Post = p })
+                    .ToArray();
+                await publishEndpoint.PublishBatch(apiPostMessages, cancellationToken);
+
+                logger.LogInformation("Found {PostCount} changed post(s) at {Day} for {Api}.", changedPosts.Length, currentDay, api.HostName);
             }
 
             startDay = startDay.AddDays(1);

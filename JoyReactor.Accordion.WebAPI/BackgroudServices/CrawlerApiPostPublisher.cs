@@ -11,11 +11,10 @@ using System.Collections.Concurrent;
 
 namespace JoyReactor.Accordion.WebAPI.BackgroudServices;
 
-public class ApiPostPublisher(
+public class CrawlerApiPostPublisher(
     IServiceScopeFactory serviceScopeFactory,
-    IPublishEndpoint publishEndpoint,
     IOptions<BackgroundServiceSettings> settings,
-    ILogger<ApiPostPublisher> logger)
+    ILogger<CrawlerApiPostPublisher> logger)
     : RobustBackgroundService(settings, logger)
 {
     protected override bool IsIndefinite => true;
@@ -73,6 +72,7 @@ public class ApiPostPublisher(
             await using var serviceScope = serviceScopeFactory.CreateAsyncScope();
             await using var sqlDatabaseContext = serviceScope.ServiceProvider.GetRequiredService<SqlDatabaseContext>();
             var postClient = serviceScope.ServiceProvider.GetRequiredService<IPostClient>();
+            var publishEndpoint = serviceScope.ServiceProvider.GetRequiredService<IPublishEndpoint>();
 
             var crawlerTask = await sqlDatabaseContext.CrawlerTasks
                 .Include(task => task.Tag)
@@ -94,12 +94,12 @@ public class ApiPostPublisher(
                 postPager = await postClient.GetByTagAsync(crawlerTask.Tag.Api, tagNumberId, crawlerTask.PostLineType, crawlerTask.PageCurrent, cancellationToken);
                 isLastPage = crawlerTask.PageCurrent >= postPager.LastPage;
 
-                var postApiMqMessages = postPager.Posts
-                    .Select(p => new ApiPostMessage() { Api = crawlerTask.Tag.Api, Post = p })
+                var apiPostMessages = postPager.Posts
+                    .Select(p => new ApiPostMessage() { ApiId = crawlerTask.Tag.Api.Id, Post = p })
                     .ToArray();
-                await publishEndpoint.PublishBatch(postApiMqMessages, cancellationToken);
+                await publishEndpoint.PublishBatch(apiPostMessages, cancellationToken);
 
-                logger.LogInformation("Found {PostCount} post(s) using \"{TagName}\" tag in {HostName} on {Page}/{PageLast} page.", postApiMqMessages.Length, crawlerTask.Tag.Name, crawlerTask.Tag.Api.HostName, crawlerTask.PageCurrent, postPager.LastPage);
+                logger.LogInformation("Found {PostCount} post(s) using \"{TagName}\" tag in {HostName} on {Page}/{PageLast} page.", apiPostMessages.Length, crawlerTask.Tag.Name, crawlerTask.Tag.Api.HostName, crawlerTask.PageCurrent, postPager.LastPage);
 
                 if (isLastPage)
                     crawlerTask.FinishedAt = DateTime.UtcNow;

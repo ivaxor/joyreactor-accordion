@@ -1,5 +1,6 @@
-﻿using JoyReactor.Accordion.Logic.Database.Sql.Entities;
+﻿using JoyReactor.Accordion.Logic.ApiClient.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Text;
 
 namespace JoyReactor.Accordion.Tests;
 
@@ -21,58 +22,246 @@ public sealed class PostParserTests
     }
 
     [TestMethod]
-    public async Task ParseAsync_NoExistingPost_Inserts()
+    public async Task ParseAsync_NewPost_Creates()
     {
-        var post = await SharedDependencies.PostClient.GetAsync(SharedDependencies.Api, 22, default);
-
-        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api, post, default);
+        var post1 = CreateTestPost();
+        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
 
         var parsedPost = await SharedDependencies.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()
-            .Where(pp => pp.NumberId == post.NumberId)
+            .Include(pp => pp.AttributePictures)
+            .Include(pp => pp.AttributeEmbeds)
+            .Where(pp => pp.NumberId == post1.NumberId)
             .FirstAsync();
-        Assert.AreEqual(post.ContentVersion, parsedPost.ContentVersion);
+
+        Assert.HasCount(1, parsedPost.AttributePictures);
+        Assert.HasCount(5, parsedPost.AttributeEmbeds);
     }
 
     [TestMethod]
-    public async Task ParseAsync_NewContentVersion_Upserts()
+    public async Task ParseAsync_ExistingPost_Updates()
     {
-        var post = await SharedDependencies.PostClient.GetAsync(SharedDependencies.Api, 22, default);
-
-        var existingParsedPost = new ParsedPost(SharedDependencies.Api, post);
-        existingParsedPost.ContentVersion--;
-        await SharedDependencies.SqlDatabaseContext.ParsedPosts.AddAsync(existingParsedPost);
-        await SharedDependencies.SqlDatabaseContext.SaveChangesAsync();
-        SharedDependencies.SqlDatabaseContext.ChangeTracker.Clear();
-
-        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api, post, default);
-
-        var parsedPost = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+        var post1 = CreateTestPost();
+        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
+        var parsedPost1 = await SharedDependencies.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()
-            .Where(pp => pp.NumberId == post.NumberId)
+            .Include(pp => pp.AttributePictures)
+            .Include(pp => pp.AttributeEmbeds)
+            .Where(pp => pp.NumberId == post1.NumberId)
             .FirstAsync();
-        Assert.AreEqual(post.ContentVersion, parsedPost.ContentVersion);
-        Assert.AreNotEqual(existingParsedPost.ContentVersion, parsedPost.ContentVersion);
+
+        var post2 = post1 with
+        {
+            ContentVersion = post1.ContentVersion + 1,
+        };
+        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
+        var parsedPost2 = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+            .AsNoTracking()
+            .Include(pp => pp.AttributePictures)
+            .Include(pp => pp.AttributeEmbeds)
+            .Where(pp => pp.NumberId == post1.NumberId)
+            .FirstAsync();
+
+        Assert.AreEqual(parsedPost1.Id, parsedPost2.Id);
+
+        CollectionAssert.AreEquivalent(parsedPost1.AttributePictures.Select(ppap => ppap.Id).ToArray(), parsedPost2.AttributePictures.Select(ppap => ppap.Id).ToArray());
+        CollectionAssert.AreEquivalent(parsedPost1.AttributeEmbeds.Select(ppae => ppae.Id).ToArray(), parsedPost2.AttributeEmbeds.Select(ppae => ppae.Id).ToArray());
     }
 
     [TestMethod]
-    public async Task ParseAsync_OldContentVersion_Ignores()
+    public async Task ParseAsync_ExistingPost_ContentVersionIsLower_Ignores()
     {
-        var post = await SharedDependencies.PostClient.GetAsync(SharedDependencies.Api, 22, default);
+        var post1 = CreateTestPost();
+        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
 
-        var existingParsedPost = new ParsedPost(SharedDependencies.Api, post);
-        existingParsedPost.ContentVersion++;
-        await SharedDependencies.SqlDatabaseContext.ParsedPosts.AddAsync(existingParsedPost);
-        await SharedDependencies.SqlDatabaseContext.SaveChangesAsync();
-        SharedDependencies.SqlDatabaseContext.ChangeTracker.Clear();
-
-        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api, post, default);
+        var post2 = post1 with
+        {
+            ContentVersion = post1.ContentVersion - 1,
+            Attributes = [],
+        };
+        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
 
         var parsedPost = await SharedDependencies.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()
-            .Where(pp => pp.NumberId == post.NumberId)
+            .Include(pp => pp.AttributePictures)
+            .Include(pp => pp.AttributeEmbeds)
+            .Where(pp => pp.NumberId == post1.NumberId)
             .FirstAsync();
-        Assert.AreNotEqual(post.ContentVersion, parsedPost.ContentVersion);
-        Assert.AreEqual(existingParsedPost.ContentVersion, parsedPost.ContentVersion);
+
+        Assert.HasCount(1, parsedPost.AttributePictures);
+        Assert.HasCount(5, parsedPost.AttributeEmbeds);
+    }
+
+    [TestMethod]
+    public async Task ParseAsync_ExistingPost_ContentVersionIsHigher_Updates()
+    {
+        var post1 = CreateTestPost();
+        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
+
+        var post2 = post1 with
+        {
+            ContentVersion = post1.ContentVersion + 1,
+            Attributes = [],
+        };
+        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
+
+        var parsedPost = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+            .AsNoTracking()
+            .Include(pp => pp.AttributePictures)
+            .Include(pp => pp.AttributeEmbeds)
+            .Where(pp => pp.NumberId == post1.NumberId)
+            .FirstAsync();
+
+        Assert.HasCount(0, parsedPost.AttributePictures);
+        Assert.HasCount(0, parsedPost.AttributeEmbeds);
+    }
+
+    [TestMethod]
+    public async Task ParseAsync_ExistingPost_RemovesOnlyPictureAttribute()
+    {
+        var post1 = CreateTestPost();
+        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
+
+        var post2 = post1 with
+        {
+            ContentVersion = post1.ContentVersion + 1,
+            Attributes = post1.Attributes.Where(pa => pa.Type != "PICTURE").ToArray(),
+        };
+        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
+
+        var parsedPost = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+            .AsNoTracking()
+            .Include(pp => pp.AttributePictures)
+            .Include(pp => pp.AttributeEmbeds)
+            .Where(pp => pp.NumberId == post1.NumberId)
+            .FirstAsync();
+
+        Assert.HasCount(0, parsedPost.AttributePictures);
+        Assert.HasCount(5, parsedPost.AttributeEmbeds);
+    }
+
+    [TestMethod]
+    public async Task ParseAsync_ExistingPost_AddsOnlyPictureAttribute()
+    {
+        var post1 = CreateTestPost();
+        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
+
+        var post2 = post1 with
+        {
+            ContentVersion = post1.ContentVersion + 1,
+            Attributes = [.. post1.Attributes, CreateTestImagePostAttribute()],
+        };
+        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
+
+        var parsedPost = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+            .AsNoTracking()
+            .Include(pp => pp.AttributePictures)
+            .Include(pp => pp.AttributeEmbeds)
+            .Where(pp => pp.NumberId == post1.NumberId)
+            .FirstAsync();
+
+        Assert.HasCount(2, parsedPost.AttributePictures);
+        Assert.HasCount(5, parsedPost.AttributeEmbeds);
+    }
+
+    [TestMethod]
+    [DataRow("BANDCAMP")]
+    [DataRow("COUB")]
+    [DataRow("SOUNDCLOUD")]
+    [DataRow("VIMEO")]
+    [DataRow("YOUTUBE")]
+    public async Task ParseAsync_ExistingPost_RemovesOnlyEmbeddedAttribute(string type)
+    {
+        var post1 = CreateTestPost();
+        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
+
+        var post2 = post1 with
+        {
+            ContentVersion = post1.ContentVersion + 1,
+            Attributes = post1.Attributes.Where(pa => pa.Type != type).ToArray(),
+        };
+        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
+
+        var parsedPost = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+            .AsNoTracking()
+            .Include(pp => pp.AttributePictures)
+            .Include(pp => pp.AttributeEmbeds)
+            .Where(pp => pp.NumberId == post1.NumberId)
+            .FirstAsync();
+
+        Assert.HasCount(1, parsedPost.AttributePictures);
+        Assert.HasCount(4, parsedPost.AttributeEmbeds);
+    }
+
+    [TestMethod]
+    [DataRow("BANDCAMP")]
+    [DataRow("COUB")]
+    [DataRow("SOUNDCLOUD")]
+    [DataRow("VIMEO")]
+    [DataRow("YOUTUBE")]
+    public async Task ParseAsync_ExistingPost_AddsOnlyEmbeddedAttribute(string type)
+    {
+        var post1 = CreateTestPost();
+        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
+
+        var post2 = post1 with
+        {
+            ContentVersion = post1.ContentVersion + 1,
+            Attributes = [.. post1.Attributes, CreateTestEmbeddedPostAttribute(type)],
+        };
+        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
+
+        var parsedPost = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+            .AsNoTracking()
+            .Include(pp => pp.AttributePictures)
+            .Include(pp => pp.AttributeEmbeds)
+            .Where(pp => pp.NumberId == post1.NumberId)
+            .FirstAsync();
+
+        Assert.HasCount(1, parsedPost.AttributePictures);
+        Assert.HasCount(6, parsedPost.AttributeEmbeds);
+    }
+
+    protected static Post CreateTestPost(int? id = null, int contentVersion = 1, bool nsfw = false)
+    {
+        return new Post
+        {
+            NodeId = Convert.ToBase64String(Encoding.UTF8.GetBytes($"Post:{id ?? Random.Shared.Next()}")),
+            ContentVersion = contentVersion,
+            Nsfw = nsfw,
+            Attributes = [
+                CreateTestImagePostAttribute(),
+                CreateTestEmbeddedPostAttribute("BANDCAMP"),
+                CreateTestEmbeddedPostAttribute("COUB"),
+                CreateTestEmbeddedPostAttribute("SOUNDCLOUD"),
+                CreateTestEmbeddedPostAttribute("VIMEO"),
+                CreateTestEmbeddedPostAttribute("YOUTUBE"),
+            ]
+        };
+    }
+
+    protected static PostAttribute CreateTestImagePostAttribute(string type = "JPEG", int? id = null)
+    {
+        return new PostAttribute()
+        {
+            NodeId = Convert.ToBase64String(Encoding.UTF8.GetBytes($"PostAttributePicture:{id ?? Random.Shared.Next()}")),
+            Type = "PICTURE",
+            Image = new Image() { Type = type },
+        };
+    }
+
+    protected static PostAttribute CreateTestEmbeddedPostAttribute(string type, string? value = null, int? id = null)
+    {
+        return new PostAttribute()
+        {
+            NodeId = Convert.ToBase64String(Encoding.UTF8.GetBytes($"PostAttributeEmbed:{id ?? Random.Shared.Next()}")),
+            Type = type,
+            Value = type switch
+            {
+                "BANDCAMP" => $"{{\"url\":\"album={value ?? Random.Shared.Next().ToString()}\\/size=large\\/bgcol=ffffff\\/linkcol=0687f5\\/transparent=true\\/\",\"height\":905,\"width\":700}}",
+                "SOUNDCLOUD" => $"{{\"url\":\"https:\\/\\/api.soundcloud.com\\/playlists\\/{value ?? Random.Shared.Next().ToString()}\",\"height\":600}}",
+                _ => value ?? Random.Shared.Next().ToString(),
+            },
+        };
     }
 }

@@ -1,122 +1,174 @@
 ﻿using JoyReactor.Accordion.Logic.ApiClient.Models;
 using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
-using JoyReactor.Accordion.Logic.Database.Sql.Extensions;
+using JoyReactor.Accordion.Logic.MQ.Messages;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace JoyReactor.Accordion.Logic.Parsers;
 
-public class PostParser(
-    SqlDatabaseContext sqlDatabaseContext,
-    ILogger<PostParser> logger)
+public class PostParser(SqlDatabaseContext sqlDatabaseContext)
     : IPostParser
 {
-    public Task ParseAsync(Api api, Post post, CancellationToken cancellationToken)
+    public Task ParseAsync(ApiPostMessage message, CancellationToken cancellationToken)
     {
-        return ParseAsync(api, [post], cancellationToken);
+        return ParseAsync(message.ApiId, message.Post, cancellationToken);
     }
 
-    public async Task ParseAsync(Api api, IEnumerable<Post> posts, CancellationToken cancellationToken)
+    public async Task ParseAsync(Guid apiId, Post post, CancellationToken cancellationToken)
     {
-        if (!posts.Any())
+        var parsedPost = await sqlDatabaseContext.ParsedPosts
+            .Include(pp => pp.AttributePictures)
+            .Include(pp => pp.AttributeEmbeds)
+            .ThenInclude(ppae => ppae.BandCamp)
+            .Include(pp => pp.AttributeEmbeds)
+            .ThenInclude(ppae => ppae.Coub)
+            .Include(pp => pp.AttributeEmbeds)
+            .ThenInclude(ppae => ppae.SoundCloud)
+            .Include(pp => pp.AttributeEmbeds)
+            .ThenInclude(ppae => ppae.Vimeo)
+            .Include(pp => pp.AttributeEmbeds)
+            .ThenInclude(ppae => ppae.YouTube)
+            .AsSplitQuery()
+            .Where(pp => pp.NumberId == post.NumberId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (parsedPost != null)
+            await UpdateAsync(parsedPost, apiId, post, cancellationToken);
+        else
+            await CreateAsync(apiId, post, cancellationToken);
+    }
+
+    protected async Task UpdateAsync(
+        ParsedPost parsedPost,
+        Guid apiId,
+        Post post,
+        CancellationToken cancellationToken)
+    {
+        if (post.ContentVersion <= parsedPost.ContentVersion)
             return;
 
-        var postsWithNewestContentVersion = 0;
-
         await using var transaction = await sqlDatabaseContext.Database.BeginTransactionAsync(cancellationToken);
-        var postNumberIds = posts.Select(p => p.NumberId).ToArray();
-        var existingPostContentVersions = await sqlDatabaseContext.ParsedPosts
-            .AsNoTracking()
-            .Where(post => postNumberIds.Contains(post.NumberId))
-            .Select(post => new { post.NumberId, post.ContentVersion })
-            .ToDictionaryAsync(post => post.NumberId, post => post.ContentVersion, cancellationToken);
-        foreach (var post in posts)
-        {
-            if (!existingPostContentVersions.TryGetValue(post.NumberId, out var currentContentVersion) || post.ContentVersion <= currentContentVersion)
-                continue;
 
-            logger.LogDebug("Post {PostNubmerId} content version changed. Deleting old post information.", post.NumberId);
-            await sqlDatabaseContext.ParsedPosts.Where(p => p.NumberId == post.NumberId).ExecuteDeleteAsync(cancellationToken);
-            postsWithNewestContentVersion++;
-        }
-        await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
+        parsedPost.ContentVersion = post.ContentVersion.Value;
+        parsedPost.UpdatedAt = DateTime.UtcNow;
 
-        var parsedPosts = new List<ParsedPost>(posts.Count());
-        var parsedPostAttributes = new List<IParsedPostAttribute>();
-        var parsedAttributeEmbeds = new List<IParsedAttributeEmbedded>();
-        foreach (var post in posts)
+        var existingPostAttributePictures = parsedPost.AttributePictures
+            .Select(ppap => ppap.AttributeId)
+            .ToHashSet();
+        var existingPostAttributeEmbeds = parsedPost.AttributeEmbeds
+            .Select(ppae => ppae.UniqueId)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var newPostAttributePictureIds = new HashSet<int>();
+        var newPostAttributeEmbeddedIds = new HashSet<string>();
+
+        foreach (var postAttribute in post.Attributes)
         {
-            if (existingPostContentVersions.TryGetValue(post.NumberId, out var currentContentVersion) && post.ContentVersion <= currentContentVersion)
+            switch (postAttribute.Type)
             {
-                logger.LogDebug("Post {PostNumberId} content version change didn't changed. Skipping post.", post.NumberId);
-                continue;
+                case "PICTURE":
+                    newPostAttributePictureIds.Add(postAttribute.NumberId);
+                    if (existingPostAttributePictures.Contains(postAttribute.NumberId))
+                        continue;
+
+                    var postAttributePicture = new ParsedPostAttributePicture(postAttribute, parsedPost);
+                    await sqlDatabaseContext.ParsedPostAttributePictures.AddAsync(postAttributePicture, cancellationToken);
+                    break;
+
+                case "BANDCAMP":
+                case "COUB":
+                case "SOUNDCLOUD":
+                case "VIMEO":
+                case "YOUTUBE":
+                    var parsedAttributeEmbedded = ParseAttributeEmbedded(postAttribute);
+                    newPostAttributeEmbeddedIds.Add(parsedAttributeEmbedded.UniqueId);
+                    if (existingPostAttributeEmbeds.Contains(parsedAttributeEmbedded.UniqueId))
+                        continue;
+
+                    var existingAttributeEmbedded = await TryToGetAttributeEmbeddedAsync(parsedAttributeEmbedded, cancellationToken);
+                    if (existingAttributeEmbedded == null)
+                        await AddAttributeEmbeddedAsync(parsedAttributeEmbedded, cancellationToken);
+
+                    var parsedPostAttributeEmbedded = new ParsedPostAttributeEmbedded(postAttribute, parsedPost, existingAttributeEmbedded ?? parsedAttributeEmbedded);
+                    await sqlDatabaseContext.ParsedPostAttributeEmbeds.AddAsync(parsedPostAttributeEmbedded, cancellationToken);
+                    break;
+
+                default:
+                    throw new NotImplementedException();
             }
 
-            var parsedPost = new ParsedPost(api, post);
-            parsedPosts.Add(parsedPost);
-
-            foreach (var postAttribute in post.Attributes)
-            {
-                var parsedAttributeEmbedded = CreateAttribute(postAttribute);
-                var existingDatabaseParsedAttributeEmbedded = await GetExistingDatabaseAttributeAsync(parsedAttributeEmbedded, cancellationToken);
-                var existingLocalParsedAttributeEmbedded = GetExistingLocalAttribute(parsedAttributeEmbeds, parsedAttributeEmbedded);
-                if (parsedAttributeEmbedded != null && existingDatabaseParsedAttributeEmbedded == null && existingLocalParsedAttributeEmbedded == null)
-                    parsedAttributeEmbeds.Add(parsedAttributeEmbedded);
-
-                var existingParsedAttributeEmbedded = existingLocalParsedAttributeEmbedded
-                    ?? existingDatabaseParsedAttributeEmbedded
-                    ?? parsedAttributeEmbedded;
-
-                var parsedPostAttribute = CreatePostAttribute(postAttribute, parsedPost, existingParsedAttributeEmbedded);
-                parsedPostAttributes.Add(parsedPostAttribute);
-            }
+            await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
         }
 
-        await sqlDatabaseContext.ParsedPosts.AddRangeAsync(parsedPosts, cancellationToken);
-        await AddRangeAsync(parsedPostAttributes, cancellationToken);
-        await UpsertRangeAsync(parsedAttributeEmbeds, cancellationToken);
+        if (parsedPost.AttributePictures.Any())
+        {
+            foreach (var ppap in parsedPost.AttributePictures)
+            {
+                if (!newPostAttributePictureIds.Contains(ppap.AttributeId))
+                    sqlDatabaseContext.ParsedPostAttributePictures.Remove(ppap);
+            }
+            await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
+        }
 
-        await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
+        if (parsedPost.AttributeEmbeds.Any())
+        {
+            foreach (var ppae in parsedPost.AttributeEmbeds)
+            {
+                if (!newPostAttributeEmbeddedIds.Contains(ppae.UniqueId))
+                    sqlDatabaseContext.ParsedPostAttributeEmbeds.Remove(ppae);
+            }
+            await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
+        }
+
         await transaction.CommitAsync(cancellationToken);
-
-        logger.LogInformation("Added {PostCount} post(s) with {PostWithNewestContentVersionCount} post(s) updated to newest content version.", parsedPosts.Count, postsWithNewestContentVersion);
     }
 
-    protected async Task UpsertRangeAsync(IEnumerable<IParsedAttributeEmbedded> parsedAttributeEmbeds, CancellationToken cancellationToken)
+    protected async Task CreateAsync(Guid apiId, Post post, CancellationToken cancellationToken)
     {
-        foreach (var group in parsedAttributeEmbeds.GroupBy(attribute => attribute.GetType()))
+        await using var transaction = await sqlDatabaseContext.Database.BeginTransactionAsync(cancellationToken);
+
+        var parsedPost = new ParsedPost(apiId, post);
+        await sqlDatabaseContext.ParsedPosts.AddAsync(parsedPost, cancellationToken);
+        await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
+
+        foreach (var postAttribute in post.Attributes)
         {
-            await (group.First() switch
+            switch (postAttribute.Type)
             {
-                ParsedBandCamp => sqlDatabaseContext.ParsedBandCamps.UpsertRangeAsync(group.Cast<ParsedBandCamp>(), cancellationToken),
-                ParsedCoub => sqlDatabaseContext.ParsedCoubs.UpsertRangeAsync(group.Cast<ParsedCoub>(), cancellationToken),
-                ParsedSoundCloud => sqlDatabaseContext.ParsedSoundClouds.UpsertRangeAsync(group.Cast<ParsedSoundCloud>(), cancellationToken),
-                ParsedVimeo => sqlDatabaseContext.ParsedVimeos.UpsertRangeAsync(group.Cast<ParsedVimeo>(), cancellationToken),
-                ParsedYouTube => sqlDatabaseContext.ParsedYouTubes.UpsertRangeAsync(group.Cast<ParsedYouTube>(), cancellationToken),
-                _ => throw new NotImplementedException(),
-            });
+                case "PICTURE":
+                    var postAttributePicture = new ParsedPostAttributePicture(postAttribute, parsedPost);
+                    await sqlDatabaseContext.ParsedPostAttributePictures.AddAsync(postAttributePicture, cancellationToken);
+                    break;
+
+                case "BANDCAMP":
+                case "COUB":
+                case "SOUNDCLOUD":
+                case "VIMEO":
+                case "YOUTUBE":
+                    var parsedAttributeEmbedded = ParseAttributeEmbedded(postAttribute);
+                    var existingAttributeEmbedded = await TryToGetAttributeEmbeddedAsync(parsedAttributeEmbedded, cancellationToken);
+
+                    if (existingAttributeEmbedded == null)
+                        await AddAttributeEmbeddedAsync(parsedAttributeEmbedded, cancellationToken);
+
+                    var parsedPostAttributeEmbedded = new ParsedPostAttributeEmbedded(postAttribute, parsedPost, existingAttributeEmbedded ?? parsedAttributeEmbedded);
+                    await sqlDatabaseContext.ParsedPostAttributeEmbeds.AddAsync(parsedPostAttributeEmbedded, cancellationToken);
+                    break;
+
+                default:
+                    throw new NotImplementedException();
+            }
+
+            await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
         }
+
+        await transaction.CommitAsync(cancellationToken);
     }
 
-    protected async Task AddRangeAsync(IEnumerable<IParsedPostAttribute> parsedPostAttributes, CancellationToken cancellationToken)
-    {
-        foreach (var group in parsedPostAttributes.GroupBy(postAttribute => postAttribute.GetType()))
-        {
-            await (group.First() switch
-            {
-                ParsedPostAttributePicture => sqlDatabaseContext.ParsedPostAttributePictures.AddRangeAsync(group.Cast<ParsedPostAttributePicture>(), cancellationToken),
-                ParsedPostAttributeEmbedded => sqlDatabaseContext.ParsedPostAttributeEmbeds.AddRangeAsync(group.Cast<ParsedPostAttributeEmbedded>(), cancellationToken),
-                _ => throw new NotImplementedException(),
-            });
-        }
-    }
-
-    protected static IParsedAttributeEmbedded? CreateAttribute(PostAttribute postAttribute)
+    protected static IParsedAttributeEmbedded ParseAttributeEmbedded(PostAttribute postAttribute)
     {
         return postAttribute.Type switch
         {
-            "PICTURE" => null,
             "BANDCAMP" => new ParsedBandCamp(postAttribute),
             "COUB" => new ParsedCoub(postAttribute),
             "SOUNDCLOUD" => new ParsedSoundCloud(postAttribute),
@@ -126,11 +178,10 @@ public class PostParser(
         };
     }
 
-    protected async Task<IParsedAttributeEmbedded?> GetExistingDatabaseAttributeAsync(IParsedAttributeEmbedded? parsedAttribute, CancellationToken cancellationToken)
+    protected async Task<IParsedAttributeEmbedded?> TryToGetAttributeEmbeddedAsync(IParsedAttributeEmbedded parsedAttributeEmbedded, CancellationToken cancellationToken)
     {
-        return parsedAttribute switch
+        return parsedAttributeEmbedded switch
         {
-            null => null,
             ParsedBandCamp parsedBandCamp => await sqlDatabaseContext.ParsedBandCamps.Where(bandCamp => bandCamp.UrlPath == parsedBandCamp.UrlPath).FirstOrDefaultAsync(cancellationToken),
             ParsedCoub parsedCoub => await sqlDatabaseContext.ParsedCoubs.Where(coub => coub.VideoId == parsedCoub.VideoId).FirstOrDefaultAsync(cancellationToken),
             ParsedSoundCloud parsedSoundCloud => await sqlDatabaseContext.ParsedSoundClouds.Where(soundCloud => soundCloud.UrlPath == parsedSoundCloud.UrlPath).FirstOrDefaultAsync(cancellationToken),
@@ -140,33 +191,38 @@ public class PostParser(
         };
     }
 
-    protected static IParsedAttributeEmbedded? GetExistingLocalAttribute(IEnumerable<IParsedAttributeEmbedded> parsedAttributes, IParsedAttributeEmbedded? parsedAttribute)
+    protected async ValueTask AddAttributeEmbeddedAsync(IParsedAttributeEmbedded parsedAttributeEmbedded, CancellationToken cancellationToken)
     {
-        return parsedAttribute switch
+        switch (parsedAttributeEmbedded)
         {
-            null => null,
-            ParsedBandCamp parsedBandCamp => parsedAttributes.Where(pa => pa is ParsedBandCamp).Cast<ParsedBandCamp>().SingleOrDefault(pa => pa.UrlPath == parsedBandCamp.UrlPath),
-            ParsedCoub parsedCoub => parsedAttributes.Where(pa => pa is ParsedCoub).Cast<ParsedCoub>().SingleOrDefault(pa => pa.VideoId == parsedCoub.VideoId),
-            ParsedSoundCloud parsedSoundCloud => parsedAttributes.Where(pa => pa is ParsedSoundCloud).Cast<ParsedSoundCloud>().SingleOrDefault(pa => pa.UrlPath == parsedSoundCloud.UrlPath),
-            ParsedVimeo parsedVimeo => parsedAttributes.Where(pa => pa is ParsedVimeo).Cast<ParsedVimeo>().SingleOrDefault(pa => pa.VideoId == parsedVimeo.VideoId),
-            ParsedYouTube parsedYouTube => parsedAttributes.Where(pa => pa is ParsedYouTube).Cast<ParsedYouTube>().SingleOrDefault(pa => pa.VideoId == parsedYouTube.VideoId),
-            _ => throw new NotImplementedException(),
-        };
-    }
+            case ParsedBandCamp parsedBandCamp:
+                await sqlDatabaseContext.ParsedBandCamps.AddAsync(parsedBandCamp, cancellationToken);
+                break;
 
-    protected static IParsedPostAttribute CreatePostAttribute(PostAttribute postAttribute, ParsedPost post, IParsedAttributeEmbedded parsedAttribute)
-    {
-        return postAttribute.Type switch
-        {
-            "PICTURE" => new ParsedPostAttributePicture(postAttribute, post),
-            "BANDCAMP" or "COUB" or "SOUNDCLOUD" or "VIMEO" or "YOUTUBE" => new ParsedPostAttributeEmbedded(postAttribute, post, parsedAttribute),
-            _ => throw new NotImplementedException(),
-        };
+            case ParsedCoub parsedCoub:
+                await sqlDatabaseContext.ParsedCoubs.AddAsync(parsedCoub, cancellationToken);
+                break;
+
+            case ParsedSoundCloud parsedSoundCloud:
+                await sqlDatabaseContext.ParsedSoundClouds.AddAsync(parsedSoundCloud, cancellationToken);
+                break;
+
+            case ParsedVimeo parsedVimeo:
+                await sqlDatabaseContext.ParsedVimeos.AddAsync(parsedVimeo, cancellationToken);
+                break;
+
+            case ParsedYouTube parsedYouTube:
+                await sqlDatabaseContext.ParsedYouTubes.AddAsync(parsedYouTube, cancellationToken);
+                break;
+
+            default:
+                throw new NotImplementedException();
+        }
     }
 }
 
 public interface IPostParser
 {
-    Task ParseAsync(Api api, Post post, CancellationToken cancellationToken);
-    Task ParseAsync(Api api, IEnumerable<Post> posts, CancellationToken cancellationToken);
+    Task ParseAsync(ApiPostMessage message, CancellationToken cancellationToken);
+    Task ParseAsync(Guid apiId, Post posts, CancellationToken cancellationToken);
 }

@@ -31,18 +31,20 @@ builder.AddHealthChecks();
 
 builder.Services.AddMassTransit(busConfigurator =>
 {
-    var consumersSettings = builder.Configuration.GetSection(nameof(ConsumersSettings)).Get<ConsumersSettings>();
-
     busConfigurator.UsingRabbitMq((context, rabbitConfigurator) =>
     {
-        rabbitConfigurator.Host(consumersSettings.Host, "/", h =>
+        var rabbitMqSetting = builder.Configuration.GetSection(nameof(RabbitMqSettings)).Get<RabbitMqSettings>();
+
+        rabbitConfigurator.Host(rabbitMqSetting.Host, "/", rabbitHostConfigurator =>
         {
-            h.Username(consumersSettings.UserName);
-            h.Password(consumersSettings.Password);
+            rabbitHostConfigurator.Username(rabbitMqSetting.UserName);
+            rabbitHostConfigurator.Password(rabbitMqSetting.Password);
         });
 
         rabbitConfigurator.ConfigureEndpoints(context);
     });
+
+    var consumersSettings = builder.Configuration.GetSection(nameof(ConsumersSettings)).Get<ConsumersSettings>();
 
     if (consumersSettings.ConsumersEnabled[nameof(ApiPostConsumer)])
         busConfigurator.AddConsumer<ApiPostConsumer, ApiPostConsumerDefinition>();
@@ -88,8 +90,8 @@ builder.Services.AddSingleton<IMediaReducer, MediaReducer>();
 builder.Services.AddSingleton<IOnnxVectorConverter, OnnxVectorConverter>();
 builder.Services.AddSingleton<IChangedPostClient, ChangedPostClient>();
 
-builder.Services.AddHostedService<ChangedPostHandler>();
-builder.Services.AddHostedService<CrawlerTaskHandler>();
+builder.Services.AddHostedService<ChangedApiPostPublisher>();
+builder.Services.AddHostedService<CrawlerApiPostPublisher>();
 builder.Services.AddHostedService<DuplicatePictureDetector>();
 builder.Services.AddHostedService<DuplicateVoteCleaner>();
 builder.Services.AddHostedService<MediaToVectorConverter>();
@@ -140,6 +142,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/healthz");
-
 
 app.Run();

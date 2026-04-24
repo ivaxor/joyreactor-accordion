@@ -17,6 +17,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="BackgroudServices\Cron\**" />
+    <Content Remove="BackgroudServices\Cron\**" />
+    <EmbeddedResource Remove="BackgroudServices\Cron\**" />
+    <None Remove="BackgroudServices\Cron\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="Onnx\clip-ViT-B-32-vision.onnx" Condition="Exists('Onnx\clip-ViT-B-32-vision.onnx')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -41,10 +48,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\JoyReactor.Accordion.Logic\JoyReactor.Accordion.Logic.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="BackgroudServices\Cron\" />
   </ItemGroup>
 
 </Project>

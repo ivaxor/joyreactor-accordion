@@ -1,4 +1,4 @@
-﻿namespace JoyReactor.Accordion.Logic.Database.Sql;
+﻿namespace JoyReactor.Accordion.WebAPI.Models;
 
 public record PostgreSqlSettings
 {

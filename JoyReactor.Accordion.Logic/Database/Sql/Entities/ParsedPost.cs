@@ -1,6 +1,5 @@
 ﻿using JoyReactor.Accordion.Logic.ApiClient.Models;
 using JoyReactor.Accordion.Logic.Extensions;
-using JoyReactor.Accordion.Logic.MQ.Messages;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -10,18 +9,16 @@ public record ParsedPost : ISqlUpdatedAtEntity
 {
     public ParsedPost() { }
 
-    public ParsedPost(Api api, Post post)
+    public ParsedPost(Guid apiId, Post post)
     {
         Id = post.NumberId.ToGuid();
-        ApiId = api.Id;
+        ApiId = apiId;
         NumberId = post.NumberId;
         ContentVersion = post.ContentVersion.Value;
         Nsfw = post.Nsfw.Value;
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
-
-    public ParsedPost(ApiPostMessage message) : this(message.Api, message.Post) { }
 
     public Guid Id { get; set; }
 
