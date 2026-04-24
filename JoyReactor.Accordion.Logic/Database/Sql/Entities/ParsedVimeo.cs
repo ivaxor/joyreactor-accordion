@@ -18,6 +18,8 @@ public record ParsedVimeo : ISqlUpdatedAtEntity, IParsedAttributeEmbedded
 
     public Guid Id { get; set; }
 
+    public string UniqueId => $"{nameof(ParsedVimeo)}:{VideoId}";
+
     public string VideoId { get; set; }
 
     public virtual ParsedPostAttributeEmbedded PostAttributeEmbedded { get; set; }
@@ -33,6 +35,9 @@ public class ParsedVimeoEntityTypeConfiguration : IEntityTypeConfiguration<Parse
         builder
             .Property(e => e.Id)
             .HasDefaultValueSql("gen_random_uuid()");
+
+        builder
+            .Ignore(e => e.UniqueId);
 
         builder
             .HasIndex(e => e.VideoId)

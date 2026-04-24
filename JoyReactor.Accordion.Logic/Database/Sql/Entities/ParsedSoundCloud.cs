@@ -23,6 +23,8 @@ public partial record ParsedSoundCloud : ISqlUpdatedAtEntity, IParsedAttributeEm
 
     public Guid Id { get; set; }
 
+    public string UniqueId => $"{nameof(ParsedSoundCloud)}:{UrlPath}";
+
     public string UrlPath { get; set; }
 
     public virtual ParsedPostAttributeEmbedded PostAttributeEmbedded { get; set; }
@@ -38,6 +40,9 @@ public class ParsedSoundCloudEntityTypeConfiguration : IEntityTypeConfiguration<
         builder
             .Property(e => e.Id)
             .HasDefaultValueSql("gen_random_uuid()");
+
+        builder
+            .Ignore(e => e.UniqueId);
 
         builder
             .HasIndex(e => e.UrlPath)

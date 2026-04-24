@@ -58,7 +58,7 @@ public class PostParser(
 
             foreach (var postAttribute in post.Attributes)
             {
-                var parsedAttributeEmbedded = await CreateAttributeAsync(postAttribute, cancellationToken);
+                var parsedAttributeEmbedded = CreateAttribute(postAttribute);
                 var existingDatabaseParsedAttributeEmbedded = await GetExistingDatabaseAttributeAsync(parsedAttributeEmbedded, cancellationToken);
                 var existingLocalParsedAttributeEmbedded = GetExistingLocalAttribute(parsedAttributeEmbeds, parsedAttributeEmbedded);
                 if (parsedAttributeEmbedded != null && existingDatabaseParsedAttributeEmbedded == null && existingLocalParsedAttributeEmbedded == null)
@@ -112,7 +112,7 @@ public class PostParser(
         }
     }
 
-    protected async Task<IParsedAttributeEmbedded?> CreateAttributeAsync(PostAttribute postAttribute, CancellationToken cancellationToken)
+    protected static IParsedAttributeEmbedded? CreateAttribute(PostAttribute postAttribute)
     {
         return postAttribute.Type switch
         {

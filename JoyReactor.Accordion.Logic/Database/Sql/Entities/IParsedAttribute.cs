@@ -3,4 +3,5 @@
 public interface IParsedAttributeEmbedded
 {
     public Guid Id { get; set; }
+    public string UniqueId { get; }
 }

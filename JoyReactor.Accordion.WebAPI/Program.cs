@@ -5,9 +5,11 @@ using JoyReactor.Accordion.Logic.Onnx;
 using JoyReactor.Accordion.Logic.Parsers;
 using JoyReactor.Accordion.WebAPI.Auth;
 using JoyReactor.Accordion.WebAPI.BackgroudServices;
+using JoyReactor.Accordion.WebAPI.Consumers;
 using JoyReactor.Accordion.WebAPI.Controllers;
 using JoyReactor.Accordion.WebAPI.Extensions;
 using JoyReactor.Accordion.WebAPI.Models;
+using MassTransit;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Options;
 using Scalar.AspNetCore;
@@ -26,6 +28,25 @@ builder.AddDatabases();
 builder.AddInferenceSession();
 builder.AddRateLimiter();
 builder.AddHealthChecks();
+
+builder.Services.AddMassTransit(busConfigurator =>
+{
+    var consumersSettings = builder.Configuration.GetSection(nameof(ConsumersSettings)).Get<ConsumersSettings>();
+
+    busConfigurator.UsingRabbitMq((context, rabbitConfigurator) =>
+    {
+        rabbitConfigurator.Host(consumersSettings.Host, "/", h =>
+        {
+            h.Username(consumersSettings.UserName);
+            h.Password(consumersSettings.Password);
+        });
+
+        rabbitConfigurator.ConfigureEndpoints(context);
+    });
+
+    if (consumersSettings.ConsumersEnabled[nameof(ApiPostConsumer)])
+        busConfigurator.AddConsumer<ApiPostConsumer, PostApiMqConsumerDefinition>();
+});
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {

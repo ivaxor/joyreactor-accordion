@@ -41,6 +41,8 @@ public record ParsedPostAttributeEmbedded : ISqlUpdatedAtEntity, IParsedPostAttr
 
     public Guid Id { get; set; }
 
+    public string UniqueId => BandCamp?.UniqueId ?? Coub?.UniqueId ?? SoundCloud?.UniqueId ?? Vimeo?.UniqueId ?? YouTube!.UniqueId;
+
     public Guid PostId { get; set; }
     public virtual ParsedPost Post { get; set; }
 
@@ -70,6 +72,9 @@ public class ParsedPostAttributeEmbeddedEntityTypeConfiguration : IEntityTypeCon
         builder
             .Property(e => e.Id)
             .HasDefaultValueSql("gen_random_uuid()");
+
+        builder
+            .Ignore(e => e.UniqueId);
 
         builder
             .HasOne(e => e.Post)
