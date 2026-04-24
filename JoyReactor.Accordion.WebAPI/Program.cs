@@ -45,7 +45,7 @@ builder.Services.AddMassTransit(busConfigurator =>
     });
 
     if (consumersSettings.ConsumersEnabled[nameof(ApiPostConsumer)])
-        busConfigurator.AddConsumer<ApiPostConsumer, PostApiMqConsumerDefinition>();
+        busConfigurator.AddConsumer<ApiPostConsumer, ApiPostConsumerDefinition>();
 });
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
