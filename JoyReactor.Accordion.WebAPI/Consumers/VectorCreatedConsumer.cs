@@ -32,27 +32,28 @@ public class VectorCreatedConsumer(
             return;
 
         picture.IsVectorCheckedForDuplicates = true;
+        await sqlDatabaseContext.SaveChangesAsync(context.CancellationToken);
 
         var votes = await CreateVotesAsync(picture, context.CancellationToken);
-        if (votes.Length == 0)
-            return;
+        if (votes.Length != 0)
+        {
+            var votesUpserted = await sqlDatabaseContext.DuplicatePictureVotes
+                .UpsertRange(votes)
+                .On(dpv => new { dpv.OriginalPictureId, dpv.DuplicatePictureId })
+                .NoUpdate()
+                .RunAsync(context.CancellationToken);
+            await sqlDatabaseContext.SaveChangesAsync(context.CancellationToken);
+            logger.LogDebug("Upserted {DuplicatesCount} post attribute picture duplicate vote(s) for {PictureAttributeId}.", votesUpserted, picture.AttributeId);
 
-        var votesUpserted = await sqlDatabaseContext.DuplicatePictureVotes
-            .UpsertRange(votes)
-            .On(dpv => new { dpv.OriginalPictureId, dpv.DuplicatePictureId })
-            .NoUpdate()
-            .RunAsync(context.CancellationToken);
-        await sqlDatabaseContext.SaveChangesAsync(context.CancellationToken);
-        logger.LogDebug("Upserted {DuplicatesCount} post attribute picture duplicate vote(s) for {PictureAttributeId}.", votesUpserted, picture.AttributeId);
+            var duplicatePictureIds = votes.Select(dpv => dpv.DuplicatePictureId).ToArray();
+            await CleanUpVotesAsync(duplicatePictureIds, context.CancellationToken);
+            await sqlDatabaseContext.SaveChangesAsync(context.CancellationToken);            
 
-        var voteIds = votes.Select(dpv => dpv.Id).ToArray();
-        await CleanUpVotesAsync(voteIds, context.CancellationToken);
-        await sqlDatabaseContext.SaveChangesAsync(context.CancellationToken);
+            var messages = duplicatePictureIds.Select(id => new VoteCreatedMessage() { DuplicatePictureId = id }).ToArray();
+            await publishEndpoint.PublishBatch(messages, context.CancellationToken);
+        }
 
         await transaction.CommitAsync(context.CancellationToken);
-
-        var messages = voteIds.Select(id => new VoteCreatedMessage() { Id = id }).ToArray();
-        await publishEndpoint.PublishBatch(messages, context.CancellationToken);
     }
 
     protected async Task<DuplicatePictureVote[]> CreateVotesAsync(ParsedPostAttributePicture picture, CancellationToken cancellationToken)
@@ -160,33 +161,33 @@ public class VectorCreatedConsumer(
         return votes;
     }
 
-    protected async Task CleanUpVotesAsync(IEnumerable<Guid> voteIds, CancellationToken cancellationToken)
+    protected async Task CleanUpVotesAsync(IEnumerable<Guid> duplicatePictureIds, CancellationToken cancellationToken)
     {
-        if (!voteIds.Any())
+        if (!duplicatePictureIds.Any())
             return;
 
         // https://joyreactor.cc/tag/%D0%B1%D0%B0%D1%8F%D0%BD
         // Только посты после 15 ноября 2017 года могут быть баянами
         var beforeDuplicatePostThreshold = await sqlDatabaseContext.DuplicatePictureVotes
-            .Where(v => voteIds.Contains(v.Id))
+            .Where(v => duplicatePictureIds.Contains(v.DuplicatePictureId))
             .Where(v => v.VotingClosed == false)
             .Where(v => v.DuplicatePicture.Post.NumberId < 3302432)
             .ToArrayAsync(cancellationToken);
 
         var nearPosts = await sqlDatabaseContext.DuplicatePictureVotes
-            .Where(v => voteIds.Contains(v.Id))
+            .Where(v => duplicatePictureIds.Contains(v.DuplicatePictureId))
             .Where(v => v.VotingClosed == false)
             .Where(v => v.DuplicatePicture.Post.NumberId - v.OriginalPicture.Post.NumberId < 10)
             .ToArrayAsync(cancellationToken);
 
         var differentPictureCount = await sqlDatabaseContext.DuplicatePictureVotes
-            .Where(v => voteIds.Contains(v.Id))
+            .Where(v => duplicatePictureIds.Contains(v.DuplicatePictureId))
             .Where(v => v.VotingClosed == false)
             .Where(v => v.DuplicatePicture.Post.AttributePictures.Count > v.OriginalPicture.Post.AttributePictures.Count)
             .ToArrayAsync(cancellationToken);
 
         var differentPictureVoteCount = await sqlDatabaseContext.DuplicatePictureVotes
-            .Where(v => voteIds.Contains(v.Id))
+            .Where(v => duplicatePictureIds.Contains(v.DuplicatePictureId))
             .Where(v => v.VotingClosed == false)
             .Where(v => v.DuplicatePicture.Post.AttributePictures.All(p => p.IsVectorCheckedForDuplicates))
             .Where(v => v.DuplicatePicture.Post.AttributePictures.Any(p => p.VotesAsDuplicate.Count() == 0))

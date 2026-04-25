@@ -47,7 +47,7 @@ public class VoteCreatedConsumer(
             .Where(dpv => dpv.DuplicatePicture.Post.AttributePictures.Count == 1)
             .Where(dpv => AllowedImageTypes.Contains(dpv.DuplicatePicture.ImageType))
             .Where(dpv => AllowedImageTypes.Contains(dpv.OriginalPicture.ImageType))
-            .Where(dpv => dpv.Id == context.Message.Id)
+            .Where(dpv => dpv.DuplicatePictureId == context.Message.DuplicatePictureId)
             .OrderBy(dpv => dpv.DuplicatePictureId)
             .ThenBy(dpv => dpv.OriginalPictureId)
             .GroupBy(dpv => dpv.DuplicatePicture.AttributeId)

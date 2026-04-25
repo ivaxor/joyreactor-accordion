@@ -2,5 +2,5 @@
 
 public record VoteCreatedMessage
 {
-    public required Guid Id { get; init; }
+    public required Guid DuplicatePictureId { get; init; }
 }

@@ -15,7 +15,7 @@ public class PostPictureCreatedCatchUp(
     : RobustBackgroundService(settings, logger)
 {
     protected override bool IsIndefinite => true;
-    protected override TimeSpan SubsequentRunDelay => TimeSpan.FromHours(1);
+    protected override TimeSpan SubsequentRunDelay => TimeSpan.FromMinutes(15);
 
     protected override async Task RunAsync(CancellationToken cancellationToken)
     {
