@@ -104,10 +104,9 @@ public class TelegramBotReceiver(
                         .ToArray();
                 }
 
-                var entry = sqlDatabaseContext.Entry<DuplicatePictureVote>(vote);
-                entry.State = EntityState.Unchanged;
-                entry.Property(p => p.YesVotes).IsModified = true;
-                entry.Property(p => p.NoVotes).IsModified = true;
+                sqlDatabaseContext.DuplicatePictureVotes.Attach(vote);
+                sqlDatabaseContext.DuplicatePictureVotes.Entry(vote).Property(p => p.YesVotes).IsModified = true;
+                sqlDatabaseContext.DuplicatePictureVotes.Entry(vote).Property(p => p.NoVotes).IsModified = true;
             }
 
             await sqlDatabaseContext.SaveChangesAsync(cancellationToken);

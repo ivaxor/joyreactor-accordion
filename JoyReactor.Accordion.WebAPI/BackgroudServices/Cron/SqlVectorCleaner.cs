@@ -135,10 +135,9 @@ public class SqlVectorCleaner(
             {
                 foreach (var updatedPostAttribute in updatedPostAttributes)
                 {
-                    var entry = sqlDatabaseContext.Entry(updatedPostAttribute);
-                    entry.State = EntityState.Unchanged;
-                    entry.Property(p => p.IsVectorCreated).IsModified = true;
-                    entry.Property(p => p.UpdatedAt).IsModified = true;
+                    sqlDatabaseContext.ParsedPostAttributePictures.Attach(updatedPostAttribute);
+                    sqlDatabaseContext.ParsedPostAttributePictures.Entry(updatedPostAttribute).Property(p => p.IsVectorCreated).IsModified = true;
+                    sqlDatabaseContext.ParsedPostAttributePictures.Entry(updatedPostAttribute).Property(p => p.UpdatedAt).IsModified = true;
                 }
 
                 await sqlDatabaseContext.SaveChangesAsync(cancellationToken);

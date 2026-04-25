@@ -14,7 +14,7 @@ public class VectorCreatedCatchUp(
     : RobustBackgroundService(settings, logger)
 {
     protected override bool IsIndefinite => true;
-    protected override TimeSpan SubsequentRunDelay => TimeSpan.FromMinutes(15);
+    protected override TimeSpan SubsequentRunDelay => TimeSpan.FromHours(1);
 
     protected override async Task RunAsync(CancellationToken cancellationToken)
     {
@@ -23,6 +23,7 @@ public class VectorCreatedCatchUp(
         var publishEndpoint = serviceScope.ServiceProvider.GetRequiredService<IPublishEndpoint>();
 
         var attributeIds = await sqlDatabaseContext.ParsedPostAttributePictures
+            .AsNoTracking()
             .Where(picture => picture.IsVectorCreated == true && picture.IsVectorCheckedForDuplicates == false)
             .OrderBy(picture => picture.AttributeId)
             .Select(picture => picture.AttributeId)

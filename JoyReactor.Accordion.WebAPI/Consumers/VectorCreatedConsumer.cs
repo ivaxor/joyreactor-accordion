@@ -25,14 +25,12 @@ public class VectorCreatedConsumer(
         await using var transaction = await sqlDatabaseContext.Database.BeginTransactionAsync(context.CancellationToken);
 
         var picture = await sqlDatabaseContext.ParsedPostAttributePictures
+            .AsNoTracking()
             .Where(ppap => ppap.AttributeId == context.Message.AttributeId)
             .FirstAsync(context.CancellationToken);
 
         if (picture.IsVectorCheckedForDuplicates == true)
             return;
-
-        picture.IsVectorCheckedForDuplicates = true;
-        await sqlDatabaseContext.SaveChangesAsync(context.CancellationToken);
 
         var votes = await CreateVotesAsync(picture, context.CancellationToken);
         if (votes.Length != 0)
@@ -47,11 +45,20 @@ public class VectorCreatedConsumer(
 
             var duplicatePictureIds = votes.Select(dpv => dpv.DuplicatePictureId).ToArray();
             await CleanUpVotesAsync(duplicatePictureIds, context.CancellationToken);
-            await sqlDatabaseContext.SaveChangesAsync(context.CancellationToken);            
+            await sqlDatabaseContext.SaveChangesAsync(context.CancellationToken);
 
             var messages = duplicatePictureIds.Select(id => new VoteCreatedMessage() { DuplicatePictureId = id }).ToArray();
             await publishEndpoint.PublishBatch(messages, context.CancellationToken);
         }
+
+        picture.IsVectorCheckedForDuplicates = true;
+        picture.UpdatedAt = DateTime.UtcNow;
+
+        sqlDatabaseContext.ParsedPostAttributePictures.Attach(picture);
+        sqlDatabaseContext.ParsedPostAttributePictures.Entry(picture).Property(e => e.IsVectorCheckedForDuplicates).IsModified = true;
+        sqlDatabaseContext.ParsedPostAttributePictures.Entry(picture).Property(e => e.UpdatedAt).IsModified = true;
+
+        await sqlDatabaseContext.SaveChangesAsync(context.CancellationToken);
 
         await transaction.CommitAsync(context.CancellationToken);
     }

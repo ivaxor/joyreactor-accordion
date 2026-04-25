@@ -80,9 +80,10 @@ public class CrawlerApiPostPublisher(
                 .ThenInclude(tag => tag.Api)
                 .Where(task => task.Id == crawlerTaskId)
                 .FirstAsync(cancellationToken);
+
             crawlerTask.StartedAt = DateTime.UtcNow;
             crawlerTask.UpdatedAt = DateTime.UtcNow;
-            sqlDatabaseContext.CrawlerTasks.Update(crawlerTask);
+
             await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
 
             var postPager = (PostPager)null;
@@ -106,9 +107,10 @@ public class CrawlerApiPostPublisher(
                     crawlerTask.FinishedAt = DateTime.UtcNow;
                 else
                     crawlerTask.PageCurrent += 1;
+
                 crawlerTask.PageLast = postPager.LastPage;
                 crawlerTask.UpdatedAt = DateTime.UtcNow;
-                sqlDatabaseContext.CrawlerTasks.Update(crawlerTask);
+
                 await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
             } while (!isLastPage);
 

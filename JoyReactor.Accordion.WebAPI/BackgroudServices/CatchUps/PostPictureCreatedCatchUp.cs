@@ -15,7 +15,7 @@ public class PostPictureCreatedCatchUp(
     : RobustBackgroundService(settings, logger)
 {
     protected override bool IsIndefinite => true;
-    protected override TimeSpan SubsequentRunDelay => TimeSpan.FromMinutes(15);
+    protected override TimeSpan SubsequentRunDelay => TimeSpan.FromHours(1);
 
     protected override async Task RunAsync(CancellationToken cancellationToken)
     {
@@ -24,6 +24,7 @@ public class PostPictureCreatedCatchUp(
         var publishEndpoint = serviceScope.ServiceProvider.GetRequiredService<IPublishEndpoint>();
 
         var attributeIds = await sqlDatabaseContext.ParsedPostAttributePictures
+            .AsNoTracking()
             .Where(picture => picture.IsVectorCreated == false)
             .Where(picture => picture.NoContent == false && picture.NoContentDueToDns == false && picture.UnsupportedContent == false)
             .Where(picture => PostPictureCreatedConsumer.SupportedImageTypes.Contains(picture.ImageType))

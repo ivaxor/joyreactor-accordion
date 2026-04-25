@@ -40,6 +40,7 @@ public class PostPictureCreatedConsumer(
     public async Task Consume(ConsumeContext<PostPictureCreatedMessage> context)
     {
         var picture = await sqlDatabaseContext.ParsedPostAttributePictures
+            .AsNoTracking()
             .Include(ppap => ppap.Post)
             .ThenInclude(pp => pp.Api)
             .Where(ppap => ppap.AttributeId == context.Message.AttributeId)
@@ -52,6 +53,13 @@ public class PostPictureCreatedConsumer(
             return;
 
         using var image = await DownloadReducedAsync(picture, context.CancellationToken);
+
+        sqlDatabaseContext.ParsedPostAttributePictures.Attach(picture);
+        sqlDatabaseContext.ParsedPostAttributePictures.Entry(picture).Property(e => e.NoContent).IsModified = true;
+        sqlDatabaseContext.ParsedPostAttributePictures.Entry(picture).Property(e => e.UnsupportedContent).IsModified = true;
+        sqlDatabaseContext.ParsedPostAttributePictures.Entry(picture).Property(e => e.IsVectorCreated).IsModified = true;
+        sqlDatabaseContext.ParsedPostAttributePictures.Entry(picture).Property(e => e.UpdatedAt).IsModified = true;
+
         if (image == null)
         {
             await sqlDatabaseContext.SaveChangesAsync(context.CancellationToken);
@@ -59,8 +67,6 @@ public class PostPictureCreatedConsumer(
         }
 
         var vector = await onnxVectorConverter.ConvertAsync(image);
-        picture.IsVectorCreated = true;
-        picture.UpdatedAt = DateTime.UtcNow;
 
         await qdrantClient.UpsertAsync(qdrantSettings.Value.CollectionName, picture, vector, context.CancellationToken);
         await sqlDatabaseContext.SaveChangesAsync(context.CancellationToken);
@@ -76,7 +82,15 @@ public class PostPictureCreatedConsumer(
 
         try
         {
-            return await mediaDownloader.DownloadReducedAsync(picture, cancellationToken);
+            picture.UpdatedAt = DateTime.UtcNow;
+
+            var image = await mediaDownloader.DownloadReducedAsync(picture, cancellationToken);
+
+            picture.NoContent = false;
+            picture.UnsupportedContent = false;
+            picture.IsVectorCreated = true;            
+
+            return image;
         }
         catch (HttpRequestException ex)
         when (
@@ -85,7 +99,6 @@ public class PostPictureCreatedConsumer(
         ex.Message.StartsWith("The requested name is valid, but no data of the requested type was found.", StringComparison.Ordinal))
         {
             picture.NoContentDueToDns = true;
-            picture.UpdatedAt = DateTime.UtcNow;
 
             logger.LogWarning("Failed to download {PictureAttributeId} post attribute picture due DNS issues. Adding it to temporary ignore list.", picture.AttributeId);
             return null;
@@ -98,13 +111,11 @@ public class PostPictureCreatedConsumer(
                 case HttpStatusCode.NotFound:
                     // TODO: Try to download mp4/webm if download failed and type is GIF
                     picture.NoContent = true;
-                    picture.UpdatedAt = DateTime.UtcNow;
                     logger.LogWarning("Failed to download {PictureAttributeId} post attribute picture due to no content.", picture.AttributeId);
                     break;
 
                 case HttpStatusCode.Forbidden:
                     picture.NoContent = true;
-                    picture.UpdatedAt = DateTime.UtcNow;
                     logger.LogWarning("Failed to download {PictureAttributeId} post attribute picture due inaccessible content.", picture.AttributeId);
                     break;
 
@@ -117,21 +128,18 @@ public class PostPictureCreatedConsumer(
         catch (InvalidImageContentException ex)
         {
             picture.UnsupportedContent = true;
-            picture.UpdatedAt = DateTime.UtcNow;
             logger.LogWarning("Failed to create image for {PictureAttributeId} post attribute picture due to invalid image content.", picture.AttributeId);
             return null;
         }
         catch (UnknownImageFormatException ex)
         {
             picture.UnsupportedContent = true;
-            picture.UpdatedAt = DateTime.UtcNow;
             logger.LogWarning("Failed to create image for {PictureAttributeId} post attribute picture due to unknown image format.", picture.AttributeId);
             return null;
         }
         catch (NotSupportedException ex)
         {
             picture.UnsupportedContent = true;
-            picture.UpdatedAt = DateTime.UtcNow;
             logger.LogWarning("Failed to create image for {PictureAttributeId} post attribute picture due to unsupported content.", picture.AttributeId);
             return null;
         }
@@ -141,7 +149,6 @@ public class PostPictureCreatedConsumer(
         (ex.Source == "System.Private.CoreLib" && ex.Message.Equals("Specified argument was out of the range of valid values.", StringComparison.Ordinal)))
         {
             picture.UnsupportedContent = true;
-            picture.UpdatedAt = DateTime.UtcNow;
             logger.LogWarning("Failed to create image for {PictureAttributeId} post attribute picture due to broken content.", picture.AttributeId);
             return null;
         }
