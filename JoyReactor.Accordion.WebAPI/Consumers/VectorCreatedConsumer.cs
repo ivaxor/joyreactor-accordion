@@ -51,7 +51,6 @@ public class VectorCreatedConsumer(
 
             var duplicatePictureIds = votes.Select(dpv => dpv.DuplicatePictureId).ToArray();
             await CleanUpVotesAsync(duplicatePictureIds, context.CancellationToken);
-            await sqlDatabaseContext.SaveChangesAsync(context.CancellationToken);
 
             var messages = duplicatePictureIds.Select(id => new VoteCreatedMessage() { DuplicatePictureId = id }).ToArray();
             await publishEndpoint.PublishBatch(messages, context.CancellationToken);
@@ -182,24 +181,28 @@ public class VectorCreatedConsumer(
         // https://joyreactor.cc/tag/%D0%B1%D0%B0%D1%8F%D0%BD
         // Только посты после 15 ноября 2017 года могут быть баянами
         var beforeDuplicatePostThreshold = await sqlDatabaseContext.DuplicatePictureVotes
+            .AsNoTracking()
             .Where(v => duplicatePictureIds.Contains(v.DuplicatePictureId))
             .Where(v => v.VotingClosed == false)
             .Where(v => v.DuplicatePicture.Post.NumberId < 3302432)
             .ToArrayAsync(cancellationToken);
 
         var nearPosts = await sqlDatabaseContext.DuplicatePictureVotes
+            .AsNoTracking()
             .Where(v => duplicatePictureIds.Contains(v.DuplicatePictureId))
             .Where(v => v.VotingClosed == false)
             .Where(v => v.DuplicatePicture.Post.NumberId - v.OriginalPicture.Post.NumberId < 10)
             .ToArrayAsync(cancellationToken);
 
         var differentPictureCount = await sqlDatabaseContext.DuplicatePictureVotes
+            .AsNoTracking()
             .Where(v => duplicatePictureIds.Contains(v.DuplicatePictureId))
             .Where(v => v.VotingClosed == false)
             .Where(v => v.DuplicatePicture.Post.AttributePictures.Count > v.OriginalPicture.Post.AttributePictures.Count)
             .ToArrayAsync(cancellationToken);
 
         var differentPictureVoteCount = await sqlDatabaseContext.DuplicatePictureVotes
+            .AsNoTracking()
             .Where(v => duplicatePictureIds.Contains(v.DuplicatePictureId))
             .Where(v => v.VotingClosed == false)
             .Where(v => v.DuplicatePicture.Post.AttributePictures.All(p => p.IsVectorCheckedForDuplicates))
@@ -219,7 +222,13 @@ public class VectorCreatedConsumer(
         {
             voteToClose.VotingClosed = true;
             voteToClose.UpdatedAt = DateTime.UtcNow;
+
+            sqlDatabaseContext.DuplicatePictureVotes.Attach(voteToClose);
+            sqlDatabaseContext.DuplicatePictureVotes.Entry(voteToClose).Property(e => e.VotingClosed).IsModified = true;
+            sqlDatabaseContext.DuplicatePictureVotes.Entry(voteToClose).Property(e => e.UpdatedAt).IsModified = true;
         }
+
+        await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
 
         logger.LogDebug("Closed voting for {DuplicatesCount} vote(s) due to beign before duplicate post threshold.", beforeDuplicatePostThreshold.Length);
         logger.LogDebug("Closed voting for {DuplicatesCount} vote(s) due to near post ids.", nearPosts.Length);
