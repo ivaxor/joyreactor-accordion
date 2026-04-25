@@ -18,8 +18,10 @@ public class DuplicatePictureDetector(
     ILogger<DuplicatePictureDetector> logger)
     : RobustBackgroundService(settings, logger)
 {
-    protected static readonly int BatchSize = 10000;
     protected override bool IsIndefinite => true;
+    protected override TimeSpan SubsequentRunDelay => TimeSpan.FromMinutes(1);
+
+    protected static readonly int BatchSize = 10000;
 
     protected override async Task RunAsync(CancellationToken cancellationToken)
     {

@@ -25,24 +25,27 @@ public sealed class PostParserTests
     public async Task ParseAsync_NewPost_Creates()
     {
         var post1 = CreateTestPost();
-        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
+        var post1Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
 
-        var parsedPost = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+        var parsedPost1 = await SharedDependencies.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()
             .Include(pp => pp.AttributePictures)
             .Include(pp => pp.AttributeEmbeds)
             .Where(pp => pp.NumberId == post1.NumberId)
             .FirstAsync();
 
-        Assert.HasCount(1, parsedPost.AttributePictures);
-        Assert.HasCount(5, parsedPost.AttributeEmbeds);
+        Assert.HasCount(1, post1Result.NewPostAttributePictureNumberIds);
+        Assert.HasCount(5, post1Result.NewPostAttributeEmbeddedUniqueIds);
+
+        Assert.HasCount(1, parsedPost1.AttributePictures);
+        Assert.HasCount(5, parsedPost1.AttributeEmbeds);
     }
 
     [TestMethod]
     public async Task ParseAsync_ExistingPost_Updates()
     {
         var post1 = CreateTestPost();
-        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
+        var post1Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
         var parsedPost1 = await SharedDependencies.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()
             .Include(pp => pp.AttributePictures)
@@ -54,7 +57,7 @@ public sealed class PostParserTests
         {
             ContentVersion = post1.ContentVersion + 1,
         };
-        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
+        var post2Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
         var parsedPost2 = await SharedDependencies.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()
             .Include(pp => pp.AttributePictures)
@@ -64,6 +67,12 @@ public sealed class PostParserTests
 
         Assert.AreEqual(parsedPost1.Id, parsedPost2.Id);
 
+        Assert.HasCount(1, post1Result.NewPostAttributePictureNumberIds);
+        Assert.HasCount(5, post1Result.NewPostAttributeEmbeddedUniqueIds);
+
+        Assert.HasCount(0, post2Result.NewPostAttributePictureNumberIds);
+        Assert.HasCount(0, post2Result.NewPostAttributeEmbeddedUniqueIds);
+
         CollectionAssert.AreEquivalent(parsedPost1.AttributePictures.Select(ppap => ppap.Id).ToArray(), parsedPost2.AttributePictures.Select(ppap => ppap.Id).ToArray());
         CollectionAssert.AreEquivalent(parsedPost1.AttributeEmbeds.Select(ppae => ppae.Id).ToArray(), parsedPost2.AttributeEmbeds.Select(ppae => ppae.Id).ToArray());
     }
@@ -72,96 +81,119 @@ public sealed class PostParserTests
     public async Task ParseAsync_ExistingPost_ContentVersionIsLower_Ignores()
     {
         var post1 = CreateTestPost();
-        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
+        var post1Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
 
         var post2 = post1 with
         {
             ContentVersion = post1.ContentVersion - 1,
             Attributes = [],
         };
-        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
+        var post2Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
 
-        var parsedPost = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+        var parsedPost2 = await SharedDependencies.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()
             .Include(pp => pp.AttributePictures)
             .Include(pp => pp.AttributeEmbeds)
             .Where(pp => pp.NumberId == post1.NumberId)
             .FirstAsync();
 
-        Assert.HasCount(1, parsedPost.AttributePictures);
-        Assert.HasCount(5, parsedPost.AttributeEmbeds);
+        Assert.HasCount(1, post1Result.NewPostAttributePictureNumberIds);
+        Assert.HasCount(5, post1Result.NewPostAttributeEmbeddedUniqueIds);
+
+        Assert.IsNull(post2Result);
+
+        Assert.HasCount(1, parsedPost2.AttributePictures);
+        Assert.HasCount(5, parsedPost2.AttributeEmbeds);
     }
 
     [TestMethod]
     public async Task ParseAsync_ExistingPost_ContentVersionIsHigher_Updates()
     {
         var post1 = CreateTestPost();
-        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
+        var post1Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
 
         var post2 = post1 with
         {
             ContentVersion = post1.ContentVersion + 1,
             Attributes = [],
         };
-        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
+        var post2Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
 
-        var parsedPost = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+        var parsedPost2 = await SharedDependencies.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()
             .Include(pp => pp.AttributePictures)
             .Include(pp => pp.AttributeEmbeds)
             .Where(pp => pp.NumberId == post1.NumberId)
             .FirstAsync();
 
-        Assert.HasCount(0, parsedPost.AttributePictures);
-        Assert.HasCount(0, parsedPost.AttributeEmbeds);
+        Assert.HasCount(1, post1Result.NewPostAttributePictureNumberIds);
+        Assert.HasCount(5, post1Result.NewPostAttributeEmbeddedUniqueIds);
+
+        Assert.HasCount(0, post2Result.NewPostAttributePictureNumberIds);
+        Assert.HasCount(0, post2Result.NewPostAttributeEmbeddedUniqueIds);
+
+        Assert.HasCount(0, parsedPost2.AttributePictures);
+        Assert.HasCount(0, parsedPost2.AttributeEmbeds);
     }
 
     [TestMethod]
     public async Task ParseAsync_ExistingPost_RemovesOnlyPictureAttribute()
     {
         var post1 = CreateTestPost();
-        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
+        var post1Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
 
         var post2 = post1 with
         {
             ContentVersion = post1.ContentVersion + 1,
             Attributes = post1.Attributes.Where(pa => pa.Type != "PICTURE").ToArray(),
         };
-        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
+        var post2Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
 
-        var parsedPost = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+        var parsedPost2 = await SharedDependencies.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()
             .Include(pp => pp.AttributePictures)
             .Include(pp => pp.AttributeEmbeds)
             .Where(pp => pp.NumberId == post1.NumberId)
             .FirstAsync();
 
-        Assert.HasCount(0, parsedPost.AttributePictures);
-        Assert.HasCount(5, parsedPost.AttributeEmbeds);
+        Assert.HasCount(1, post1Result.NewPostAttributePictureNumberIds);
+        Assert.HasCount(5, post1Result.NewPostAttributeEmbeddedUniqueIds);
+
+        Assert.HasCount(0, post2Result.NewPostAttributePictureNumberIds);
+        Assert.HasCount(0, post2Result.NewPostAttributeEmbeddedUniqueIds);
+
+        Assert.HasCount(0, parsedPost2.AttributePictures);
+        Assert.HasCount(5, parsedPost2.AttributeEmbeds);
     }
 
     [TestMethod]
     public async Task ParseAsync_ExistingPost_AddsOnlyPictureAttribute()
     {
         var post1 = CreateTestPost();
-        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
+        var post1Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
 
         var post2 = post1 with
         {
             ContentVersion = post1.ContentVersion + 1,
             Attributes = [.. post1.Attributes, CreateTestImagePostAttribute()],
         };
-        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
+        var post2Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
 
-        var parsedPost = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+        var parsedPost2 = await SharedDependencies.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()
             .Include(pp => pp.AttributePictures)
             .Include(pp => pp.AttributeEmbeds)
             .Where(pp => pp.NumberId == post1.NumberId)
             .FirstAsync();
 
-        Assert.HasCount(2, parsedPost.AttributePictures);
-        Assert.HasCount(5, parsedPost.AttributeEmbeds);
+        Assert.HasCount(1, post1Result.NewPostAttributePictureNumberIds);
+        Assert.HasCount(5, post1Result.NewPostAttributeEmbeddedUniqueIds);
+
+        Assert.HasCount(1, post2Result.NewPostAttributePictureNumberIds);
+        Assert.HasCount(0, post2Result.NewPostAttributeEmbeddedUniqueIds);
+
+        Assert.HasCount(2, parsedPost2.AttributePictures);
+        Assert.HasCount(5, parsedPost2.AttributeEmbeds);
     }
 
     [TestMethod]
@@ -173,24 +205,30 @@ public sealed class PostParserTests
     public async Task ParseAsync_ExistingPost_RemovesOnlyEmbeddedAttribute(string type)
     {
         var post1 = CreateTestPost();
-        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
+        var post1Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
 
         var post2 = post1 with
         {
             ContentVersion = post1.ContentVersion + 1,
             Attributes = post1.Attributes.Where(pa => pa.Type != type).ToArray(),
         };
-        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
+        var post2Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
 
-        var parsedPost = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+        var parsedPost2 = await SharedDependencies.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()
             .Include(pp => pp.AttributePictures)
             .Include(pp => pp.AttributeEmbeds)
             .Where(pp => pp.NumberId == post1.NumberId)
             .FirstAsync();
 
-        Assert.HasCount(1, parsedPost.AttributePictures);
-        Assert.HasCount(4, parsedPost.AttributeEmbeds);
+        Assert.HasCount(1, post1Result.NewPostAttributePictureNumberIds);
+        Assert.HasCount(5, post1Result.NewPostAttributeEmbeddedUniqueIds);
+
+        Assert.HasCount(0, post2Result.NewPostAttributePictureNumberIds);
+        Assert.HasCount(0, post2Result.NewPostAttributeEmbeddedUniqueIds);
+
+        Assert.HasCount(1, parsedPost2.AttributePictures);
+        Assert.HasCount(4, parsedPost2.AttributeEmbeds);
     }
 
     [TestMethod]
@@ -202,24 +240,30 @@ public sealed class PostParserTests
     public async Task ParseAsync_ExistingPost_AddsOnlyEmbeddedAttribute(string type)
     {
         var post1 = CreateTestPost();
-        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
+        var post1Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
 
         var post2 = post1 with
         {
             ContentVersion = post1.ContentVersion + 1,
             Attributes = [.. post1.Attributes, CreateTestEmbeddedPostAttribute(type)],
         };
-        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
+        var post2Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
 
-        var parsedPost = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+        var parsedPost2 = await SharedDependencies.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()
             .Include(pp => pp.AttributePictures)
             .Include(pp => pp.AttributeEmbeds)
             .Where(pp => pp.NumberId == post1.NumberId)
             .FirstAsync();
 
-        Assert.HasCount(1, parsedPost.AttributePictures);
-        Assert.HasCount(6, parsedPost.AttributeEmbeds);
+        Assert.HasCount(1, post1Result.NewPostAttributePictureNumberIds);
+        Assert.HasCount(5, post1Result.NewPostAttributeEmbeddedUniqueIds);
+
+        Assert.HasCount(0, post2Result.NewPostAttributePictureNumberIds);
+        Assert.HasCount(1, post2Result.NewPostAttributeEmbeddedUniqueIds);
+
+        Assert.HasCount(1, parsedPost2.AttributePictures);
+        Assert.HasCount(6, parsedPost2.AttributeEmbeds);
     }
 
     protected static Post CreateTestPost(int? id = null, int contentVersion = 1, bool nsfw = false)

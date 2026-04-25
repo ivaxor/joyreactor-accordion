@@ -14,6 +14,7 @@ public class RootTagsCrawler(
     : RobustBackgroundService(settings, logger)
 {
     protected override bool IsIndefinite => false;
+    protected override TimeSpan SubsequentRunDelay => TimeSpan.FromMinutes(1);
 
     protected override async Task RunAsync(CancellationToken cancellationToken)
     {

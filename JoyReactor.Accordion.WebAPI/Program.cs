@@ -5,6 +5,8 @@ using JoyReactor.Accordion.Logic.Onnx;
 using JoyReactor.Accordion.Logic.Parsers;
 using JoyReactor.Accordion.WebAPI.Auth;
 using JoyReactor.Accordion.WebAPI.BackgroudServices;
+using JoyReactor.Accordion.WebAPI.BackgroudServices.CatchUps;
+using JoyReactor.Accordion.WebAPI.BackgroudServices.Publishers;
 using JoyReactor.Accordion.WebAPI.Consumers;
 using JoyReactor.Accordion.WebAPI.Controllers;
 using JoyReactor.Accordion.WebAPI.Extensions;
@@ -46,8 +48,10 @@ builder.Services.AddMassTransit(busConfigurator =>
 
     var consumersSettings = builder.Configuration.GetSection(nameof(ConsumersSettings)).Get<ConsumersSettings>();
 
-    if (consumersSettings.ConsumersEnabled[nameof(ApiPostConsumer)])
-        busConfigurator.AddConsumer<ApiPostConsumer, ApiPostConsumerDefinition>();
+    if (consumersSettings.ConsumersEnabled[nameof(ApiPostCreatedConsumer)]) busConfigurator.AddConsumer<ApiPostCreatedConsumer, ApiPostCreatedConsumerDefinition>();
+    if (consumersSettings.ConsumersEnabled[nameof(PostPictureCreatedConsumer)]) busConfigurator.AddConsumer<PostPictureCreatedConsumer, PostPictureCreatedConsumerDefinition>();
+    if (consumersSettings.ConsumersEnabled[nameof(VectorCreatedConsumer)]) busConfigurator.AddConsumer<VectorCreatedConsumer, VectorCreatedConsumerDefinition>();
+    if (consumersSettings.ConsumersEnabled[nameof(VoteCreatedConsumer)]) busConfigurator.AddConsumer<VoteCreatedConsumer, VoteCreatedConsumerDefinition>();
 });
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -90,8 +94,12 @@ builder.Services.AddSingleton<IMediaReducer, MediaReducer>();
 builder.Services.AddSingleton<IOnnxVectorConverter, OnnxVectorConverter>();
 builder.Services.AddSingleton<IChangedPostClient, ChangedPostClient>();
 
+builder.Services.AddHostedService<PostPictureCreatedCatchUp>();
+builder.Services.AddHostedService<VectorCreatedCatchUp>();
+
 builder.Services.AddHostedService<ChangedApiPostPublisher>();
 builder.Services.AddHostedService<CrawlerApiPostPublisher>();
+
 builder.Services.AddHostedService<DuplicatePictureDetector>();
 builder.Services.AddHostedService<DuplicateVoteCleaner>();
 builder.Services.AddHostedService<MediaToVectorConverter>();
@@ -100,6 +108,8 @@ builder.Services.AddHostedService<TagSubTagsCrawler>();
 builder.Services.AddHostedService<TelegramBotReceiver>();
 builder.Services.AddHostedService<TelegramBotSender>();
 builder.Services.AddHostedService<VectorNormalizator>();
+
+builder.Services.AddHostedService<EmptyPostEmbedsFixer>();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddAuthentication()

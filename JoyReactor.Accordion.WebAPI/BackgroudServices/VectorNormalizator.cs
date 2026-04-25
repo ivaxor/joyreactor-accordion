@@ -19,8 +19,9 @@ public class VectorNormalizator(
     ILogger<VectorNormalizator> logger)
     : RobustBackgroundService(settings, logger)
 {
-    protected override TimeSpan SubsequentRunDelay => TimeSpan.FromDays(1);
     protected override bool IsIndefinite => false;
+    protected override TimeSpan SubsequentRunDelay => TimeSpan.FromDays(1);
+
     protected const int BatchSize = 100_000;
 
     protected override async Task RunAsync(CancellationToken cancellationToken)

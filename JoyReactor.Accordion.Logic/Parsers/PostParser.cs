@@ -3,18 +3,30 @@ using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using JoyReactor.Accordion.Logic.MQ.Messages;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace JoyReactor.Accordion.Logic.Parsers;
 
-public class PostParser(SqlDatabaseContext sqlDatabaseContext)
+public class PostParser(
+    SqlDatabaseContext sqlDatabaseContext,
+    ILogger<PostParser> logger)
     : IPostParser
 {
-    public Task ParseAsync(ApiPostMessage message, CancellationToken cancellationToken)
+    public Task<PostParserResult?> ParseAsync(ApiPostCreatedMessage message, CancellationToken cancellationToken)
     {
-        return ParseAsync(message.ApiId, message.Post, cancellationToken);
+        return ParseAsync(message.ApiId, message.Post, false, cancellationToken);
     }
 
-    public async Task ParseAsync(Guid apiId, Post post, CancellationToken cancellationToken)
+    public Task<PostParserResult?> ParseAsync(Guid apiId, Post post, CancellationToken cancellationToken)
+    {
+        return ParseAsync(apiId, post, false, cancellationToken);
+    }
+
+    public async Task<PostParserResult?> ParseAsync(
+        Guid apiId,
+        Post post,
+        bool ignoreContentVersion,
+        CancellationToken cancellationToken)
     {
         var parsedPost = await sqlDatabaseContext.ParsedPosts
             .Include(pp => pp.AttributePictures)
@@ -33,29 +45,40 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (parsedPost != null)
-            await UpdateAsync(parsedPost, apiId, post, cancellationToken);
+            return await UpdateAsync(parsedPost, post, ignoreContentVersion, cancellationToken);
         else
-            await CreateAsync(apiId, post, cancellationToken);
+            return await CreateAsync(apiId, post, cancellationToken);
     }
 
-    protected async Task UpdateAsync(
+    protected async Task<PostParserResult?> UpdateAsync(
         ParsedPost parsedPost,
-        Guid apiId,
         Post post,
+        bool ignoreContentVersion,
         CancellationToken cancellationToken)
     {
-        if (post.ContentVersion <= parsedPost.ContentVersion)
-            return;
+        if (ignoreContentVersion == false && post.ContentVersion <= parsedPost.ContentVersion)
+            return null;
 
         await using var transaction = await sqlDatabaseContext.Database.BeginTransactionAsync(cancellationToken);
 
         parsedPost.ContentVersion = post.ContentVersion.Value;
         parsedPost.UpdatedAt = DateTime.UtcNow;
 
-        var existingPostAttributePictures = parsedPost.AttributePictures
+        var brokenPostAttibuteEmbeds = parsedPost.AttributeEmbeds
+            .Where(ppae => ppae.BandCampId == null && ppae.CoubId == null && ppae.SoundCloudId == null && ppae.VimeoId == null && ppae.YouTubeId == null)
+            .ToArray();
+        if (brokenPostAttibuteEmbeds.Length != 0)
+        {
+            logger.LogWarning("Found {PostAttributes} broken embedded attribute(s) in {PostNumberId} post.", brokenPostAttibuteEmbeds.Length, parsedPost.NumberId);
+
+            sqlDatabaseContext.ParsedPostAttributeEmbeds.RemoveRange(brokenPostAttibuteEmbeds);
+            await sqlDatabaseContext.SaveChangesAsync();
+        }
+
+        var existingPostAttributePictureIds = parsedPost.AttributePictures
             .Select(ppap => ppap.AttributeId)
             .ToHashSet();
-        var existingPostAttributeEmbeds = parsedPost.AttributeEmbeds
+        var existingPostAttributeEmbeddedIds = parsedPost.AttributeEmbeds
             .Select(ppae => ppae.UniqueId)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -68,7 +91,7 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext)
             {
                 case "PICTURE":
                     newPostAttributePictureIds.Add(postAttribute.NumberId);
-                    if (existingPostAttributePictures.Contains(postAttribute.NumberId))
+                    if (existingPostAttributePictureIds.Contains(postAttribute.NumberId))
                         continue;
 
                     var postAttributePicture = new ParsedPostAttributePicture(postAttribute, parsedPost);
@@ -82,7 +105,7 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext)
                 case "YOUTUBE":
                     var parsedAttributeEmbedded = ParseAttributeEmbedded(postAttribute);
                     newPostAttributeEmbeddedIds.Add(parsedAttributeEmbedded.UniqueId);
-                    if (existingPostAttributeEmbeds.Contains(parsedAttributeEmbedded.UniqueId))
+                    if (existingPostAttributeEmbeddedIds.Contains(parsedAttributeEmbedded.UniqueId))
                         continue;
 
                     var existingAttributeEmbedded = await TryToGetAttributeEmbeddedAsync(parsedAttributeEmbedded, cancellationToken);
@@ -121,9 +144,16 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext)
         }
 
         await transaction.CommitAsync(cancellationToken);
+
+        return new PostParserResult()
+        {
+            Post = parsedPost,
+            NewPostAttributePictureNumberIds = newPostAttributePictureIds.Except(existingPostAttributePictureIds).ToArray(),
+            NewPostAttributeEmbeddedUniqueIds = newPostAttributeEmbeddedIds.Except(existingPostAttributeEmbeddedIds).ToArray(),
+        };
     }
 
-    protected async Task CreateAsync(Guid apiId, Post post, CancellationToken cancellationToken)
+    protected async Task<PostParserResult> CreateAsync(Guid apiId, Post post, CancellationToken cancellationToken)
     {
         await using var transaction = await sqlDatabaseContext.Database.BeginTransactionAsync(cancellationToken);
 
@@ -131,11 +161,16 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext)
         await sqlDatabaseContext.ParsedPosts.AddAsync(parsedPost, cancellationToken);
         await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
 
+        var newPostAttributePictureIds = new HashSet<int>();
+        var newPostAttributeEmbeddedIds = new HashSet<string>();
+
         foreach (var postAttribute in post.Attributes)
         {
             switch (postAttribute.Type)
             {
                 case "PICTURE":
+                    newPostAttributePictureIds.Add(postAttribute.NumberId);
+
                     var postAttributePicture = new ParsedPostAttributePicture(postAttribute, parsedPost);
                     await sqlDatabaseContext.ParsedPostAttributePictures.AddAsync(postAttributePicture, cancellationToken);
                     break;
@@ -146,8 +181,9 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext)
                 case "VIMEO":
                 case "YOUTUBE":
                     var parsedAttributeEmbedded = ParseAttributeEmbedded(postAttribute);
-                    var existingAttributeEmbedded = await TryToGetAttributeEmbeddedAsync(parsedAttributeEmbedded, cancellationToken);
+                    newPostAttributeEmbeddedIds.Add(parsedAttributeEmbedded.UniqueId);
 
+                    var existingAttributeEmbedded = await TryToGetAttributeEmbeddedAsync(parsedAttributeEmbedded, cancellationToken);
                     if (existingAttributeEmbedded == null)
                         await AddAttributeEmbeddedAsync(parsedAttributeEmbedded, cancellationToken);
 
@@ -163,6 +199,13 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext)
         }
 
         await transaction.CommitAsync(cancellationToken);
+
+        return new PostParserResult()
+        {
+            Post = parsedPost,
+            NewPostAttributePictureNumberIds = newPostAttributePictureIds.ToArray(),
+            NewPostAttributeEmbeddedUniqueIds = newPostAttributeEmbeddedIds.ToArray(),
+        };
     }
 
     protected static IParsedAttributeEmbedded ParseAttributeEmbedded(PostAttribute postAttribute)
@@ -223,6 +266,7 @@ public class PostParser(SqlDatabaseContext sqlDatabaseContext)
 
 public interface IPostParser
 {
-    Task ParseAsync(ApiPostMessage message, CancellationToken cancellationToken);
-    Task ParseAsync(Guid apiId, Post posts, CancellationToken cancellationToken);
+    Task<PostParserResult?> ParseAsync(ApiPostCreatedMessage message, CancellationToken cancellationToken);
+    Task<PostParserResult?> ParseAsync(Guid apiId, Post post, CancellationToken cancellationToken);
+    Task<PostParserResult?> ParseAsync(Guid apiId, Post post, bool ignoreContentVersion, CancellationToken cancellationToken);
 }

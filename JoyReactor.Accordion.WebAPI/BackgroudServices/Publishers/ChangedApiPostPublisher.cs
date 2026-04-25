@@ -6,7 +6,7 @@ using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
-namespace JoyReactor.Accordion.WebAPI.BackgroudServices;
+namespace JoyReactor.Accordion.WebAPI.BackgroudServices.Publishers;
 
 public class ChangedApiPostPublisher(
     IServiceScopeFactory serviceScopeFactory,
@@ -14,7 +14,7 @@ public class ChangedApiPostPublisher(
     ILogger<ChangedApiPostPublisher> logger)
     : RobustBackgroundService(settings, logger)
 {
-    protected override TimeSpan SubsequentRunDelay => settings.Value.SubsequentRunDelay * 3;
+    protected override TimeSpan SubsequentRunDelay => TimeSpan.FromMinutes(3);
     protected override bool IsIndefinite => true;
     protected bool IsFirstRun = true;
 
@@ -36,21 +36,20 @@ public class ChangedApiPostPublisher(
         var startDay = IsFirstRun
             ? currentDay.AddDays(-29)
             : currentDay.AddDays(-1);
-
         var endDay = currentDay.AddDays(1);
 
         do
         {
             foreach (var api in apis)
             {
-                var changedPosts = await changedPostClient.GetAsync(api, currentDay, cancellationToken);
+                var changedPosts = await changedPostClient.GetAsync(api, startDay, cancellationToken);
 
-                var apiPostMessages = changedPosts
-                    .Select(p => new ApiPostMessage() { ApiId = api.Id, Post = p })
+                var messages = changedPosts
+                    .Select(p => new ApiPostCreatedMessage() { ApiId = api.Id, Post = p })
                     .ToArray();
-                await publishEndpoint.PublishBatch(apiPostMessages, cancellationToken);
+                await publishEndpoint.PublishBatch(messages, cancellationToken);
 
-                logger.LogInformation("Found {PostCount} changed post(s) at {Day} for {Api}.", changedPosts.Length, currentDay, api.HostName);
+                logger.LogInformation("Found {PostCount} changed post(s) at {Day} for {Api}.", changedPosts.Length, startDay, api.HostName);
             }
 
             startDay = startDay.AddDays(1);

@@ -12,7 +12,8 @@ public static class QdrantClientExtensions
     public static Task UpsertAsync(
         this IQdrantClient qdrantClient,
         string collectionName,
-        ParsedPostAttributePicture picture, float[] vector,
+        ParsedPostAttributePicture picture,
+        float[] vector,
         CancellationToken cancellationToken)
     {
         var point = CreatePointStruct(picture, vector);

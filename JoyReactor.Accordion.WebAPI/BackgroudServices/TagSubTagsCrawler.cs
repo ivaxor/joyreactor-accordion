@@ -14,6 +14,7 @@ public class TagSubTagsCrawler(
     : RobustBackgroundService(settings, logger)
 {
     protected override bool IsIndefinite => true;
+    protected override TimeSpan SubsequentRunDelay => TimeSpan.FromMinutes(1);
 
     protected override async Task RunAsync(CancellationToken cancellationToken)
     {

@@ -21,6 +21,8 @@ public class TelegramBotReceiver(
     : RobustBackgroundService(settings, logger)
 {
     protected override bool IsIndefinite => true;
+    protected override TimeSpan SubsequentRunDelay => TimeSpan.FromMinutes(1);
+
     protected readonly ChatId ChatId = new ChatId(telegramBotSettings.Value.ChatId);
     protected readonly ReceiverOptions ReceiverOptions = new ReceiverOptions()
     {

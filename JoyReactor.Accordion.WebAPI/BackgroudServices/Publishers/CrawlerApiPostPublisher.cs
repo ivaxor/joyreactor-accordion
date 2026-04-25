@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
 
-namespace JoyReactor.Accordion.WebAPI.BackgroudServices;
+namespace JoyReactor.Accordion.WebAPI.BackgroudServices.Publishers;
 
 public class CrawlerApiPostPublisher(
     IServiceScopeFactory serviceScopeFactory,
@@ -18,6 +18,7 @@ public class CrawlerApiPostPublisher(
     : RobustBackgroundService(settings, logger)
 {
     protected override bool IsIndefinite => true;
+    protected override TimeSpan SubsequentRunDelay => TimeSpan.FromMinutes(1);
 
     protected readonly ConcurrentDictionary<Guid, (Task Task, CancellationTokenSource Cts)> TaskWithCancellationTokenSources = new ConcurrentDictionary<Guid, (Task Task, CancellationTokenSource Cts)>();
 
@@ -94,12 +95,12 @@ public class CrawlerApiPostPublisher(
                 postPager = await postClient.GetByTagAsync(crawlerTask.Tag.Api, tagNumberId, crawlerTask.PostLineType, crawlerTask.PageCurrent, cancellationToken);
                 isLastPage = crawlerTask.PageCurrent >= postPager.LastPage;
 
-                var apiPostMessages = postPager.Posts
-                    .Select(p => new ApiPostMessage() { ApiId = crawlerTask.Tag.Api.Id, Post = p })
+                var messages = postPager.Posts
+                    .Select(p => new ApiPostCreatedMessage() { ApiId = crawlerTask.Tag.Api.Id, Post = p })
                     .ToArray();
-                await publishEndpoint.PublishBatch(apiPostMessages, cancellationToken);
+                await publishEndpoint.PublishBatch(messages, cancellationToken);
 
-                logger.LogInformation("Found {PostCount} post(s) using \"{TagName}\" tag in {HostName} on {Page}/{PageLast} page.", apiPostMessages.Length, crawlerTask.Tag.Name, crawlerTask.Tag.Api.HostName, crawlerTask.PageCurrent, postPager.LastPage);
+                logger.LogInformation("Found {PostCount} post(s) using \"{TagName}\" tag in {HostName} on {Page}/{PageLast} page.", messages.Length, crawlerTask.Tag.Name, crawlerTask.Tag.Api.HostName, crawlerTask.PageCurrent, postPager.LastPage);
 
                 if (isLastPage)
                     crawlerTask.FinishedAt = DateTime.UtcNow;

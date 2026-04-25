@@ -41,7 +41,7 @@ public record ParsedPostAttributeEmbedded : ISqlUpdatedAtEntity, IParsedPostAttr
 
     public Guid Id { get; set; }
 
-    public string UniqueId => BandCamp?.UniqueId ?? Coub?.UniqueId ?? SoundCloud?.UniqueId ?? Vimeo?.UniqueId ?? YouTube!.UniqueId;
+    public string UniqueId => BandCamp?.UniqueId ?? Coub?.UniqueId ?? SoundCloud?.UniqueId ?? Vimeo?.UniqueId ?? YouTube?.UniqueId;
 
     public Guid PostId { get; set; }
     public virtual ParsedPost Post { get; set; }

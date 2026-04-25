@@ -2,7 +2,7 @@
 
 namespace JoyReactor.Accordion.Logic.MQ.Messages;
 
-public record ApiPostMessage
+public record ApiPostCreatedMessage
 {
     public required Guid ApiId { get; init; }
     public required Post Post { get; init; }

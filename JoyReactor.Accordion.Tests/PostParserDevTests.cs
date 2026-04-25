@@ -30,7 +30,7 @@ public sealed class PostParserDevTests
     public async Task CrawlAndParseByPostIdAsync(int postId)
     {
         var post = await SharedDependencies.PostClient.GetAsync(SharedDependencies.Api, postId, default);
-        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post, default);
+        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post, false, default);
 
         var parsedPost = await SharedDependencies.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()

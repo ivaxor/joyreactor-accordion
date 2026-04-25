@@ -10,8 +10,7 @@ public abstract class RobustBackgroundService : BackgroundService
 
     protected readonly PeriodicTimer PeriodicTimer;
     protected abstract bool IsIndefinite { get; }
-
-    protected virtual TimeSpan SubsequentRunDelay => settings.Value.SubsequentRunDelay;
+    protected abstract TimeSpan SubsequentRunDelay { get; }
     protected bool IsEnabled => settings.Value.ServiceNamesEnabled.TryGetValue(GetType().Name, out var enabled) && enabled == true;
 
     public RobustBackgroundService(

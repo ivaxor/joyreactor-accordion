@@ -13,7 +13,7 @@ public class DuplicateVoteCleaner(
     : RobustBackgroundService(settings, logger)
 {
     protected override bool IsIndefinite => true;
-    protected override TimeSpan SubsequentRunDelay => settings.Value.SubsequentRunDelay * 5;
+    protected override TimeSpan SubsequentRunDelay => TimeSpan.FromMinutes(5);
 
     protected override async Task RunAsync(CancellationToken cancellationToken)
     {

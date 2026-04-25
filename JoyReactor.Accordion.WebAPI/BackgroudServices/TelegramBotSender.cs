@@ -30,6 +30,8 @@ public class TelegramBotSender(
     ];
 
     protected override bool IsIndefinite => true;
+    protected override TimeSpan SubsequentRunDelay => TimeSpan.FromMinutes(1);
+
     protected readonly ChatId ChatId = new ChatId(telegramBotSettings.Value.ChatId);
 
     protected override async Task RunAsync(CancellationToken cancellationToken)
