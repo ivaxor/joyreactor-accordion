@@ -5,7 +5,7 @@ using JoyReactor.Accordion.WebAPI.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
-namespace JoyReactor.Accordion.WebAPI.BackgroudServices;
+namespace JoyReactor.Accordion.WebAPI.BackgroudServices.Temp;
 
 public class EmptyPostEmbedsFixer(
     IServiceScopeFactory serviceScopeFactory,

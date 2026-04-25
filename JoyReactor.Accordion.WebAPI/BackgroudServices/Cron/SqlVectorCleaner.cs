@@ -10,13 +10,13 @@ using Qdrant.Client.Grpc;
 using System.Collections.Frozen;
 using Range = Qdrant.Client.Grpc.Range;
 
-namespace JoyReactor.Accordion.WebAPI.BackgroudServices;
+namespace JoyReactor.Accordion.WebAPI.BackgroudServices.Cron;
 
-public class VectorNormalizator(
+public class SqlVectorCleaner(
     IServiceScopeFactory serviceScopeFactory,
     IOptions<QdrantSettings> qdrantSettings,
     IOptions<BackgroundServiceSettings> settings,
-    ILogger<VectorNormalizator> logger)
+    ILogger<SqlVectorCleaner> logger)
     : RobustBackgroundService(settings, logger)
 {
     protected override bool IsIndefinite => false;
@@ -51,18 +51,18 @@ public class VectorNormalizator(
                 {
                     Must =
                     {
-                    new Condition()
-                    {
-                        Field = new FieldCondition()
+                        new Condition()
                         {
-                            Key = "postAttributeId",
-                            Range = new Range()
+                            Field = new FieldCondition()
                             {
-                                Gte = fromAttributeId,
-                                Lt = toAttributeId,
+                                Key = "postAttributeId",
+                                Range = new Range()
+                                {
+                                    Gte = fromAttributeId,
+                                    Lt = toAttributeId,
+                                }
                             }
                         }
-                    }
                     }
                 },
                 limit: BatchSize * 2,

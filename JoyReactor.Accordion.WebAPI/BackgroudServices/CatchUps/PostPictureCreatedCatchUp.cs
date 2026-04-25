@@ -5,7 +5,6 @@ using JoyReactor.Accordion.WebAPI.Models;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Serilog.Core;
 
 namespace JoyReactor.Accordion.WebAPI.BackgroudServices.CatchUps;
 

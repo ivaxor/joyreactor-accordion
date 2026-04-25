@@ -1,5 +1,6 @@
 ﻿using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
+using JoyReactor.Accordion.WebAPI.Consumers;
 using JoyReactor.Accordion.WebAPI.Models;
 using JoyReactor.Accordion.WebAPI.Models.Requests;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +12,7 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace JoyReactor.Accordion.WebAPI.BackgroudServices;
+namespace JoyReactor.Accordion.WebAPI.BackgroudServices.Cron;
 
 public class TelegramBotReceiver(
     IServiceScopeFactory serviceScopeFactory,
@@ -52,8 +53,8 @@ public class TelegramBotReceiver(
         var votes = await sqlDatabaseContext.DuplicatePictureVotes
             .AsNoTracking()
             .Where(dpv => dpv.DuplicatePicture.Post.AttributePictures.Count == 1)
-            .Where(dpv => TelegramBotSender.AllowedImageTypes.Contains(dpv.DuplicatePicture.ImageType))
-            .Where(dpv => TelegramBotSender.AllowedImageTypes.Contains(dpv.OriginalPicture.ImageType))
+            .Where(dpv => VoteCreatedConsumer.AllowedImageTypes.Contains(dpv.DuplicatePicture.ImageType))
+            .Where(dpv => VoteCreatedConsumer.AllowedImageTypes.Contains(dpv.OriginalPicture.ImageType))
             .Where(dpv => dpv.DuplicatePictureId == voteRequest.DuplicatePictureId)
             .GroupBy(dpv => dpv.DuplicatePicture.AttributeId)
             .OrderBy(g => g.Key)
@@ -113,8 +114,8 @@ public class TelegramBotReceiver(
             sqlDatabaseContext.ChangeTracker.Clear();
         }
 
-        var text = TelegramBotSender.GeneratePostText(votes);
-        var inlineKeyboardMarkup = TelegramBotSender.GenerateInlineKeyboardMarkup(votes.First());
+        var text = VoteCreatedConsumer.GeneratePostText(votes);
+        var inlineKeyboardMarkup = VoteCreatedConsumer.GenerateInlineKeyboardMarkup(votes.First());
 
         try
         {

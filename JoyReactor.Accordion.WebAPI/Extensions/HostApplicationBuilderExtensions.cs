@@ -7,8 +7,10 @@ using JoyReactor.Accordion.Logic.Database.Vector;
 using JoyReactor.Accordion.Logic.Media;
 using JoyReactor.Accordion.Logic.Onnx;
 using JoyReactor.Accordion.WebAPI.Auth;
+using JoyReactor.Accordion.WebAPI.Consumers;
 using JoyReactor.Accordion.WebAPI.HealthChecks;
 using JoyReactor.Accordion.WebAPI.Models;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.ML.OnnxRuntime;
@@ -129,6 +131,32 @@ public static class HostApplicationBuilderExtensions
         });
     }
 
+    public static void AddMessageQueue(this IHostApplicationBuilder builder)
+    {
+        builder.Services.AddMassTransit(busConfigurator =>
+        {
+            busConfigurator.UsingRabbitMq((context, rabbitConfigurator) =>
+            {
+                var rabbitMqSetting = builder.Configuration.GetSection(nameof(RabbitMqSettings)).Get<RabbitMqSettings>();
+
+                rabbitConfigurator.Host(rabbitMqSetting.Host, "/", rabbitHostConfigurator =>
+                {
+                    rabbitHostConfigurator.Username(rabbitMqSetting.UserName);
+                    rabbitHostConfigurator.Password(rabbitMqSetting.Password);
+                });
+
+                rabbitConfigurator.ConfigureEndpoints(context);
+            });
+
+            var consumersSettings = builder.Configuration.GetSection(nameof(ConsumersSettings)).Get<ConsumersSettings>();
+
+            if (consumersSettings.ConsumersEnabled[nameof(ApiPostCreatedConsumer)]) busConfigurator.AddConsumer<ApiPostCreatedConsumer, ApiPostCreatedConsumerDefinition>();
+            if (consumersSettings.ConsumersEnabled[nameof(PostPictureCreatedConsumer)]) busConfigurator.AddConsumer<PostPictureCreatedConsumer, PostPictureCreatedConsumerDefinition>();
+            if (consumersSettings.ConsumersEnabled[nameof(VectorCreatedConsumer)]) busConfigurator.AddConsumer<VectorCreatedConsumer, VectorCreatedConsumerDefinition>();
+            if (consumersSettings.ConsumersEnabled[nameof(VoteCreatedConsumer)]) busConfigurator.AddConsumer<VoteCreatedConsumer, VoteCreatedConsumerDefinition>();
+        });
+    }
+    
     public static void AddInferenceSession(this IHostApplicationBuilder builder)
     {
         builder.Services.AddSingleton(serviceProvider =>
