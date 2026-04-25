@@ -111,12 +111,14 @@ public class SqlVectorCleaner(
 
                     oldContentVersionPointIds.Add(latestContentVersionRetrivedPoint.PointId);
                     postAttribute.IsVectorCreated = false;
+                    postAttribute.IsVectorCheckedForDuplicates = false;
                     postAttribute.UpdatedAt = DateTime.UtcNow;
                     updatedPostAttributes.Add(postAttribute);
                 }
                 else
                 {
                     postAttribute.IsVectorCreated = false;
+                    postAttribute.IsVectorCheckedForDuplicates = false;
                     postAttribute.UpdatedAt = DateTime.UtcNow;
                     updatedPostAttributes.Add(postAttribute);
                 }
@@ -137,6 +139,7 @@ public class SqlVectorCleaner(
                 {
                     sqlDatabaseContext.ParsedPostAttributePictures.Attach(updatedPostAttribute);
                     sqlDatabaseContext.ParsedPostAttributePictures.Entry(updatedPostAttribute).Property(p => p.IsVectorCreated).IsModified = true;
+                    sqlDatabaseContext.ParsedPostAttributePictures.Entry(updatedPostAttribute).Property(p => p.IsVectorCheckedForDuplicates).IsModified = true;
                     sqlDatabaseContext.ParsedPostAttributePictures.Entry(updatedPostAttribute).Property(p => p.UpdatedAt).IsModified = true;
                 }
 
