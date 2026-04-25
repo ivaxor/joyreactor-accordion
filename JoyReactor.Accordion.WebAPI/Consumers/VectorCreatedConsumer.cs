@@ -29,6 +29,12 @@ public class VectorCreatedConsumer(
             .Where(ppap => ppap.AttributeId == context.Message.AttributeId)
             .FirstAsync(context.CancellationToken);
 
+        if (picture.IsVectorCreated == false)
+        {
+            logger.LogWarning("Tried to check {PictureAttibuteId} post picture attribute without vector for duplicates.", picture.AttributeId);
+            return;
+        }
+
         if (picture.IsVectorCheckedForDuplicates == true)
             return;
 
