@@ -28,6 +28,8 @@ public class VectorCreatedCatchUp(
             .Select(picture => picture.AttributeId)
             .ToArrayAsync(cancellationToken);
 
+        logger.LogInformation("Catching up {PostAttributes} post attribute picture(s) to check vectors for duplicates.", attributeIds.Length);
+
         var messages = attributeIds
             .Select(id => new VectorCreatedMessage() { AttributeId = id })
             .ToArray();

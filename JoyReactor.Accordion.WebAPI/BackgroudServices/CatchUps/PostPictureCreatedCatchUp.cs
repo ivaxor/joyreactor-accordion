@@ -5,6 +5,7 @@ using JoyReactor.Accordion.WebAPI.Models;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Serilog.Core;
 
 namespace JoyReactor.Accordion.WebAPI.BackgroudServices.CatchUps;
 
@@ -30,6 +31,8 @@ public class PostPictureCreatedCatchUp(
             .OrderBy(picture => picture.AttributeId)
             .Select(picture => picture.AttributeId)
             .ToArrayAsync(cancellationToken);
+
+        logger.LogInformation("Catching up {PostAttributes} post attribute picture(s) to create vectors.", attributeIds.Length);
 
         var messages = attributeIds
             .Select(id => new PostPictureCreatedMessage() { AttributeId = id })
