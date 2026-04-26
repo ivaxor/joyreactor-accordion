@@ -81,13 +81,24 @@ public class VoteCreatedConsumer(
 
         var text = GeneratePostText(votes);
         var inlineKeyboardMarkup = GenerateInlineKeyboardMarkup(votes.First());
-        var voteMessage = await telegramBotClient.SendMessage(
-            ChatId,
-            text,
-            ParseMode.MarkdownV2,
-            replyMarkup: inlineKeyboardMarkup,
-            linkPreviewOptions: new LinkPreviewOptions() { IsDisabled = true },
-            cancellationToken: context.CancellationToken);
+
+        try
+        {
+            var voteMessage = await telegramBotClient.SendMessage(
+                ChatId,
+                text,
+                ParseMode.MarkdownV2,
+                replyMarkup: inlineKeyboardMarkup,
+                linkPreviewOptions: new LinkPreviewOptions() { IsDisabled = true },
+                cancellationToken: context.CancellationToken);
+        }
+        catch
+        {
+            var messageIds = mediaGroupMessages.Select(m => m.Id).ToArray();
+            await telegramBotClient.DeleteMessages(ChatId, messageIds, context.CancellationToken);
+
+            throw;
+        }
 
         foreach (var vote in votes)
         {
