@@ -43,6 +43,7 @@ public record DuplicatePictureVote : ISqlUpdatedAtEntity
     public string[] NoVotes { get; set; }
 
     public bool VotingClosed { get; set; }
+    public bool SentViaTelegram { get; set; }
 
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
@@ -97,6 +98,11 @@ public class DuplicatePictureVoteTypeConfiguration : IEntityTypeConfiguration<Du
 
         builder
             .Property(e => e.VotingClosed)
+            .HasDefaultValue(false)
+            .IsRequired(true);
+
+        builder
+            .Property(e => e.SentViaTelegram)
             .HasDefaultValue(false)
             .IsRequired(true);
 

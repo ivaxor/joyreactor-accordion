@@ -43,6 +43,7 @@ public class VoteCreatedConsumer(
             .Include(dpv => dpv.OriginalPicture)
             .ThenInclude(ppap => ppap.Post)
             .ThenInclude(pp => pp.Api)
+            .Where(dpv => dpv.SentViaTelegram == false)
             .Where(dpv => dpv.VotingClosed == false)
             .Where(dpv => dpv.DuplicatePicture.Post.AttributePictures.Count == 1)
             .Where(dpv => AllowedImageTypes.Contains(dpv.DuplicatePicture.ImageType))
@@ -87,6 +88,17 @@ public class VoteCreatedConsumer(
             replyMarkup: inlineKeyboardMarkup,
             linkPreviewOptions: new LinkPreviewOptions() { IsDisabled = true },
             cancellationToken: context.CancellationToken);
+
+        foreach (var vote in votes)
+        {
+            vote.SentViaTelegram = true;
+            vote.UpdatedAt = DateTime.UtcNow;
+
+            var entry = sqlDatabaseContext.DuplicatePictureVotes.Entry(vote);
+            entry.Property(e => e.SentViaTelegram).IsModified = true;
+            entry.Property(e => e.UpdatedAt).IsModified = true;
+        }
+        await sqlDatabaseContext.SaveChangesAsync(context.CancellationToken);
     }
 
     public static string GeneratePostText(IEnumerable<DuplicatePictureVoteExtended> votes)
