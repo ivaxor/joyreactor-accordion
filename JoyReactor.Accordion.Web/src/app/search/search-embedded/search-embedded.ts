@@ -92,7 +92,7 @@ export class SearchEmbedded implements OnInit, OnDestroy {
         }
       } else if (url.host === 'soundcloud.com') {
         const text = url.pathname.replace('/', '');
-        return ({ type: SearchEmbeddedType.Coub, text, limit: 3 });
+        return ({ type: SearchEmbeddedType.SoundCloud, text, limit: 3 });
       } else if (url.host.endsWith('vimeo.com')) {
         if (url.host === 'vimeo.com') {
           const text = url.pathname.replace('/', '');
