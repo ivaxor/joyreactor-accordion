@@ -37,12 +37,6 @@ public class VoteCreatedConsumer(
     {
         var votes = await sqlDatabaseContext.DuplicatePictureVotes
             .AsNoTracking()
-            .Include(dpv => dpv.DuplicatePicture)
-            .ThenInclude(ppap => ppap.Post)
-            .ThenInclude(pp => pp.Api)
-            .Include(dpv => dpv.OriginalPicture)
-            .ThenInclude(ppap => ppap.Post)
-            .ThenInclude(pp => pp.Api)
             .Where(dpv => dpv.SentViaTelegram == false)
             .Where(dpv => dpv.VotingClosed == false)
             .Where(dpv => dpv.DuplicatePicture.Post.AttributePictures.Count == 1)
@@ -58,8 +52,10 @@ public class VoteCreatedConsumer(
                 .ThenBy(dpv => dpv.OriginalPictureId)
                 .Select(dpv => new DuplicatePictureVoteExtended(
                     dpv,
+                    dpv.OriginalPicture.Post.Api.HostName,
                     dpv.OriginalPicture.Post.NumberId,
                     dpv.OriginalPicture.Post.AttributePictures.Count,
+                    dpv.DuplicatePicture.Post.Api.HostName,
                     dpv.DuplicatePicture.Post.NumberId,
                     dpv.DuplicatePicture.Post.AttributePictures.Count,
                     dpv.DuplicatePicture.Post.Nsfw || dpv.OriginalPicture.Post.Nsfw)))
@@ -118,7 +114,7 @@ public class VoteCreatedConsumer(
         stringBuilder.AppendFormat(
             "Дубликат: [{0}](https://{1}/post/{2})",
             votes.First().DuplicatePostNumberId,
-            votes.First().DuplicatePicture.Post.Api.HostName,
+            votes.First().DuplicateHostName,
             votes.First().DuplicatePostNumberId);
 
         stringBuilder.AppendLine();
@@ -128,7 +124,7 @@ public class VoteCreatedConsumer(
             stringBuilder.AppendFormat(
                 " [{0}](https://{1}/post/{2})",
                 vote.OriginalPostNumberId,
-                votes.First().OriginalPicture.Post.Api.HostName,
+                vote.OriginalHostName,
                 vote.OriginalPostNumberId);
         }
 

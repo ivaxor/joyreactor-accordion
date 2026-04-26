@@ -35,8 +35,10 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
             .Take(PageSize)
             .Select(dpv => new DuplicatePictureVoteExtended(
                 dpv,
+                dpv.OriginalPicture.Post.Api.HostName,
                 dpv.OriginalPicture.Post.NumberId,
                 dpv.OriginalPicture.Post.AttributePictures.Count,
+                dpv.DuplicatePicture.Post.Api.HostName,
                 dpv.DuplicatePicture.Post.NumberId,
                 dpv.DuplicatePicture.Post.AttributePictures.Count,
                 dpv.DuplicatePicture.Post.Nsfw || dpv.OriginalPicture.Post.Nsfw))
@@ -86,8 +88,10 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
             .Take(PageSize)
             .Select(dpv => new DuplicatePictureVoteExtended(
                 dpv,
+                dpv.OriginalPicture.Post.Api.HostName,
                 dpv.OriginalPicture.Post.NumberId,
                 dpv.OriginalPicture.Post.AttributePictures.Count,
+                dpv.DuplicatePicture.Post.Api.HostName,
                 dpv.DuplicatePicture.Post.NumberId,
                 dpv.DuplicatePicture.Post.AttributePictures.Count,
                 dpv.DuplicatePicture.Post.Nsfw || dpv.OriginalPicture.Post.Nsfw))
