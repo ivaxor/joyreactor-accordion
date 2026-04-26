@@ -40,6 +40,8 @@ public class VoteCreatedConsumer(
     {
         var votes = await sqlDatabaseContext.DuplicatePictureVotes
             .AsNoTracking()
+            .Include(dpv => dpv.DuplicatePicture)
+            .Include(dpv => dpv.OriginalPicture)
             .Where(dpv => dpv.SentViaTelegram == false)
             .Where(dpv => dpv.VotingClosed == false)
             .Where(dpv => dpv.DuplicatePicture.Post.AttributePictures.Count == 1)
