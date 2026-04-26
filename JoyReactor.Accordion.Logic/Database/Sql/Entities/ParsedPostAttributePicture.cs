@@ -81,6 +81,9 @@ public class ParsedPostAttributePictureEntityTypeConfiguration : IEntityTypeConf
         builder
             .HasIndex(e => new { e.PostId, e.AttributeId })
             .IsUnique();
+
+        builder
+            .HasIndex(e => e.AttributeId);
         builder
             .Property(e => e.AttributeId)
             .IsRequired(true);

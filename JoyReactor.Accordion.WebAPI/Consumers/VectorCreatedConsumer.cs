@@ -59,9 +59,9 @@ public class VectorCreatedConsumer(
         picture.IsVectorCheckedForDuplicates = true;
         picture.UpdatedAt = DateTime.UtcNow;
 
-        sqlDatabaseContext.ParsedPostAttributePictures.Attach(picture);
-        sqlDatabaseContext.ParsedPostAttributePictures.Entry(picture).Property(e => e.IsVectorCheckedForDuplicates).IsModified = true;
-        sqlDatabaseContext.ParsedPostAttributePictures.Entry(picture).Property(e => e.UpdatedAt).IsModified = true;
+        var entry = sqlDatabaseContext.ParsedPostAttributePictures.Entry(picture);
+        entry.Property(e => e.IsVectorCheckedForDuplicates).IsModified = true;
+        entry.Property(e => e.UpdatedAt).IsModified = true;
 
         await sqlDatabaseContext.SaveChangesAsync(context.CancellationToken);
 
@@ -223,9 +223,9 @@ public class VectorCreatedConsumer(
             voteToClose.VotingClosed = true;
             voteToClose.UpdatedAt = DateTime.UtcNow;
 
-            sqlDatabaseContext.DuplicatePictureVotes.Attach(voteToClose);
-            sqlDatabaseContext.DuplicatePictureVotes.Entry(voteToClose).Property(e => e.VotingClosed).IsModified = true;
-            sqlDatabaseContext.DuplicatePictureVotes.Entry(voteToClose).Property(e => e.UpdatedAt).IsModified = true;
+            var entry = sqlDatabaseContext.DuplicatePictureVotes.Entry(voteToClose);
+            entry.Property(e => e.VotingClosed).IsModified = true;
+            entry.Property(e => e.UpdatedAt).IsModified = true;
         }
 
         await sqlDatabaseContext.SaveChangesAsync(cancellationToken);

@@ -54,11 +54,11 @@ public class PostPictureCreatedConsumer(
 
         using var image = await DownloadReducedAsync(picture, context.CancellationToken);
 
-        sqlDatabaseContext.ParsedPostAttributePictures.Attach(picture);
-        sqlDatabaseContext.ParsedPostAttributePictures.Entry(picture).Property(e => e.NoContent).IsModified = true;
-        sqlDatabaseContext.ParsedPostAttributePictures.Entry(picture).Property(e => e.UnsupportedContent).IsModified = true;
-        sqlDatabaseContext.ParsedPostAttributePictures.Entry(picture).Property(e => e.IsVectorCreated).IsModified = true;
-        sqlDatabaseContext.ParsedPostAttributePictures.Entry(picture).Property(e => e.UpdatedAt).IsModified = true;
+        var entry = sqlDatabaseContext.ParsedPostAttributePictures.Entry(picture);
+        entry.Property(e => e.NoContent).IsModified = true;
+        entry.Property(e => e.UnsupportedContent).IsModified = true;
+        entry.Property(e => e.IsVectorCreated).IsModified = true;
+        entry.Property(e => e.UpdatedAt).IsModified = true;
 
         if (image == null)
         {
