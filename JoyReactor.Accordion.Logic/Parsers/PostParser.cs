@@ -148,6 +148,8 @@ public class PostParser(
         return new PostParserResult()
         {
             Post = parsedPost,
+            PostAttributePictureNumberIds = newPostAttributePictureIds.ToArray(),
+            PostAttributeEmbeddedUniqueIds = newPostAttributeEmbeddedIds.ToArray(),
             NewPostAttributePictureNumberIds = newPostAttributePictureIds.Except(existingPostAttributePictureIds).ToArray(),
             NewPostAttributeEmbeddedUniqueIds = newPostAttributeEmbeddedIds.Except(existingPostAttributeEmbeddedIds).ToArray(),
         };
@@ -203,6 +205,8 @@ public class PostParser(
         return new PostParserResult()
         {
             Post = parsedPost,
+            PostAttributePictureNumberIds = newPostAttributePictureIds.ToArray(),
+            PostAttributeEmbeddedUniqueIds = newPostAttributeEmbeddedIds.ToArray(),
             NewPostAttributePictureNumberIds = newPostAttributePictureIds.ToArray(),
             NewPostAttributeEmbeddedUniqueIds = newPostAttributeEmbeddedIds.ToArray(),
         };

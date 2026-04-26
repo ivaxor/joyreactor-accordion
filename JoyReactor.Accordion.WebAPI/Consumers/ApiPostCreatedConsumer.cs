@@ -15,7 +15,7 @@ public class ApiPostCreatedConsumer(
         if (result == null)
             return;
 
-        var messages = result.NewPostAttributePictureNumberIds
+        var messages = result.PostAttributePictureNumberIds
             .Select(id => new PostPictureCreatedMessage() { AttributeId = id })
             .ToArray();
 

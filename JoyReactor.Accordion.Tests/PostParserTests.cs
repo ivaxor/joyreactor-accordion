@@ -34,6 +34,8 @@ public sealed class PostParserTests
             .Where(pp => pp.NumberId == post1.NumberId)
             .FirstAsync();
 
+        Assert.HasCount(1, post1Result.PostAttributePictureNumberIds);
+        Assert.HasCount(5, post1Result.PostAttributeEmbeddedUniqueIds);
         Assert.HasCount(1, post1Result.NewPostAttributePictureNumberIds);
         Assert.HasCount(5, post1Result.NewPostAttributeEmbeddedUniqueIds);
 
@@ -67,9 +69,13 @@ public sealed class PostParserTests
 
         Assert.AreEqual(parsedPost1.Id, parsedPost2.Id);
 
+        Assert.HasCount(1, post1Result.PostAttributePictureNumberIds);
+        Assert.HasCount(5, post1Result.PostAttributeEmbeddedUniqueIds);
         Assert.HasCount(1, post1Result.NewPostAttributePictureNumberIds);
         Assert.HasCount(5, post1Result.NewPostAttributeEmbeddedUniqueIds);
 
+        Assert.HasCount(1, post1Result.PostAttributePictureNumberIds);
+        Assert.HasCount(5, post1Result.PostAttributeEmbeddedUniqueIds);
         Assert.HasCount(0, post2Result.NewPostAttributePictureNumberIds);
         Assert.HasCount(0, post2Result.NewPostAttributeEmbeddedUniqueIds);
 
@@ -97,6 +103,8 @@ public sealed class PostParserTests
             .Where(pp => pp.NumberId == post1.NumberId)
             .FirstAsync();
 
+        Assert.HasCount(1, post1Result.PostAttributePictureNumberIds);
+        Assert.HasCount(5, post1Result.PostAttributeEmbeddedUniqueIds);
         Assert.HasCount(1, post1Result.NewPostAttributePictureNumberIds);
         Assert.HasCount(5, post1Result.NewPostAttributeEmbeddedUniqueIds);
 
@@ -126,9 +134,13 @@ public sealed class PostParserTests
             .Where(pp => pp.NumberId == post1.NumberId)
             .FirstAsync();
 
+        Assert.HasCount(1, post1Result.PostAttributePictureNumberIds);
+        Assert.HasCount(5, post1Result.PostAttributeEmbeddedUniqueIds);
         Assert.HasCount(1, post1Result.NewPostAttributePictureNumberIds);
         Assert.HasCount(5, post1Result.NewPostAttributeEmbeddedUniqueIds);
 
+        Assert.HasCount(0, post2Result.PostAttributePictureNumberIds);
+        Assert.HasCount(0, post2Result.PostAttributeEmbeddedUniqueIds);
         Assert.HasCount(0, post2Result.NewPostAttributePictureNumberIds);
         Assert.HasCount(0, post2Result.NewPostAttributeEmbeddedUniqueIds);
 
@@ -156,9 +168,13 @@ public sealed class PostParserTests
             .Where(pp => pp.NumberId == post1.NumberId)
             .FirstAsync();
 
+        Assert.HasCount(1, post1Result.PostAttributePictureNumberIds);
+        Assert.HasCount(5, post1Result.PostAttributeEmbeddedUniqueIds);
         Assert.HasCount(1, post1Result.NewPostAttributePictureNumberIds);
         Assert.HasCount(5, post1Result.NewPostAttributeEmbeddedUniqueIds);
 
+        Assert.HasCount(0, post2Result.PostAttributePictureNumberIds);
+        Assert.HasCount(5, post2Result.PostAttributeEmbeddedUniqueIds);
         Assert.HasCount(0, post2Result.NewPostAttributePictureNumberIds);
         Assert.HasCount(0, post2Result.NewPostAttributeEmbeddedUniqueIds);
 
@@ -186,9 +202,13 @@ public sealed class PostParserTests
             .Where(pp => pp.NumberId == post1.NumberId)
             .FirstAsync();
 
+        Assert.HasCount(1, post1Result.PostAttributePictureNumberIds);
+        Assert.HasCount(5, post1Result.PostAttributeEmbeddedUniqueIds);
         Assert.HasCount(1, post1Result.NewPostAttributePictureNumberIds);
         Assert.HasCount(5, post1Result.NewPostAttributeEmbeddedUniqueIds);
 
+        Assert.HasCount(2, post2Result.PostAttributePictureNumberIds);
+        Assert.HasCount(5, post2Result.PostAttributeEmbeddedUniqueIds);
         Assert.HasCount(1, post2Result.NewPostAttributePictureNumberIds);
         Assert.HasCount(0, post2Result.NewPostAttributeEmbeddedUniqueIds);
 
@@ -221,9 +241,13 @@ public sealed class PostParserTests
             .Where(pp => pp.NumberId == post1.NumberId)
             .FirstAsync();
 
+        Assert.HasCount(1, post1Result.PostAttributePictureNumberIds);
+        Assert.HasCount(5, post1Result.PostAttributeEmbeddedUniqueIds);
         Assert.HasCount(1, post1Result.NewPostAttributePictureNumberIds);
         Assert.HasCount(5, post1Result.NewPostAttributeEmbeddedUniqueIds);
 
+        Assert.HasCount(1, post2Result.PostAttributePictureNumberIds);
+        Assert.HasCount(4, post2Result.PostAttributeEmbeddedUniqueIds);
         Assert.HasCount(0, post2Result.NewPostAttributePictureNumberIds);
         Assert.HasCount(0, post2Result.NewPostAttributeEmbeddedUniqueIds);
 
@@ -256,9 +280,13 @@ public sealed class PostParserTests
             .Where(pp => pp.NumberId == post1.NumberId)
             .FirstAsync();
 
+        Assert.HasCount(1, post1Result.PostAttributePictureNumberIds);
+        Assert.HasCount(5, post1Result.PostAttributeEmbeddedUniqueIds);
         Assert.HasCount(1, post1Result.NewPostAttributePictureNumberIds);
         Assert.HasCount(5, post1Result.NewPostAttributeEmbeddedUniqueIds);
 
+        Assert.HasCount(1, post2Result.PostAttributePictureNumberIds);
+        Assert.HasCount(6, post2Result.PostAttributeEmbeddedUniqueIds);
         Assert.HasCount(0, post2Result.NewPostAttributePictureNumberIds);
         Assert.HasCount(1, post2Result.NewPostAttributeEmbeddedUniqueIds);
 
