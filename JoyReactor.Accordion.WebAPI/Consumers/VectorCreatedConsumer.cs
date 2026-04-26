@@ -218,6 +218,9 @@ public class VectorCreatedConsumer(
             .DistinctBy(v => v.Id)
             .ToArray();
 
+        if (votesToClose.Length == 0)
+            return;
+
         foreach (var voteToClose in votesToClose)
         {
             voteToClose.VotingClosed = true;
