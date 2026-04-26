@@ -67,8 +67,8 @@ public class VoteCreatedConsumer(
         using var duplicateMediaStream = await mediaDownloader.DownloadRawAsync(votes.First().DuplicatePicture, context.CancellationToken);
         using var originalMediaStrem = await mediaDownloader.DownloadRawAsync(votes.First().OriginalPicture, context.CancellationToken);
 
-        var duplicateMedia = new InputMediaPhoto(InputFile.FromStream(duplicateMediaStream)) { HasSpoiler = votes.First().Nsfw };
-        var originalMedia = new InputMediaPhoto(InputFile.FromStream(originalMediaStrem)) { HasSpoiler = votes.First().Nsfw };
+        var duplicateMedia = CreateInputMedia(duplicateMediaStream, votes.First().DuplicatePicture, votes.First().Nsfw);
+        var originalMedia = CreateInputMedia(originalMediaStrem, votes.First().OriginalPicture, votes.First().Nsfw);
 
         var mediaGroupMessages = await telegramBotClient.SendMediaGroup(
             ChatId,
@@ -106,6 +106,24 @@ public class VoteCreatedConsumer(
             entry.Property(e => e.UpdatedAt).IsModified = true;
         }
         await sqlDatabaseContext.SaveChangesAsync(context.CancellationToken);
+    }
+
+    protected IAlbumInputMedia CreateInputMedia(Stream stream, ParsedPostAttributePicture picture, bool nsfw)
+    {
+        var file = InputFile.FromStream(stream);
+
+        return picture.ImageType switch
+        {
+            ParsedPostAttributePictureType.PNG => new InputMediaPhoto(file) { HasSpoiler = nsfw },
+            ParsedPostAttributePictureType.JPEG => new InputMediaPhoto(file) { HasSpoiler = nsfw },
+            ParsedPostAttributePictureType.GIF => new InputMediaVideo(file) { HasSpoiler = nsfw },
+            ParsedPostAttributePictureType.BMP => new InputMediaPhoto(file) { HasSpoiler = nsfw },
+            ParsedPostAttributePictureType.TIFF => new InputMediaPhoto(file) { HasSpoiler = nsfw },
+            ParsedPostAttributePictureType.MP4 => new InputMediaVideo(file) { HasSpoiler = nsfw },
+            ParsedPostAttributePictureType.WEBM => new InputMediaVideo(file) { HasSpoiler = nsfw },
+            ParsedPostAttributePictureType.WEBP => new InputMediaPhoto(file) { HasSpoiler = nsfw },
+            _ => throw new NotImplementedException(),
+        };
     }
 
     public static string GeneratePostText(IEnumerable<DuplicatePictureVoteExtended> votes)
