@@ -141,11 +141,11 @@ public class SqlVectorCleaner(
                     entry.Property(p => p.IsVectorCheckedForDuplicates).IsModified = true;
                     entry.Property(p => p.UpdatedAt).IsModified = true;
                 }
+                await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
 
                 var messages = updatedPostAttributes.Select(ppap => new PostPictureCreatedMessage() { AttributeId = ppap.AttributeId }).ToArray();
                 await publishEndpoint.PublishBatch(messages, cancellationToken);
 
-                await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
                 logger.LogInformation("Updated {SqlCount} SQL record(s).", updatedPostAttributes.Count);
             }
 
