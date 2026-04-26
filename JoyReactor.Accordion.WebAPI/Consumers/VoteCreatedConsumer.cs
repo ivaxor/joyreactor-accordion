@@ -26,8 +26,11 @@ public class VoteCreatedConsumer(
     public static readonly ParsedPostAttributePictureType[] AllowedImageTypes = [
         ParsedPostAttributePictureType.PNG,
         ParsedPostAttributePictureType.JPEG,
+        ParsedPostAttributePictureType.GIF,
         ParsedPostAttributePictureType.BMP,
         ParsedPostAttributePictureType.TIFF,
+        ParsedPostAttributePictureType.MP4,
+        ParsedPostAttributePictureType.WEBM,
         ParsedPostAttributePictureType.WEBP,
     ];
 
