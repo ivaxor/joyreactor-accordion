@@ -24,6 +24,7 @@ export class VotePager implements OnInit {
   page = signal<number>(0);
   pages = signal<number>(0);
   votes = signal<VoteResponse[] | null>(null);
+  openedTabs = new Map<string, Window[]>();
 
   ngOnInit(): void {
     this.apiKeySet = this.apiKeyService.get() !== null;
@@ -51,8 +52,14 @@ export class VotePager implements OnInit {
     const originalUrl = this.joyReactorMediaMetadataService.getPostUrl(vote.originalPostId);
     const duplicateUrl = this.joyReactorMediaMetadataService.getPostUrl(vote.duplicatePostId);
 
-    window.open(duplicateUrl, "_blank");
-    window.open(originalUrl, "_blank");
+    const originalTab = window.open(duplicateUrl, "_blank");
+    const duplicateTab = window.open(originalUrl, "_blank");
+
+    const tabs: Window[] = [];
+    if (originalTab) tabs.push(originalTab);
+    if (duplicateTab) tabs.push(duplicateTab);
+
+    this.openedTabs.set(vote.id, tabs);
   }
 
   close(vote: VoteResponse): void {
@@ -60,7 +67,10 @@ export class VotePager implements OnInit {
       return;
 
     this.voteService.close(vote)
-      .subscribe(() => this.loadVotes());
+      .subscribe(() => {
+        this.closeTabsForVote(vote.id);
+        this.loadVotes();
+      });
   }
 
   closeAll(duplicatePostId: number): void {
@@ -68,7 +78,18 @@ export class VotePager implements OnInit {
       return;
 
     this.voteService.closeAll(duplicatePostId)
-      .subscribe(() => this.loadVotes());
+      .subscribe(() => {
+        this.votes()?.filter(v => v.duplicatePostId === duplicatePostId).forEach(v => this.closeTabsForVote(v.id));
+        this.loadVotes();
+      });
+  }
+
+  private closeTabsForVote(voteId: string): void {
+    const tabs = this.openedTabs.get(voteId);
+    if (tabs) {
+      tabs.filter(t => !t.closed).forEach(t => t.close());
+      this.openedTabs.delete(voteId);
+    }
   }
 
   private loadVotes(): void {
