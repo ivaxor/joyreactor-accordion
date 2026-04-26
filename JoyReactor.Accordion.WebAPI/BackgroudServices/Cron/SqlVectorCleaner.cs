@@ -2,7 +2,9 @@
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using JoyReactor.Accordion.Logic.Database.Vector;
 using JoyReactor.Accordion.Logic.Database.Vector.Entities;
+using JoyReactor.Accordion.Logic.MQ.Messages;
 using JoyReactor.Accordion.WebAPI.Models;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Qdrant.Client;
@@ -27,8 +29,9 @@ public class SqlVectorCleaner(
     protected override async Task RunAsync(CancellationToken cancellationToken)
     {
         await using var serviceScope = serviceScopeFactory.CreateAsyncScope();
-        var qdrantClient = serviceScope.ServiceProvider.GetRequiredService<IQdrantClient>();
         using var sqlDatabaseContext = serviceScope.ServiceProvider.GetRequiredService<SqlDatabaseContext>();
+        var qdrantClient = serviceScope.ServiceProvider.GetRequiredService<IQdrantClient>();
+        var publishEndpoint = serviceScope.ServiceProvider.GetRequiredService<IPublishEndpoint>();
 
         var fromAttributeId = 0;
         var toAttributeId = BatchSize;
@@ -110,18 +113,9 @@ public class SqlVectorCleaner(
                         continue;
 
                     oldContentVersionPointIds.Add(latestContentVersionRetrivedPoint.PointId);
-                    postAttribute.IsVectorCreated = false;
-                    postAttribute.IsVectorCheckedForDuplicates = false;
-                    postAttribute.UpdatedAt = DateTime.UtcNow;
-                    updatedPostAttributes.Add(postAttribute);
                 }
-                else
-                {
-                    postAttribute.IsVectorCreated = false;
-                    postAttribute.IsVectorCheckedForDuplicates = false;
-                    postAttribute.UpdatedAt = DateTime.UtcNow;
-                    updatedPostAttributes.Add(postAttribute);
-                }
+
+                updatedPostAttributes.Add(postAttribute);
             }
 
             if (oldContentVersionPointIds.Count > 0)
@@ -138,12 +132,18 @@ public class SqlVectorCleaner(
                 foreach (var updatedPostAttribute in updatedPostAttributes)
                 {
                     updatedPostAttribute.Post = null;
+                    updatedPostAttribute.IsVectorCreated = false;
+                    updatedPostAttribute.IsVectorCheckedForDuplicates = false;
+                    updatedPostAttribute.UpdatedAt = DateTime.UtcNow;
 
                     var entry = sqlDatabaseContext.ParsedPostAttributePictures.Entry(updatedPostAttribute);
                     entry.Property(p => p.IsVectorCreated).IsModified = true;
                     entry.Property(p => p.IsVectorCheckedForDuplicates).IsModified = true;
                     entry.Property(p => p.UpdatedAt).IsModified = true;
                 }
+
+                var messages = updatedPostAttributes.Select(ppap => new PostPictureCreatedMessage() { AttributeId = ppap.AttributeId }).ToArray();
+                await publishEndpoint.PublishBatch(messages, cancellationToken);
 
                 await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
                 logger.LogInformation("Updated {SqlCount} SQL record(s).", updatedPostAttributes.Count);

@@ -88,7 +88,7 @@ public class PostPictureCreatedConsumer(
 
             picture.NoContent = false;
             picture.UnsupportedContent = false;
-            picture.IsVectorCreated = true;            
+            picture.IsVectorCreated = true;
 
             return image;
         }
@@ -125,19 +125,19 @@ public class PostPictureCreatedConsumer(
 
             return null;
         }
-        catch (InvalidImageContentException ex)
+        catch (InvalidImageContentException)
         {
             picture.UnsupportedContent = true;
             logger.LogWarning("Failed to create image for {PictureAttributeId} post attribute picture due to invalid image content.", picture.AttributeId);
             return null;
         }
-        catch (UnknownImageFormatException ex)
+        catch (UnknownImageFormatException)
         {
             picture.UnsupportedContent = true;
             logger.LogWarning("Failed to create image for {PictureAttributeId} post attribute picture due to unknown image format.", picture.AttributeId);
             return null;
         }
-        catch (NotSupportedException ex)
+        catch (NotSupportedException)
         {
             picture.UnsupportedContent = true;
             logger.LogWarning("Failed to create image for {PictureAttributeId} post attribute picture due to unsupported content.", picture.AttributeId);
