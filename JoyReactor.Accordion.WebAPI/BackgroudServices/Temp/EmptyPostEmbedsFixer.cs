@@ -14,7 +14,7 @@ public class EmptyPostEmbedsFixer(
     : RobustBackgroundService(settings, logger)
 {
     protected override bool IsIndefinite => false;
-    protected override TimeSpan SubsequentRunDelay => TimeSpan.FromDays(1);
+    protected override TimeSpan SubsequentRunDelay => TimeSpan.FromMinutes(1);
 
     protected override async Task RunAsync(CancellationToken cancellationToken)
     {
