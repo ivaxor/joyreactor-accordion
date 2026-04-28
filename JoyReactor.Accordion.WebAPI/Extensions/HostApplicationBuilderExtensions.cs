@@ -16,6 +16,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.ML.OnnxRuntime;
 using Qdrant.Client;
 using Qdrant.Client.Grpc;
+using RabbitMQ.Client;
 using Serilog;
 using System.Threading.RateLimiting;
 
@@ -139,7 +140,7 @@ public static class HostApplicationBuilderExtensions
             {
                 var rabbitMqSetting = builder.Configuration.GetSection(nameof(RabbitMqSettings)).Get<RabbitMqSettings>();
 
-                rabbitConfigurator.Host(rabbitMqSetting.Host, "/", rabbitHostConfigurator =>
+                rabbitConfigurator.Host(rabbitMqSetting.Host, rabbitMqSetting.VirtualHost, rabbitHostConfigurator =>
                 {
                     rabbitHostConfigurator.Username(rabbitMqSetting.UserName);
                     rabbitHostConfigurator.Password(rabbitMqSetting.Password);
@@ -156,7 +157,7 @@ public static class HostApplicationBuilderExtensions
             if (consumersSettings.ConsumersEnabled[nameof(VoteCreatedConsumer)]) busConfigurator.AddConsumer<VoteCreatedConsumer, VoteCreatedConsumerDefinition>();
         });
     }
-    
+
     public static void AddInferenceSession(this IHostApplicationBuilder builder)
     {
         builder.Services.AddSingleton(serviceProvider =>
@@ -215,6 +216,19 @@ public static class HostApplicationBuilderExtensions
         builder.Services
             .AddHealthChecks()
             .AddDbContextCheck<SqlDatabaseContext>("SqlDatabase")
-            .AddCheck<VectorDatabaseContextHealthCheck>("VectorDatabase");
+            .AddCheck<VectorDatabaseContextHealthCheck>("VectorDatabase")
+            .AddRabbitMQ(async (serviceProvider) =>
+            {
+                var rabbitMqSetting = serviceProvider.GetRequiredService<IOptions<RabbitMqSettings>>();
+                var factory = new ConnectionFactory
+                {
+                    Uri = new Uri(rabbitMqSetting.Value.Host),
+                    UserName = rabbitMqSetting.Value.UserName,
+                    Password = rabbitMqSetting.Value.Password,
+                    VirtualHost = rabbitMqSetting.Value.VirtualHost,
+                };
+                return await factory.CreateConnectionAsync();
+            },
+            "MQ");
     }
 }
