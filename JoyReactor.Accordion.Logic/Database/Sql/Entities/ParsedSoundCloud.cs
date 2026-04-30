@@ -26,6 +26,7 @@ public partial record ParsedSoundCloud : ISqlUpdatedAtEntity, IParsedAttributeEm
     public string UniqueId => $"{nameof(ParsedSoundCloud)}:{UrlPath}";
 
     public string UrlPath { get; set; }
+    public string PermaLink { get; set; }
 
     public virtual ParsedPostAttributeEmbedded PostAttributeEmbedded { get; set; }
 
@@ -50,6 +51,9 @@ public class ParsedSoundCloudEntityTypeConfiguration : IEntityTypeConfiguration<
         builder
             .Property(e => e.UrlPath)
             .IsRequired(true);
+
+        builder
+            .HasIndex(e => e.PermaLink);
 
         builder
             .HasOne(e => e.PostAttributeEmbedded)

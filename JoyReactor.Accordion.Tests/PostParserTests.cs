@@ -12,7 +12,7 @@ public sealed class PostParserTests
     [TestInitialize]
     public async Task TestInitializeAsync()
     {
-        SharedDependencies = await SharedDependencyFactory.CreateAsync(Guid.NewGuid());
+        SharedDependencies = await SharedDependencyFactory.CreateAsync();
     }
 
     [TestCleanup]

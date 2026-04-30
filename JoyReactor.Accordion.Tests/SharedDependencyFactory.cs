@@ -5,24 +5,39 @@ using JoyReactor.Accordion.Logic.Database.Sql.Entities;
 using JoyReactor.Accordion.Logic.Media;
 using JoyReactor.Accordion.Logic.Onnx;
 using JoyReactor.Accordion.Logic.Parsers;
+using JoyReactor.Accordion.Logic.SoundCloud;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Reflection;
 
 namespace JoyReactor.Accordion.Tests;
 
 public static class SharedDependencyFactory
 {
-    public static async Task<SharedDependencies> CreateAsync(Guid runId)
+    public static async Task<SharedDependencies> CreateAsync()
     {
         var services = new ServiceCollection();
 
         services.AddSingleton<ILoggerFactory, NullLoggerFactory>();
         services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
 
+        var userAgent = $"JoyReactor.Accordion/{Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3)} (Bot; +https://github.com/ivaxor/joyreactor-accordion)";
+
         services.AddHttpClient();
+        services
+            .AddHttpClient<IMediaDownloader, MediaDownloader>(httpClient =>
+            {
+                httpClient.DefaultRequestHeaders.Add("Referer", "https://joyreactor.cc/");
+                httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
+            });
+        services
+            .AddHttpClient<ISoundCloudApiClient, SoundCloudApiClient>(httpClient =>
+            {
+                httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
+            });
 
         var sqliteConnection = new SqliteConnection("DataSource=:memory:");
         services.AddDbContext<SqlDatabaseContext>(options =>
@@ -58,6 +73,9 @@ public static class SharedDependencyFactory
         services.AddSingleton<IMediaReducer, MediaReducer>();
         services.AddSingleton<IOnnxVectorConverter, OnnxVectorConverter>();
         services.AddSingleton<IChangedPostClient, ChangedPostClient>();
+        services.AddSingleton<ISoundCloudApiClient, SoundCloudApiClient>();
+
+        services.AddMemoryCache();
 
         var serviceProvider = services.BuildServiceProvider();
 
@@ -84,6 +102,7 @@ public record SharedDependencies : IAsyncDisposable
     public IMediaReducer MediaReducer => ServiceProvider.GetRequiredService<IMediaReducer>();
     public IOnnxVectorConverter OnnxVectorConverter => ServiceProvider.GetRequiredService<IOnnxVectorConverter>();
     public IChangedPostClient ChangedPostClient => ServiceProvider.GetRequiredService<IChangedPostClient>();
+    public ISoundCloudApiClient SoundCloudApiClient => ServiceProvider.GetRequiredService<ISoundCloudApiClient>();
 
     public Api Api => SqlDatabaseContext.Apis.First();
 

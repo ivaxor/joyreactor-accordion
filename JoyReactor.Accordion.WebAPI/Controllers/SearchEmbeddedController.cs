@@ -1,4 +1,5 @@
 ﻿using JoyReactor.Accordion.Logic.Database.Sql;
+using JoyReactor.Accordion.Logic.SoundCloud;
 using JoyReactor.Accordion.WebAPI.Models.Requests;
 using JoyReactor.Accordion.WebAPI.Models.Responses;
 using Microsoft.AspNetCore.Authorization;
@@ -10,7 +11,9 @@ namespace JoyReactor.Accordion.WebAPI.Controllers;
 [Route("search/embedded")]
 [ApiController]
 [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
-public class SearchEmbeddedController(SqlDatabaseContext sqlDatabaseContext)
+public class SearchEmbeddedController(
+    ISoundCloudApiClient soundCloudApiClient,
+    SqlDatabaseContext sqlDatabaseContext)
     : ControllerBase
 {
     [HttpPost]
@@ -21,35 +24,73 @@ public class SearchEmbeddedController(SqlDatabaseContext sqlDatabaseContext)
         [FromBody] SearchEmbeddedRequest request,
         CancellationToken cancellationToken)
     {
-        var entityId = request.Type switch
+        var entityId = Guid.Empty;
+        switch (request.Type)
         {
-            SearchEmbeddedType.BandCamp => (await sqlDatabaseContext.ParsedBandCamps.FirstOrDefaultAsync(bandCamp => bandCamp.UrlPath == request.Text, cancellationToken))?.Id,
-            SearchEmbeddedType.Coub => (await sqlDatabaseContext.ParsedCoubs.FirstOrDefaultAsync(coub => coub.VideoId == request.Text, cancellationToken))?.Id,
-            SearchEmbeddedType.SoundCloud => (await sqlDatabaseContext.ParsedSoundClouds.FirstOrDefaultAsync(soundCloud => soundCloud.UrlPath == request.Text, cancellationToken))?.Id,
-            SearchEmbeddedType.Vimeo => (await sqlDatabaseContext.ParsedVimeos.FirstOrDefaultAsync(vimeo => vimeo.VideoId == request.Text, cancellationToken))?.Id,
-            SearchEmbeddedType.YouTube => (await sqlDatabaseContext.ParsedYouTubes.FirstOrDefaultAsync(youTube => youTube.VideoId == request.Text, cancellationToken))?.Id,
-            _ => throw new NotImplementedException()
-        };
-        if (entityId == null)
+            case SearchEmbeddedType.BandCamp:
+                entityId = await sqlDatabaseContext.ParsedBandCamps
+                    .AsNoTracking()
+                    .Where(bandCamp => bandCamp.UrlPath == request.Text)
+                    .Select(bc => bc.Id)
+                    .FirstOrDefaultAsync(cancellationToken);
+                break;
+
+            case SearchEmbeddedType.Coub:
+                entityId = await sqlDatabaseContext.ParsedCoubs
+                    .AsNoTracking()
+                    .Where(c => c.VideoId == request.Text)
+                    .Select(c => c.Id)
+                    .FirstOrDefaultAsync(cancellationToken);
+                break;
+
+            case SearchEmbeddedType.SoundCloud:
+                var soundCloudResponse = await soundCloudApiClient.GetByPermaLinkAsync(request.Text, cancellationToken);
+                if (soundCloudResponse == null)
+                    break;
+
+                entityId = await sqlDatabaseContext.ParsedSoundClouds
+                    .AsNoTracking()
+                    .Where(sc => sc.UrlPath == $"{soundCloudResponse.Kind}s/{soundCloudResponse.Id}")
+                    .Select(sc => sc.Id)
+                    .FirstOrDefaultAsync(cancellationToken);
+                break;
+
+            case SearchEmbeddedType.Vimeo:
+                entityId = await sqlDatabaseContext.ParsedVimeos
+                    .AsNoTracking()
+                    .Where(v => v.VideoId == request.Text)
+                    .Select(v => v.Id)
+                    .FirstOrDefaultAsync(cancellationToken);
+                break;
+
+            case SearchEmbeddedType.YouTube:
+                entityId = await sqlDatabaseContext.ParsedYouTubes
+                    .AsNoTracking()
+                    .Where(yt => yt.VideoId == request.Text)
+                    .Select(yt => yt.Id)
+                    .FirstOrDefaultAsync(cancellationToken);
+                break;
+        }
+        if (entityId == Guid.Empty)
         {
             var emptyResponse = new SearchEmbeddedResponse(Enumerable.Empty<Guid>());
             return Ok(emptyResponse);
         }
 
-        var query = sqlDatabaseContext.ParsedPostAttributeEmbeds.AsQueryable();
+        var query = sqlDatabaseContext.ParsedPostAttributeEmbeds.AsNoTracking();
         query = request.Type switch
         {
-            SearchEmbeddedType.BandCamp => query.Where(x => x.BandCampId == entityId),
-            SearchEmbeddedType.Coub => query.Where(coub => coub.CoubId == entityId),
-            SearchEmbeddedType.SoundCloud => query.Where(soundCloud => soundCloud.SoundCloudId == entityId),
-            SearchEmbeddedType.Vimeo => query.Where(vimeo => vimeo.VimeoId == entityId),
-            SearchEmbeddedType.YouTube => query.Where(youTube => youTube.YouTubeId == entityId),
-            _ => query
+            SearchEmbeddedType.BandCamp => query.Where(ppae => ppae.BandCampId == entityId),
+            SearchEmbeddedType.Coub => query.Where(ppae => ppae.CoubId == entityId),
+            SearchEmbeddedType.SoundCloud => query.Where(ppae => ppae.SoundCloudId == entityId),
+            SearchEmbeddedType.Vimeo => query.Where(ppae => ppae.VimeoId == entityId),
+            SearchEmbeddedType.YouTube => query.Where(ppae => ppae.YouTubeId == entityId),
+            _ => throw new NotImplementedException(),
         };
 
         var postIds = await query
-            .Select(postAttribute => postAttribute.PostId)
-            .Order()
+            .OrderBy(ppae => ppae.PostId)
+            .Select(ppae => ppae.PostId)
             .Take(request.Limit)
             .ToArrayAsync(cancellationToken);
 
