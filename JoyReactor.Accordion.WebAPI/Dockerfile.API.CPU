@@ -3,7 +3,7 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 USER root
-RUN apk add --no-cache ffmpeg icu-libs
+RUN apk add --no-cache ffmpeg icu-libs gcompat
 USER $APP_UID
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
