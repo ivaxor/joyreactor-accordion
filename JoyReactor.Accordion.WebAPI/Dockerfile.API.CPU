@@ -1,21 +1,23 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS base
+﻿﻿FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 USER root
-RUN apk add --no-cache ffmpeg icu-libs gcompat
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ffmpeg && \
+    rm -rf /var/lib/apt/lists/*
 USER $APP_UID
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY ["JoyReactor.Accordion.WebAPI/JoyReactor.Accordion.WebAPI.csproj", "JoyReactor.Accordion.WebAPI/"]
 COPY ["JoyReactor.Accordion.Logic/JoyReactor.Accordion.Logic.csproj", "JoyReactor.Accordion.Logic/"]
-RUN dotnet restore "JoyReactor.Accordion.WebAPI/JoyReactor.Accordion.WebAPI.csproj" -r linux-musl-x64
+RUN dotnet restore "JoyReactor.Accordion.WebAPI/JoyReactor.Accordion.WebAPI.csproj"
 COPY . .
 WORKDIR "/src/JoyReactor.Accordion.WebAPI"
 RUN dotnet publish "JoyReactor.Accordion.WebAPI.csproj" \
     -c Release \
-    -r linux-musl-x64 \
+    -r linux-x64 \
     --self-contained false \
     -o /app/publish \
     /p:OnnxRuntime=CPU \
@@ -29,4 +31,3 @@ ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 ENV LC_ALL=en_US.UTF-8
 ENV LANG=en_US.UTF-8
 COPY --from=build /app/publish .
-ENTRYPOINT ["dotnet", "JoyReactor.Accordion.WebAPI.dll"]
