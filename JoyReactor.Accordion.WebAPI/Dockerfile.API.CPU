@@ -31,3 +31,4 @@ ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 ENV LC_ALL=en_US.UTF-8
 ENV LANG=en_US.UTF-8
 COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "JoyReactor.Accordion.WebAPI.dll"]
