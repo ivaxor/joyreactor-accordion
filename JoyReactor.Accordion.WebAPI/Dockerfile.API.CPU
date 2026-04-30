@@ -3,21 +3,19 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 USER root
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends ffmpeg && \
-    rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache ffmpeg icu-libs
 USER $APP_UID
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 WORKDIR /src
 COPY ["JoyReactor.Accordion.WebAPI/JoyReactor.Accordion.WebAPI.csproj", "JoyReactor.Accordion.WebAPI/"]
 COPY ["JoyReactor.Accordion.Logic/JoyReactor.Accordion.Logic.csproj", "JoyReactor.Accordion.Logic/"]
-RUN dotnet restore "JoyReactor.Accordion.WebAPI/JoyReactor.Accordion.WebAPI.csproj"
+RUN dotnet restore "JoyReactor.Accordion.WebAPI/JoyReactor.Accordion.WebAPI.csproj" -r linux-musl-x64
 COPY . .
 WORKDIR "/src/JoyReactor.Accordion.WebAPI"
 RUN dotnet publish "JoyReactor.Accordion.WebAPI.csproj" \
     -c Release \
-    -r linux-x64 \
+    -r linux-musl-x64 \
     --self-contained false \
     -o /app/publish \
     /p:OnnxRuntime=CPU \
