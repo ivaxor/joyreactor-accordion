@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace JoyReactor.Accordion.Logic.SoundCloud;
 
-public class SoundCloudBaseConverter : JsonConverter<SoundCloudBaseResponse>
+public class SoundCloudBaseJsonConverter : JsonConverter<SoundCloudBaseResponse>
 {
     public override SoundCloudBaseResponse Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {

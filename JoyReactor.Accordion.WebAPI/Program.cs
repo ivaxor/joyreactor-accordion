@@ -1,4 +1,5 @@
 ﻿using JoyReactor.Accordion.Logic.ApiClient;
+using JoyReactor.Accordion.Logic.BandCamp;
 using JoyReactor.Accordion.Logic.Crawlers;
 using JoyReactor.Accordion.Logic.Media;
 using JoyReactor.Accordion.Logic.Onnx;
@@ -55,6 +56,11 @@ builder.Services
         httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
     });
 builder.Services
+    .AddHttpClient<IBandCampApiClient, BandCampApiClient>(httpClient =>
+    {
+        httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
+    });
+builder.Services
     .AddHttpClient<ISoundCloudApiClient, SoundCloudApiClient>(httpClient =>
     {
         httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
@@ -76,6 +82,7 @@ builder.Services.AddScoped<IPostParser, PostParser>();
 builder.Services.AddSingleton<IMediaReducer, MediaReducer>();
 builder.Services.AddSingleton<IOnnxVectorConverter, OnnxVectorConverter>();
 builder.Services.AddSingleton<IChangedPostClient, ChangedPostClient>();
+builder.Services.AddSingleton<IBandCampApiClient, BandCampApiClient>();
 builder.Services.AddSingleton<ISoundCloudApiClient, SoundCloudApiClient>();
 
 builder.Services.AddHostedService<PostPictureCreatedCatchUp>();

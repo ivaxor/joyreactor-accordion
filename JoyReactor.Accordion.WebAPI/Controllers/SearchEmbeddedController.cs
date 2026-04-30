@@ -1,4 +1,5 @@
-﻿using JoyReactor.Accordion.Logic.Database.Sql;
+﻿using JoyReactor.Accordion.Logic.BandCamp;
+using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.SoundCloud;
 using JoyReactor.Accordion.WebAPI.Models.Requests;
 using JoyReactor.Accordion.WebAPI.Models.Responses;
@@ -12,6 +13,7 @@ namespace JoyReactor.Accordion.WebAPI.Controllers;
 [ApiController]
 [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
 public class SearchEmbeddedController(
+    IBandCampApiClient bandCampApiClient,
     ISoundCloudApiClient soundCloudApiClient,
     SqlDatabaseContext sqlDatabaseContext)
     : ControllerBase
@@ -28,9 +30,20 @@ public class SearchEmbeddedController(
         switch (request.Type)
         {
             case SearchEmbeddedType.BandCamp:
+                var bandCampResponse = await bandCampApiClient.GetInfoAsync(request.Text, cancellationToken);
+                if (bandCampResponse == null)
+                    break;
+
+                var type = bandCampResponse.Type switch
+                {
+                    "a" => "album",
+                    "t" => "track",
+                    _ => throw new NotImplementedException(),
+                };
+
                 entityId = await sqlDatabaseContext.ParsedBandCamps
                     .AsNoTracking()
-                    .Where(bandCamp => bandCamp.UrlPath == request.Text)
+                    .Where(bandCamp => bandCamp.UrlPath == $"{type}={bandCampResponse.Id}")
                     .Select(bc => bc.Id)
                     .FirstOrDefaultAsync(cancellationToken);
                 break;

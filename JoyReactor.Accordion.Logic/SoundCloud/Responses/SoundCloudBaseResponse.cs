@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace JoyReactor.Accordion.Logic.SoundCloud.Responses;
 
-[JsonConverter(typeof(SoundCloudBaseConverter))]
+[JsonConverter(typeof(SoundCloudBaseJsonConverter))]
 public abstract record SoundCloudBaseResponse : ISoundCloudResponse
 {
     [JsonPropertyName("id")]

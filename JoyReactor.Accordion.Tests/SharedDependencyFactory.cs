@@ -1,4 +1,5 @@
 ﻿using JoyReactor.Accordion.Logic.ApiClient;
+using JoyReactor.Accordion.Logic.BandCamp;
 using JoyReactor.Accordion.Logic.Crawlers;
 using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
@@ -31,6 +32,11 @@ public static class SharedDependencyFactory
             .AddHttpClient<IMediaDownloader, MediaDownloader>(httpClient =>
             {
                 httpClient.DefaultRequestHeaders.Add("Referer", "https://joyreactor.cc/");
+                httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
+            });
+        services
+            .AddHttpClient<IBandCampApiClient, BandCampApiClient>(httpClient =>
+            {
                 httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
             });
         services
@@ -102,6 +108,7 @@ public record SharedDependencies : IAsyncDisposable
     public IMediaReducer MediaReducer => ServiceProvider.GetRequiredService<IMediaReducer>();
     public IOnnxVectorConverter OnnxVectorConverter => ServiceProvider.GetRequiredService<IOnnxVectorConverter>();
     public IChangedPostClient ChangedPostClient => ServiceProvider.GetRequiredService<IChangedPostClient>();
+    public IBandCampApiClient BandCampApiClient => ServiceProvider.GetRequiredService<IBandCampApiClient>();
     public ISoundCloudApiClient SoundCloudApiClient => ServiceProvider.GetRequiredService<ISoundCloudApiClient>();
 
     public Api Api => SqlDatabaseContext.Apis.First();
