@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener, inject, Output, signal, ViewChild } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { BytesPipe } from '../../../pipes/bytes-pipe';
 import { SearchMediaService } from '../../../services/search-media-service/search-media-service';
 import { isIP } from 'is-ip';
@@ -8,30 +8,36 @@ import { catchError, EMPTY, tap } from 'rxjs';
 
 @Component({
   selector: 'app-search-media',
-  imports: [CommonModule, FormsModule, BytesPipe],
+  imports: [CommonModule, ReactiveFormsModule, BytesPipe],
   templateUrl: './search-media.html',
   styleUrl: './search-media.scss',
 })
 export class SearchMedia {
+  private formBuilder = inject(FormBuilder);
   private changeDetector = inject(ChangeDetectorRef);
   private searchMediaService = inject(SearchMediaService);
+
   @Output() onFileSelected = new EventEmitter<File>();
   @ViewChild("fileInput", { read: ElementRef }) fileInput!: ElementRef<HTMLInputElement>;
 
   allowedTypes: string[] = ['image/png', 'image/jpeg', 'image/gif', 'image/bmp', 'image/tiff', 'video/mp4', 'video/webm', 'image/webp'];
   isDragging: boolean = false;
-  file: File | null = null;
-  url: string = '';
   searching: boolean = false;
   isDuplicates = signal<number[]>([]);
   errorMessage = signal<string>('');
 
+  searchForm = this.formBuilder.group({
+    file: [null as File | null],
+    url: [''],
+  });
+  get file() { return this.searchForm.get('file')?.value; }
+  get url() { return this.searchForm.get('url')?.value; }
+
   onFileChange(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      this.file = input.files[0];
+      this.searchForm.patchValue({ file: input.files[0], url: '' });
       this.fileInput.nativeElement.value = '';
-      this.url = '';
     }
   }
 
@@ -43,9 +49,8 @@ export class SearchMedia {
     if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
       const file = event.dataTransfer.files[0];
       if (this.allowedTypes.some(allowedType => allowedType === file.type)) {
-        this.file = file;
+        this.searchForm.patchValue({ file, url: '' });
         this.fileInput.nativeElement.value = '';
-        this.url = '';
       }
     }
   }
@@ -62,17 +67,18 @@ export class SearchMedia {
       if (!this.allowedTypes.includes(event.clipboardData.items[i].type))
         continue;
 
-      this.file = event.clipboardData.items[i].getAsFile();
+      this.searchForm.patchValue({ file: event.clipboardData.items[i].getAsFile(), url: '' });
       this.fileInput.nativeElement.value = '';
-      this.url = '';
       break;
     }
   }
 
-  onUrlChange(event: Event): void {
-    this.file = null;
+  onUrlChange(): void {
+    const currentUrl = this.searchForm.get('url')?.value || '';
+    this.searchForm.patchValue(
+      { file: null, url: decodeURIComponent(currentUrl) },
+      { emitEvent: false });
     this.fileInput.nativeElement.value = '';
-    this.url = decodeURIComponent(this.url);
   }
 
   isSearchDisabled(): boolean {
@@ -108,6 +114,12 @@ export class SearchMedia {
     }
   }
 
+  private resetForm() {
+    this.searchForm.reset({ file: null, url: '' });
+    this.fileInput.nativeElement.value = '';
+    this.searching = false;
+  }
+
   searchUpload(threshold: number): void {
     this.errorMessage.set('');
     this.searching = true;
@@ -121,10 +133,7 @@ export class SearchMedia {
           return EMPTY;
         }),
         tap(response => {
-          this.file = null;
-          this.fileInput.nativeElement.value = '';
-          this.url = '';
-          this.searching = false;
+          this.resetForm();
           if (response.length > 0) {
             this.isDuplicates.set(response.map((_, i) => i));
             setTimeout(() => this.isDuplicates.set([]), 2500 * response.length);
@@ -136,8 +145,7 @@ export class SearchMedia {
   searchDownload(threshold: number): void {
     this.errorMessage.set('');
     this.searching = true;
-    const url = this.url;
-    this.searchMediaService.searchDownload(this.url, threshold)
+    this.searchMediaService.searchDownload(this.url!, threshold)
       .pipe(
         catchError(error => {
           this.errorMessage.set(Object.keys(error.error).flatMap(e => error.error[e] as string[]).join('\n'));
@@ -146,10 +154,7 @@ export class SearchMedia {
           return EMPTY;
         }),
         tap(response => {
-          this.file = null;
-          this.fileInput.nativeElement.value = '';
-          this.url = '';
-          this.searching = false;
+          this.resetForm();
           if (response.length > 0) {
             this.isDuplicates.set(response.map((_, i) => i));
             setTimeout(() => this.isDuplicates.set([]), 2500 * response.length);
