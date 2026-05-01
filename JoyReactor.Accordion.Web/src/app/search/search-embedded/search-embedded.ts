@@ -79,7 +79,7 @@ export class SearchEmbedded implements OnInit, OnDestroy {
 
       if (url.host.endsWith('bandcamp.com')) {
         if (url.pathname.startsWith('/album/') || url.pathname.startsWith('/track/') || url.pathname.startsWith('/users/') || url.pathname.startsWith('/tracks/') || url.pathname.startsWith('/playlists/')) {
-          const text = url.pathname.replace('/', '');
+          const text = `${url.origin}${url.pathname}`;
           return ({ type: SearchEmbeddedType.BandCamp, text, limit: 3 });
         }
       } else if (url.host === 'coub.com') {
@@ -91,7 +91,7 @@ export class SearchEmbedded implements OnInit, OnDestroy {
           return ({ type: SearchEmbeddedType.Coub, text, limit: 3 });
         }
       } else if (url.host === 'soundcloud.com') {
-        const text = url.pathname.replace('/', '');
+        const text = `${url.origin}${url.pathname}`;
         return ({ type: SearchEmbeddedType.SoundCloud, text, limit: 3 });
       } else if (url.host.endsWith('vimeo.com')) {
         if (url.host === 'vimeo.com') {

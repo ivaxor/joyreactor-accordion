@@ -19,7 +19,7 @@ export class SearchEmbeddedHistoryService extends Dexie {
     this.version(2).stores({
       searchMediaHistory: '++id, createdAt',
       searchEmbeddedHistory: '++id, createdAt',
-     });
+    });
     this.searchEmbeddedHistory = this.table('searchEmbeddedHistory');
 
     this.list().then(historyRecords => this.recordsSubject.next(historyRecords));
@@ -44,6 +44,7 @@ export class SearchEmbeddedHistoryService extends Dexie {
       type: request.type,
       text: request.text,
       postIds: response.postIds,
+      externalId: response.externalId,
       createdAt: new Date(),
     };
     record.id = await this.searchEmbeddedHistory.add(record);

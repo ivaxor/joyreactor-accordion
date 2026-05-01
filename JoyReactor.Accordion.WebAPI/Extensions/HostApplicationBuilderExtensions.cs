@@ -222,7 +222,7 @@ public static class HostApplicationBuilderExtensions
                 var rabbitMqSetting = serviceProvider.GetRequiredService<IOptions<RabbitMqSettings>>();
                 var factory = new ConnectionFactory
                 {
-                    Uri = new Uri(rabbitMqSetting.Value.Host),
+                    HostName = rabbitMqSetting.Value.Host,
                     UserName = rabbitMqSetting.Value.UserName,
                     Password = rabbitMqSetting.Value.Password,
                     VirtualHost = rabbitMqSetting.Value.VirtualHost,

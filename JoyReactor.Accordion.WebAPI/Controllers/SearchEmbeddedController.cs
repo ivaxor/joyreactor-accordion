@@ -27,6 +27,8 @@ public class SearchEmbeddedController(
         CancellationToken cancellationToken)
     {
         var entityId = Guid.Empty;
+        string? externalId = null;
+
         switch (request.Type)
         {
             case SearchEmbeddedType.BandCamp:
@@ -40,10 +42,11 @@ public class SearchEmbeddedController(
                     "t" => "track",
                     _ => throw new NotImplementedException(),
                 };
+                externalId = $"{type}={bandCampResponse.Id}";
 
                 entityId = await sqlDatabaseContext.ParsedBandCamps
                     .AsNoTracking()
-                    .Where(bandCamp => bandCamp.UrlPath == $"{type}={bandCampResponse.Id}")
+                    .Where(bandCamp => bandCamp.UrlPath == externalId)
                     .Select(bc => bc.Id)
                     .FirstOrDefaultAsync(cancellationToken);
                 break;
@@ -61,9 +64,11 @@ public class SearchEmbeddedController(
                 if (soundCloudResponse == null)
                     break;
 
+                externalId = $"{soundCloudResponse.Kind}s/{soundCloudResponse.Id}";
+
                 entityId = await sqlDatabaseContext.ParsedSoundClouds
                     .AsNoTracking()
-                    .Where(sc => sc.UrlPath == $"{soundCloudResponse.Kind}s/{soundCloudResponse.Id}")
+                    .Where(sc => sc.UrlPath == externalId)
                     .Select(sc => sc.Id)
                     .FirstOrDefaultAsync(cancellationToken);
                 break;
@@ -107,7 +112,7 @@ public class SearchEmbeddedController(
             .Take(request.Limit)
             .ToArrayAsync(cancellationToken);
 
-        var response = new SearchEmbeddedResponse(postIds);
+        var response = new SearchEmbeddedResponse(postIds, externalId);
         return Ok(response);
     }
 }

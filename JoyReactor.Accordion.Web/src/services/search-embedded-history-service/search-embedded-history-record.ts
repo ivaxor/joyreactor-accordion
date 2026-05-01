@@ -5,5 +5,6 @@ export interface SearchEmbeddedHistoryRecord {
   type: SearchEmbeddedType,
   text: string,
   postIds: number[],
+  externalId?: string,
   createdAt: Date,
 }
