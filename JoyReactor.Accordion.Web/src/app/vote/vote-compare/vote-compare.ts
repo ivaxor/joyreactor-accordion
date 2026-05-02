@@ -22,7 +22,7 @@ export class VoteCompare implements OnInit {
   originalImageUrl!: string;
   originalImagePostUrl!: string;
 
-  duplicateImageLoaded = signal(false);  
+  duplicateImageLoaded = signal(false);
   duplicateImageRetryCounter: number = 0;
   duplicateImageUrl!: string;
   duplicateImagePostUrl!: string;
@@ -64,7 +64,10 @@ export class VoteCompare implements OnInit {
 
   submitVote(yes: boolean): void {
     this.voteService.vote(this.vote!, yes)
-      .subscribe(() => this.goToNextVote());
+      .subscribe(() => {
+        gtag('event', 'vote_submit', { yes });
+        this.goToNextVote();
+      });
   }
 
   goToNextVote(): void {

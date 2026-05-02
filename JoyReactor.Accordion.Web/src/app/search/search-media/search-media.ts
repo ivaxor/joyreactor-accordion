@@ -133,6 +133,8 @@ export class SearchMedia {
           return EMPTY;
         }),
         tap(response => {
+          gtag('event', 'search_media_upload', { threshold, results: response.length });
+
           this.resetForm();
           if (response.length > 0) {
             this.isDuplicates.set(response.map((_, i) => i));
@@ -154,6 +156,8 @@ export class SearchMedia {
           return EMPTY;
         }),
         tap(response => {
+          gtag('event', 'search_media_download', { threshold, results: response.length });
+
           this.resetForm();
           if (response.length > 0) {
             this.isDuplicates.set(response.map((_, i) => i));

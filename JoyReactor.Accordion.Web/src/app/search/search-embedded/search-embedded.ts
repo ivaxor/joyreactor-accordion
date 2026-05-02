@@ -63,6 +63,8 @@ export class SearchEmbedded implements OnInit, OnDestroy {
           return EMPTY;
         }),
         tap(response => {
+          gtag('event', 'search_embedded', { results: response.postIds.length });
+
           this.url = '';
           this.searching = false;
           if (response.postIds.length > 0) {

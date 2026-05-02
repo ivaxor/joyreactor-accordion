@@ -2,11 +2,10 @@ import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Footer } from './footer/footer';
 import { NavbarRoot } from './navbar/navbar-root/navbar-root';
-import { GoogleAnalytics } from "./google-analytics/google-analytics";
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, Footer, NavbarRoot, GoogleAnalytics],
+  imports: [RouterOutlet, Footer, NavbarRoot],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

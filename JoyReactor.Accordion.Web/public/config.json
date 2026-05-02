@@ -1,6 +1,3 @@
 {
-  "googleAnalyticsEnabled": false,
-  "goggleAnalyticsDomain": "localhost",
-  "googleAnalyticsId": null,
   "apiRoot": "http://127.0.0.1:5288"
 }
