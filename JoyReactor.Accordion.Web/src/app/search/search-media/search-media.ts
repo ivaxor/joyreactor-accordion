@@ -89,7 +89,7 @@ export class SearchMedia {
       return false;
 
     try {
-      const url = new URL(this.url);
+      const url = new URL(this.url!);
 
       if (url.protocol !== 'https:')
         return true;
