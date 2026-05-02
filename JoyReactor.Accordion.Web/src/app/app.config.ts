@@ -21,7 +21,7 @@ const cookieConsentConfig: NgcCookieConsentConfig = {
     deny: 'Запретить',
     link: 'Google Analytics Terms of Service',
     href: 'https://marketingplatform.google.com/about/analytics/terms/',
-    policy: '🍪'
+    policy: '🍪',
   },
 };
 
