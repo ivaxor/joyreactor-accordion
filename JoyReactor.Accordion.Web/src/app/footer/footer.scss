@@ -1,10 +1,12 @@
-.btn-group.btn-group-sm>a {
+.btn-group.btn-group-sm>a,
+.btn-group.btn-group-sm>button {
   display: inline-flex;
   align-items: center;
   overflow: hidden;
   transition: all 0.3s ease-in-out;
 }
 
+.btn-group.btn-group-sm>button span,
 .btn-group.btn-group-sm>a span {
   max-width: 0;
   opacity: 0;
@@ -13,6 +15,7 @@
   transition: all 0.3s ease-in-out;
 }
 
+.btn-group.btn-group-sm>button:hover span,
 .btn-group.btn-group-sm>a:hover span {
   max-width: 200px;
   opacity: 1;

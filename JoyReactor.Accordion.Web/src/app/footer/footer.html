@@ -9,12 +9,16 @@
         <span class="text-white">IVAXOR</span>
       </div>
       <div class="col-6 text-end">
-        <div class="btn-group btn-group-sm" role="group" aria-label="Контакты">
+        <div class="btn-group btn-group-sm" role="group">
+          <button (click)="openCookieConsent()" class="btn btn-outline-secondary">
+            <i class="bi bi-cookie"></i>
+            <span>Настройки cookie</span>
+          </button>
           <a href="https://t.me/jr_accordion" target="_blank" class="btn btn-outline-info">
             <i class="bi bi-telegram"></i>
             <span>Найди баян</span>
           </a>
-          <a href="https://github.com/ivaxor/joyreactor-accordion/issues/new" target="_blank" class="btn btn-outline-secondary">
+          <a href="https://github.com/ivaxor/joyreactor-accordion/issues/new" target="_blank" class="btn btn-outline-danger">
             <i class="bi bi-bug-fill"></i>
             <span>Сообщить об ошибке</span>
           </a>

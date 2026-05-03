@@ -23,6 +23,8 @@ const cookieConsentConfig: NgcCookieConsentConfig = {
     href: 'https://marketingplatform.google.com/about/analytics/terms/',
     policy: '🍪',
   },
+  revokable: false,
+  revokeBtn: '<div style="display:none;"></div>',
 };
 
 export const appConfig: ApplicationConfig = {
@@ -31,7 +33,6 @@ export const appConfig: ApplicationConfig = {
     provideNgcCookieConsent(cookieConsentConfig),
     provideAppInitializer(() => {
       const gtagConsentUpdate = (status: string) => {
-        console.log(status);
         const googleStatus = status === сookieConsentService.getStatus().allow! ? 'granted' : 'denied';
         gtag('consent', 'update', {
           'ad_storage': googleStatus,
