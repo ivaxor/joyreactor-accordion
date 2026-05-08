@@ -119,7 +119,26 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 app.UseForwardedHeaders();
-app.UseSerilogRequestLogging();
+app.UseSerilogRequestLogging(options =>
+{
+    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+    {
+        if (httpContext.Request.Headers.TryGetValue("CF-Connecting-IP", out var cfConnectingIp))
+            diagnosticContext.Set("CF-Connecting-IP", cfConnectingIp.FirstOrDefault());
+
+        if (httpContext.Request.Headers.TryGetValue("CF-RAY", out var cfRay))
+            diagnosticContext.Set("CF-Ray", cfRay.FirstOrDefault());
+
+        if (httpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var xForwardedFor))
+            diagnosticContext.Set("X-Forwarded-For", xForwardedFor.FirstOrDefault());
+
+        if (httpContext.Request.Headers.TryGetValue("Host", out var host))
+            diagnosticContext.Set("Host", host.FirstOrDefault());
+
+        if (httpContext.Request.Headers.TryGetValue("User-Agent", out var userAgent))
+            diagnosticContext.Set("User-Agent", userAgent.FirstOrDefault());
+    };
+});
 app.UseCors();
 
 if (app.Environment.IsDevelopment())
