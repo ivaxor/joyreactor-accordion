@@ -70,11 +70,7 @@ public class TelegramBotReceiver(
                     dpv.DuplicatePicture.Post.Nsfw || dpv.OriginalPicture.Post.Nsfw)))
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (votes == null || votes.Count() == 0)
-        {
-            logger.LogWarning("Failed to find votes for {DuplicatePictureId} duplicate picture id.", voteRequest.DuplicatePictureId);
-            return;
-        }
+        votes ??= Enumerable.Empty<DuplicatePictureVoteExtended>();
 
         var filteredVotes = votes
             .Where(dpv => dpv.VotingClosed == false)
@@ -115,19 +111,30 @@ public class TelegramBotReceiver(
             sqlDatabaseContext.ChangeTracker.Clear();
         }
 
-        var text = VoteCreatedConsumer.GeneratePostText(votes);
-        var inlineKeyboardMarkup = VoteCreatedConsumer.GenerateInlineKeyboardMarkup(votes.First());
-
         try
         {
-            var voteMessage = await telegramBotClient.EditMessageText(
-                ChatId,
-                update.CallbackQuery.Message.Id,
-                text,
-                ParseMode.MarkdownV2,
-                replyMarkup: inlineKeyboardMarkup,
-                linkPreviewOptions: new LinkPreviewOptions() { IsDisabled = true },
-                cancellationToken: cancellationToken);
+            if (votes.Any())
+            {
+                var text = VoteCreatedConsumer.GeneratePostText(votes);
+                var inlineKeyboardMarkup = VoteCreatedConsumer.GenerateInlineKeyboardMarkup(votes.First());
+
+                await telegramBotClient.EditMessageText(
+                    ChatId,
+                    update.CallbackQuery.Message.Id,
+                    text,
+                    ParseMode.MarkdownV2,
+                    replyMarkup: inlineKeyboardMarkup,
+                    linkPreviewOptions: new LinkPreviewOptions() { IsDisabled = true },
+                    cancellationToken: cancellationToken);
+            }
+            else
+            {
+                await telegramBotClient.EditMessageReplyMarkup(
+                    ChatId,
+                    update.CallbackQuery.Message.Id,
+                    replyMarkup: null,
+                    cancellationToken: cancellationToken);
+            }
         }
         catch (ApiRequestException ex)
         when (ex.Message.StartsWith("Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message"))

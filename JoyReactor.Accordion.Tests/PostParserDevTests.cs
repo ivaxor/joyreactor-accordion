@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using JoyReactor.Accordion.Tests.Helpers;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 
 namespace JoyReactor.Accordion.Tests;
 
@@ -7,18 +9,20 @@ namespace JoyReactor.Accordion.Tests;
 #endif
 public sealed class PostParserDevTests
 {
-    protected SharedDependencies SharedDependencies { get; set; }
+    protected IHost Host { get; set; }
+    protected TestDependencyProvider DependencyProvider { get; set; }
 
     [TestInitialize]
     public async Task TestInitializeAsync()
     {
-        SharedDependencies = await SharedDependencyFactory.CreateAsync();
+        Host = TestHostApplicationBuilder.CreateInMemory().Build();
+        DependencyProvider = new TestDependencyProvider(Host.Services);
     }
 
     [TestCleanup]
     public async Task TestCleanupAsync()
     {
-        await SharedDependencies.DisposeAsync();
+        Host.Dispose();
     }
 
     [TestMethod]
@@ -29,10 +33,10 @@ public sealed class PostParserDevTests
     // YouTube [DataRow(214764)]
     public async Task CrawlAndParseByPostIdAsync(int postId)
     {
-        var post = await SharedDependencies.PostClient.GetAsync(SharedDependencies.Api, postId, default);
-        await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post, false, default);
+        var post = await DependencyProvider.PostClient.GetAsync(DependencyProvider.Api, postId, default);
+        await DependencyProvider.PostParser.ParseAsync(DependencyProvider.Api.Id, post, false, default);
 
-        var parsedPost = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+        var parsedPost = await DependencyProvider.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()
             .Include(pp => pp.AttributeEmbeds)
             .ThenInclude(ppae => ppae.BandCamp)
@@ -52,7 +56,7 @@ public sealed class PostParserDevTests
     [TestMethod]
     public async Task BandcampUrlPath()
     {
-        var tag = await SharedDependencies.TagClient.GetByNameAsync(SharedDependencies.Api, "bandcamp", TagLineType.NEW, default);
+        var tag = await DependencyProvider.TagClient.GetByNameAsync(DependencyProvider.Api, "bandcamp", TagLineType.NEW, default);
         if (tag.PostCount == 0)
             return;
 
@@ -65,7 +69,7 @@ public sealed class PostParserDevTests
         {
             page++;
 
-            postPager = await SharedDependencies.PostClient.GetByTagAsync(SharedDependencies.Api, tag.NumberId, PostLineType.ALL, page, default);
+            postPager = await DependencyProvider.PostClient.GetByTagAsync(DependencyProvider.Api, tag.NumberId, PostLineType.ALL, page, default);
             posts.AddRange(postPager.Posts);
 
             var postAttributeValues = postPager.Posts
@@ -75,10 +79,10 @@ public sealed class PostParserDevTests
                 .ToArray();
             postsAttributeValues.AddRange(postAttributeValues);
 
-            await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, postPager.Posts, default);
+            await DependencyProvider.PostParser.ParseAsync(DependencyProvider.Api.Id, postPager.Posts, default);
         } while (postPager.Posts.Length > 0 && posts.Count() < postPager.TotalCount);
 
-        var urlPaths = await SharedDependencies.SqlDatabaseContext.ParsedBandCamps
+        var urlPaths = await DependencyProvider.SqlDatabaseContext.ParsedBandCamps
             .AsNoTracking()
             .Select(bandCamp => bandCamp.UrlPath)
             .ToArrayAsync();
@@ -96,7 +100,7 @@ public sealed class PostParserDevTests
     [TestMethod]
     public async Task SoundCloudUrlPath()
     {
-        var tag = await SharedDependencies.TagClient.GetByNameAsync(SharedDependencies.Api, "soundcloud", TagLineType.NEW, default);
+        var tag = await DependencyProvider.TagClient.GetByNameAsync(DependencyProvider.Api, "soundcloud", TagLineType.NEW, default);
         if (tag.PostCount == 0)
             return;
 
@@ -109,7 +113,7 @@ public sealed class PostParserDevTests
         {
             page++;
 
-            postPager = await SharedDependencies.PostClient.GetByTagAsync(SharedDependencies.Api, tag.NumberId, PostLineType.ALL, page, default);
+            postPager = await DependencyProvider.PostClient.GetByTagAsync(DependencyProvider.Api, tag.NumberId, PostLineType.ALL, page, default);
             posts.AddRange(postPager.Posts);
 
             var postAttributeValues = postPager.Posts
@@ -119,10 +123,10 @@ public sealed class PostParserDevTests
                 .ToArray();
             postsAttributeValues.AddRange(postAttributeValues);
 
-            await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api, postPager.Posts, default);
+            await DependencyProvider.PostParser.ParseAsync(DependencyProvider.Api, postPager.Posts, default);
         } while (postPager.Posts.Length > 0 && posts.Count() < postPager.TotalCount);
 
-        var urlPaths = await SharedDependencies.SqlDatabaseContext.ParsedSoundClouds
+        var urlPaths = await DependencyProvider.SqlDatabaseContext.ParsedSoundClouds
             .AsNoTracking()
             .Select(soundCloud => soundCloud.UrlPath)
             .ToArrayAsync();

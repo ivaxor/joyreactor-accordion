@@ -1,5 +1,7 @@
 ﻿using JoyReactor.Accordion.Logic.ApiClient.Models;
+using JoyReactor.Accordion.Tests.Helpers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using System.Text;
 
 namespace JoyReactor.Accordion.Tests;
@@ -7,27 +9,29 @@ namespace JoyReactor.Accordion.Tests;
 [TestClass]
 public sealed class PostParserTests
 {
-    protected SharedDependencies SharedDependencies { get; set; }
+    protected IHost Host { get; set; }
+    protected TestDependencyProvider DependencyProvider { get; set; }
 
     [TestInitialize]
     public async Task TestInitializeAsync()
     {
-        SharedDependencies = await SharedDependencyFactory.CreateAsync();
+        Host = TestHostApplicationBuilder.CreateInMemory().Build();
+        DependencyProvider = new TestDependencyProvider(Host.Services);
     }
 
     [TestCleanup]
     public async Task TestCleanupAsync()
     {
-        await SharedDependencies.DisposeAsync();
+        Host.Dispose();
     }
 
     [TestMethod]
     public async Task ParseAsync_NewPost_Creates()
     {
         var post1 = CreateTestPost();
-        var post1Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
+        var post1Result = await DependencyProvider.PostParser.ParseAsync(DependencyProvider.Api.Id, post1, default);
 
-        var parsedPost1 = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+        var parsedPost1 = await DependencyProvider.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()
             .Include(pp => pp.AttributePictures)
             .Include(pp => pp.AttributeEmbeds)
@@ -47,8 +51,8 @@ public sealed class PostParserTests
     public async Task ParseAsync_ExistingPost_Updates()
     {
         var post1 = CreateTestPost();
-        var post1Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
-        var parsedPost1 = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+        var post1Result = await DependencyProvider.PostParser.ParseAsync(DependencyProvider.Api.Id, post1, default);
+        var parsedPost1 = await DependencyProvider.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()
             .Include(pp => pp.AttributePictures)
             .Include(pp => pp.AttributeEmbeds)
@@ -59,8 +63,8 @@ public sealed class PostParserTests
         {
             ContentVersion = post1.ContentVersion + 1,
         };
-        var post2Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
-        var parsedPost2 = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+        var post2Result = await DependencyProvider.PostParser.ParseAsync(DependencyProvider.Api.Id, post2, default);
+        var parsedPost2 = await DependencyProvider.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()
             .Include(pp => pp.AttributePictures)
             .Include(pp => pp.AttributeEmbeds)
@@ -87,16 +91,16 @@ public sealed class PostParserTests
     public async Task ParseAsync_ExistingPost_ContentVersionIsLower_Ignores()
     {
         var post1 = CreateTestPost();
-        var post1Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
+        var post1Result = await DependencyProvider.PostParser.ParseAsync(DependencyProvider.Api.Id, post1, default);
 
         var post2 = post1 with
         {
             ContentVersion = post1.ContentVersion - 1,
             Attributes = [],
         };
-        var post2Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
+        var post2Result = await DependencyProvider.PostParser.ParseAsync(DependencyProvider.Api.Id, post2, default);
 
-        var parsedPost2 = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+        var parsedPost2 = await DependencyProvider.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()
             .Include(pp => pp.AttributePictures)
             .Include(pp => pp.AttributeEmbeds)
@@ -118,16 +122,16 @@ public sealed class PostParserTests
     public async Task ParseAsync_ExistingPost_ContentVersionIsHigher_Updates()
     {
         var post1 = CreateTestPost();
-        var post1Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
+        var post1Result = await DependencyProvider.PostParser.ParseAsync(DependencyProvider.Api.Id, post1, default);
 
         var post2 = post1 with
         {
             ContentVersion = post1.ContentVersion + 1,
             Attributes = [],
         };
-        var post2Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
+        var post2Result = await DependencyProvider.PostParser.ParseAsync(DependencyProvider.Api.Id, post2, default);
 
-        var parsedPost2 = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+        var parsedPost2 = await DependencyProvider.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()
             .Include(pp => pp.AttributePictures)
             .Include(pp => pp.AttributeEmbeds)
@@ -152,16 +156,16 @@ public sealed class PostParserTests
     public async Task ParseAsync_ExistingPost_RemovesOnlyPictureAttribute()
     {
         var post1 = CreateTestPost();
-        var post1Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
+        var post1Result = await DependencyProvider.PostParser.ParseAsync(DependencyProvider.Api.Id, post1, default);
 
         var post2 = post1 with
         {
             ContentVersion = post1.ContentVersion + 1,
             Attributes = post1.Attributes.Where(pa => pa.Type != "PICTURE").ToArray(),
         };
-        var post2Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
+        var post2Result = await DependencyProvider.PostParser.ParseAsync(DependencyProvider.Api.Id, post2, default);
 
-        var parsedPost2 = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+        var parsedPost2 = await DependencyProvider.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()
             .Include(pp => pp.AttributePictures)
             .Include(pp => pp.AttributeEmbeds)
@@ -186,16 +190,16 @@ public sealed class PostParserTests
     public async Task ParseAsync_ExistingPost_AddsOnlyPictureAttribute()
     {
         var post1 = CreateTestPost();
-        var post1Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
+        var post1Result = await DependencyProvider.PostParser.ParseAsync(DependencyProvider.Api.Id, post1, default);
 
         var post2 = post1 with
         {
             ContentVersion = post1.ContentVersion + 1,
             Attributes = [.. post1.Attributes, CreateTestImagePostAttribute()],
         };
-        var post2Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
+        var post2Result = await DependencyProvider.PostParser.ParseAsync(DependencyProvider.Api.Id, post2, default);
 
-        var parsedPost2 = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+        var parsedPost2 = await DependencyProvider.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()
             .Include(pp => pp.AttributePictures)
             .Include(pp => pp.AttributeEmbeds)
@@ -225,16 +229,16 @@ public sealed class PostParserTests
     public async Task ParseAsync_ExistingPost_RemovesOnlyEmbeddedAttribute(string type)
     {
         var post1 = CreateTestPost();
-        var post1Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
+        var post1Result = await DependencyProvider.PostParser.ParseAsync(DependencyProvider.Api.Id, post1, default);
 
         var post2 = post1 with
         {
             ContentVersion = post1.ContentVersion + 1,
             Attributes = post1.Attributes.Where(pa => pa.Type != type).ToArray(),
         };
-        var post2Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
+        var post2Result = await DependencyProvider.PostParser.ParseAsync(DependencyProvider.Api.Id, post2, default);
 
-        var parsedPost2 = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+        var parsedPost2 = await DependencyProvider.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()
             .Include(pp => pp.AttributePictures)
             .Include(pp => pp.AttributeEmbeds)
@@ -264,16 +268,16 @@ public sealed class PostParserTests
     public async Task ParseAsync_ExistingPost_AddsOnlyEmbeddedAttribute(string type)
     {
         var post1 = CreateTestPost();
-        var post1Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post1, default);
+        var post1Result = await DependencyProvider.PostParser.ParseAsync(DependencyProvider.Api.Id, post1, default);
 
         var post2 = post1 with
         {
             ContentVersion = post1.ContentVersion + 1,
             Attributes = [.. post1.Attributes, CreateTestEmbeddedPostAttribute(type)],
         };
-        var post2Result = await SharedDependencies.PostParser.ParseAsync(SharedDependencies.Api.Id, post2, default);
+        var post2Result = await DependencyProvider.PostParser.ParseAsync(DependencyProvider.Api.Id, post2, default);
 
-        var parsedPost2 = await SharedDependencies.SqlDatabaseContext.ParsedPosts
+        var parsedPost2 = await DependencyProvider.SqlDatabaseContext.ParsedPosts
             .AsNoTracking()
             .Include(pp => pp.AttributePictures)
             .Include(pp => pp.AttributeEmbeds)

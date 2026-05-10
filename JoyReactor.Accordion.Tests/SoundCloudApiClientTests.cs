@@ -1,20 +1,25 @@
-﻿namespace JoyReactor.Accordion.Tests;
+﻿using JoyReactor.Accordion.Tests.Helpers;
+using Microsoft.Extensions.Hosting;
+
+namespace JoyReactor.Accordion.Tests;
 
 [TestClass]
 public sealed class SoundCloudApiClientTests
 {
-    protected SharedDependencies SharedDependencies { get; set; }
+    protected IHost Host { get; set; }
+    protected TestDependencyProvider DependencyProvider { get; set; }
 
     [TestInitialize]
     public async Task TestInitializeAsync()
     {
-        SharedDependencies = await SharedDependencyFactory.CreateAsync();
+        Host = TestHostApplicationBuilder.CreateInMemory().Build();
+        DependencyProvider = new TestDependencyProvider(Host.Services);
     }
 
     [TestCleanup]
     public async Task TestCleanupAsync()
     {
-        await SharedDependencies.DisposeAsync();
+        Host.Dispose();
     }
 
     [TestMethod]
@@ -22,7 +27,7 @@ public sealed class SoundCloudApiClientTests
     [DataRow("playlists/722549376", "https://soundcloud.com/novaypapka/sets/hbz")]
     public async Task GetByIdAsync(string urlPath, string permaLinkUrl)
     {
-        var response = await SharedDependencies.SoundCloudApiClient.GetByIdAsync(urlPath, default);
+        var response = await DependencyProvider.SoundCloudApiClient.GetByIdAsync(urlPath, default);
 
         Assert.AreEqual(permaLinkUrl, response.PermalinkUrl);
     }
@@ -32,7 +37,7 @@ public sealed class SoundCloudApiClientTests
     [DataRow("https://soundcloud.com/novaypapka/sets/hbz", "playlists/722549376")]
     public async Task GetByPermaLinkAsyncAsync(string permaLinkUrl, string urlPath)
     {
-        var response = await SharedDependencies.SoundCloudApiClient.GetByPermaLinkAsync(permaLinkUrl, default);
+        var response = await DependencyProvider.SoundCloudApiClient.GetByPermaLinkAsync(permaLinkUrl, default);
 
         Assert.AreEqual(urlPath, $"{response.Kind}s/{response.Id}");
     }
@@ -40,7 +45,7 @@ public sealed class SoundCloudApiClientTests
     [TestMethod]
     public async Task GetByPermaLinkAsync_NonExisting()
     {
-        var response = await SharedDependencies.SoundCloudApiClient.GetByPermaLinkAsync("https://soundcloud.com/test/test", default);
+        var response = await DependencyProvider.SoundCloudApiClient.GetByPermaLinkAsync("https://soundcloud.com/test/test", default);
 
         Assert.IsNull(response);
     }

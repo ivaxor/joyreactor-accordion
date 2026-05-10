@@ -38,6 +38,15 @@ public class VectorCreatedConsumer(
         if (picture.IsVectorCheckedForDuplicates == true)
             return;
 
+        picture.IsVectorCheckedForDuplicates = true;
+        picture.UpdatedAt = DateTime.UtcNow;
+
+        var pictureEntry = sqlDatabaseContext.ParsedPostAttributePictures.Entry(picture);
+        pictureEntry.Property(e => e.IsVectorCheckedForDuplicates).IsModified = true;
+        pictureEntry.Property(e => e.UpdatedAt).IsModified = true;
+
+        await sqlDatabaseContext.SaveChangesAsync(context.CancellationToken);
+
         var votes = await CreateVotesAsync(picture, context.CancellationToken);
         if (votes.Length != 0)
         {
@@ -49,26 +58,26 @@ public class VectorCreatedConsumer(
             await sqlDatabaseContext.SaveChangesAsync(context.CancellationToken);
             logger.LogDebug("Upserted {DuplicatesCount} post attribute picture duplicate vote(s) for {PictureAttributeId}.", votesUpserted, picture.AttributeId);
 
-            var duplicatePictureIds = votes.Select(dpv => dpv.DuplicatePictureId).ToArray();
-            await CleanUpVotesAsync(duplicatePictureIds, context.CancellationToken);
-
-            var messages = duplicatePictureIds.Select(id => new VoteCreatedMessage() { DuplicatePictureId = id }).ToArray();
+            var messages = votes.Select(dpv => new VoteCreatedMessage() { DuplicatePictureId = dpv.DuplicatePictureId }).ToArray();
             await publishEndpoint.PublishBatch(messages, context.CancellationToken);
         }
 
-        picture.IsVectorCheckedForDuplicates = true;
-        picture.UpdatedAt = DateTime.UtcNow;
+        var votesToClose = await GetVoteToCloseUpAsync(picture, context.CancellationToken);
+        foreach (var voteToClose in votesToClose)
+        {
+            voteToClose.VotingClosed = true;
+            voteToClose.UpdatedAt = DateTime.UtcNow;
 
-        var entry = sqlDatabaseContext.ParsedPostAttributePictures.Entry(picture);
-        entry.Property(e => e.IsVectorCheckedForDuplicates).IsModified = true;
-        entry.Property(e => e.UpdatedAt).IsModified = true;
-
+            var voteToCloseEntry = sqlDatabaseContext.DuplicatePictureVotes.Entry(voteToClose);
+            voteToCloseEntry.Property(e => e.VotingClosed).IsModified = true;
+            voteToCloseEntry.Property(e => e.UpdatedAt).IsModified = true;
+        }
         await sqlDatabaseContext.SaveChangesAsync(context.CancellationToken);
 
         await transaction.CommitAsync(context.CancellationToken);
     }
 
-    protected async Task<DuplicatePictureVote[]> CreateVotesAsync(ParsedPostAttributePicture picture, CancellationToken cancellationToken)
+    internal async Task<DuplicatePictureVote[]> CreateVotesAsync(ParsedPostAttributePicture picture, CancellationToken cancellationToken)
     {
         // https://joyreactor.cc/tag/%D0%B1%D0%B0%D1%8F%D0%BD
         // Только посты после 15 ноября 2017 года могут быть баянами
@@ -128,7 +137,7 @@ public class VectorCreatedConsumer(
                     },
                 }
             },
-            scoreThreshold: 0.99f,
+            scoreThreshold: 0.96f,
             limit: 25,
             vectorsSelector: new WithVectorsSelector() { Enable = false },
             payloadSelector: new WithPayloadSelector() { Enable = true },
@@ -173,70 +182,68 @@ public class VectorCreatedConsumer(
         return votes;
     }
 
-    protected async Task CleanUpVotesAsync(IEnumerable<Guid> duplicatePictureIds, CancellationToken cancellationToken)
+    internal async Task<DuplicatePictureVote[]> GetVoteToCloseUpAsync(ParsedPostAttributePicture picture, CancellationToken cancellationToken)
     {
-        if (!duplicatePictureIds.Any())
-            return;
-
         // https://joyreactor.cc/tag/%D0%B1%D0%B0%D1%8F%D0%BD
         // Только посты после 15 ноября 2017 года могут быть баянами
         var beforeDuplicatePostThreshold = await sqlDatabaseContext.DuplicatePictureVotes
             .AsNoTracking()
-            .Where(v => duplicatePictureIds.Contains(v.DuplicatePictureId))
+            .Where(v => v.DuplicatePicture.PostId == picture.PostId)
             .Where(v => v.VotingClosed == false)
             .Where(v => v.DuplicatePicture.Post.NumberId < 3302432)
             .ToArrayAsync(cancellationToken);
 
         var nearPosts = await sqlDatabaseContext.DuplicatePictureVotes
             .AsNoTracking()
-            .Where(v => duplicatePictureIds.Contains(v.DuplicatePictureId))
+            .Where(v => v.DuplicatePicture.PostId == picture.PostId)
             .Where(v => v.VotingClosed == false)
             .Where(v => v.DuplicatePicture.Post.NumberId - v.OriginalPicture.Post.NumberId < 10)
             .ToArrayAsync(cancellationToken);
 
         var differentPictureCount = await sqlDatabaseContext.DuplicatePictureVotes
             .AsNoTracking()
-            .Where(v => duplicatePictureIds.Contains(v.DuplicatePictureId))
+            .Where(v => v.DuplicatePicture.PostId == picture.PostId)
             .Where(v => v.VotingClosed == false)
             .Where(v => v.DuplicatePicture.Post.AttributePictures.Count > v.OriginalPicture.Post.AttributePictures.Count)
             .ToArrayAsync(cancellationToken);
 
-        var differentPictureVoteCount = await sqlDatabaseContext.DuplicatePictureVotes
+        #region Partial coverage
+        // Calculate amount of pictures in duplicate post
+        var duplicatePostPictureCount = await sqlDatabaseContext.ParsedPostAttributePictures
+            .Where(ppap => ppap.PostId == picture.PostId)
+            .CountAsync(cancellationToken);
+
+        // Get original post ids that are partially covered by duplicate post
+        // If amount of votes for any original post is not equal to duplicate post picture count, then it's not a full coverage
+        var partialCoverageOriginalPostIds = sqlDatabaseContext.DuplicatePictureVotes
+            .Where(v => v.DuplicatePicture.PostId == picture.PostId)
+            .GroupBy(v => v.OriginalPicture.PostId)
+            .Where(g => g.Select(x => x.DuplicatePictureId).Distinct().Count() != duplicatePostPictureCount)
+            .Select(g => g.Key);
+
+        var partialCoverage = await sqlDatabaseContext.DuplicatePictureVotes
             .AsNoTracking()
-            .Where(v => duplicatePictureIds.Contains(v.DuplicatePictureId))
+            .Where(v => v.DuplicatePicture.PostId == picture.PostId)
             .Where(v => v.VotingClosed == false)
             .Where(v => v.DuplicatePicture.Post.AttributePictures.All(p => p.IsVectorCheckedForDuplicates))
-            .Where(v => v.DuplicatePicture.Post.AttributePictures.Any(p => p.VotesAsDuplicate.Count() == 0))
-            .OrderBy(v => v.Id)
+            .Where(v => partialCoverageOriginalPostIds.Contains(v.OriginalPicture.PostId))
             .ToArrayAsync(cancellationToken);
+        #endregion
 
         var votesToClose = Enumerable.Empty<DuplicatePictureVote>()
             .Concat(beforeDuplicatePostThreshold)
             .Concat(nearPosts)
             .Concat(differentPictureCount)
-            .Concat(differentPictureVoteCount)
+            .Concat(partialCoverage)
             .DistinctBy(v => v.Id)
             .ToArray();
 
-        if (votesToClose.Length == 0)
-            return;
+        logger.LogDebug("Found {DuplicatesCount} vote(s) before before duplicate post threshold.", beforeDuplicatePostThreshold.Length);
+        logger.LogDebug("Found {DuplicatesCount} vote(s) with near post ids.", nearPosts.Length);
+        logger.LogDebug("Found {DuplicatesCount} vote(s) with picture count difference.", differentPictureCount.Length);
+        logger.LogDebug("Found {DuplicatesCount} vote(s) with partial coverage.", partialCoverage.Length);
 
-        foreach (var voteToClose in votesToClose)
-        {
-            voteToClose.VotingClosed = true;
-            voteToClose.UpdatedAt = DateTime.UtcNow;
-
-            var entry = sqlDatabaseContext.DuplicatePictureVotes.Entry(voteToClose);
-            entry.Property(e => e.VotingClosed).IsModified = true;
-            entry.Property(e => e.UpdatedAt).IsModified = true;
-        }
-
-        await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
-
-        logger.LogDebug("Closed voting for {DuplicatesCount} vote(s) due to beign before duplicate post threshold.", beforeDuplicatePostThreshold.Length);
-        logger.LogDebug("Closed voting for {DuplicatesCount} vote(s) due to near post ids.", nearPosts.Length);
-        logger.LogDebug("Closed voting for {DuplicatesCount} vote(s) due to picture count difference.", differentPictureCount.Length);
-        logger.LogDebug("Closed voting for {DuplicatesCount} vote(s) due to picture vote count difference.", differentPictureVoteCount.Length);
+        return votesToClose;
     }
 }
 

@@ -8,6 +8,12 @@
   </PropertyGroup>
 	
   <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>JoyReactor.Accordion.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+	
+  <ItemGroup>
     <PackageReference Include="FFMpegCore" Version="5.4.0" />
     <PackageReference Include="FlexLabs.EntityFrameworkCore.Upsert" Version="10.0.0" />
     <PackageReference Include="GraphQL.Client" Version="6.1.0" />
