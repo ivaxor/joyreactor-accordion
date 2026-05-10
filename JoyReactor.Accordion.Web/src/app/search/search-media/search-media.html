@@ -6,9 +6,6 @@
       <span i18n class="visually-hidden">Поиск...</span>
     </div>
     } @else if (files.length > 0) {
-    @if (files.length === 1) {
-    <span class="fw-bold">Выбрано файлов: {{files.length}}</span>
-    }
     @for (file of files; track $index) {
     <span class="fw-bold text-truncate w-100 text-center">{{file.name}}</span>
     <span class="small w-100 text-center">({{file.size | bytes}})</span>
