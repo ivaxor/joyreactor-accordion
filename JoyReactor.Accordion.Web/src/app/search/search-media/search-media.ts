@@ -63,10 +63,7 @@ export class SearchMedia {
     if (!event.clipboardData?.items)
       return;
 
-    const files = Array.from(event.clipboardData.items)
-      .filter(item => this.allowedTypes.includes(item.type))
-      .map(item => item.getAsFile()!);
-
+    const files = Array.from(event.clipboardData.items).filter(item => this.allowedTypes.includes(item.type)).map(item => item.getAsFile()!);
     if (files.length > 0) {
       this.searchForm.patchValue({ files, url: '' });
       this.fileInput.nativeElement.value = '';
