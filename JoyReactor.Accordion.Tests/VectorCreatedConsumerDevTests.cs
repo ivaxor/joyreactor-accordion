@@ -73,32 +73,6 @@ public class VectorCreatedConsumerDevTests
             .Where(dpv => dpv.DuplicatePicture.Post.NumberId == 6269750)
             .FirstOrDefaultAsync();
 
-        var picture = vote.DuplicatePicture;
-        var cancellationToken = CancellationToken.None;
-
-        #region Partial coverage
-        // Calculate amount of pictures in duplicate post
-        var duplicatePostPictureCount = await sqlDatabaseContext.ParsedPostAttributePictures
-            .Where(ppap => ppap.PostId == picture.PostId)
-            .CountAsync(cancellationToken);
-
-        // Get original post ids that are partially covered by duplicate post
-        // If amount of votes for any original post is not equal to duplicate post picture count, then it's not a full coverage
-        var partialCoverageOriginalPostIds = sqlDatabaseContext.DuplicatePictureVotes
-            .Where(v => v.DuplicatePicture.PostId == picture.PostId)
-            .GroupBy(v => v.OriginalPicture.PostId)
-            .Where(g => g.Select(x => x.DuplicatePictureId).Distinct().Count() != duplicatePostPictureCount)
-            .Select(g => g.Key);
-
-        var partialCoverage = await sqlDatabaseContext.DuplicatePictureVotes
-            .AsNoTracking()
-            .Where(v => v.DuplicatePicture.PostId == picture.PostId)
-            .Where(v => v.VotingClosed == false)
-            .Where(v => v.DuplicatePicture.Post.AttributePictures.All(p => p.IsVectorCheckedForDuplicates))
-            .Where(v => partialCoverageOriginalPostIds.Contains(v.OriginalPicture.PostId))
-            .ToArrayAsync(cancellationToken);
-        #endregion
-
         var voteToClose = await vectorCreatedConsumer.GetVoteToCloseUpAsync(vote.DuplicatePicture, default);
 
         await transaction.RollbackAsync();
