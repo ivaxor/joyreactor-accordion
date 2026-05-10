@@ -4,7 +4,7 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { BytesPipe } from '../../../pipes/bytes-pipe';
 import { SearchMediaService } from '../../../services/search-media-service/search-media-service';
 import { isIP } from 'is-ip';
-import { catchError, EMPTY, tap } from 'rxjs';
+import { catchError, concatMap, EMPTY, finalize, from, map, of, switchMap, tap, throwError, timer } from 'rxjs';
 
 @Component({
   selector: 'app-search-media',
@@ -27,16 +27,16 @@ export class SearchMedia {
   errorMessage = signal<string>('');
 
   searchForm = this.formBuilder.group({
-    file: [null as File | null],
+    files: [[] as File[]],
     url: [''],
   });
-  get file() { return this.searchForm.get('file')?.value; }
+  get files() { return this.searchForm.get('files')?.value || []; }
   get url() { return this.searchForm.get('url')?.value; }
 
   onFileChange(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      this.searchForm.patchValue({ file: input.files[0], url: '' });
+      this.searchForm.patchValue({ files: Array.from(input.files), url: '' });
       this.fileInput.nativeElement.value = '';
     }
   }
@@ -47,9 +47,9 @@ export class SearchMedia {
     this.isDragging = false;
 
     if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
-      const file = event.dataTransfer.files[0];
-      if (this.allowedTypes.some(allowedType => allowedType === file.type)) {
-        this.searchForm.patchValue({ file, url: '' });
+      const files = Array.from(event.dataTransfer.files).filter(file => this.allowedTypes.includes(file.type));
+      if (files.length > 0) {
+        this.searchForm.patchValue({ files, url: '' });
         this.fileInput.nativeElement.value = '';
       }
     }
@@ -63,20 +63,20 @@ export class SearchMedia {
     if (!event.clipboardData?.items)
       return;
 
-    for (let i = 0; i < event.clipboardData.items.length; i++) {
-      if (!this.allowedTypes.includes(event.clipboardData.items[i].type))
-        continue;
+    const files = Array.from(event.clipboardData.items)
+      .filter(item => this.allowedTypes.includes(item.type))
+      .map(item => item.getAsFile()!);
 
-      this.searchForm.patchValue({ file: event.clipboardData.items[i].getAsFile(), url: '' });
+    if (files.length > 0) {
+      this.searchForm.patchValue({ files, url: '' });
       this.fileInput.nativeElement.value = '';
-      break;
     }
   }
 
   onUrlChange(): void {
     const currentUrl = this.searchForm.get('url')?.value || '';
     this.searchForm.patchValue(
-      { file: null, url: decodeURIComponent(currentUrl) },
+      { files: [], url: decodeURIComponent(currentUrl) },
       { emitEvent: false });
     this.fileInput.nativeElement.value = '';
   }
@@ -85,7 +85,7 @@ export class SearchMedia {
     if (this.searching)
       return true;
 
-    if (this.file)
+    if (this.files.length > 0)
       return false;
 
     try {
@@ -107,7 +107,7 @@ export class SearchMedia {
   }
 
   search(threshold: number): void {
-    if (this.file) {
+    if (this.files.length > 0) {
       this.searchUpload(threshold);
     } else if (this.url) {
       this.searchDownload(threshold);
@@ -115,7 +115,7 @@ export class SearchMedia {
   }
 
   private resetForm() {
-    this.searchForm.reset({ file: null, url: '' });
+    this.searchForm.reset({ files: [], url: '' });
     this.fileInput.nativeElement.value = '';
     this.searching = false;
   }
@@ -123,24 +123,31 @@ export class SearchMedia {
   searchUpload(threshold: number): void {
     this.errorMessage.set('');
     this.searching = true;
-    const file = this.file!;
-    this.searchMediaService.searchUpload(file, threshold)
-      .pipe(
-        catchError(error => {
-          this.errorMessage.set(Object.keys(error.error).flatMap(e => error.error[e] as string[]).join('\n'));
-          this.searching = false;
-          this.changeDetector.markForCheck();
-          return EMPTY;
-        }),
-        tap(response => {
-          gtag('event', 'search_media_upload', { threshold, results: response.length });
 
-          this.resetForm();
-          if (response.length > 0) {
-            this.isDuplicates.set(response.map((_, i) => i));
-            setTimeout(() => this.isDuplicates.set([]), 2500 * response.length);
-          }
-        }))
+    from(this.files).pipe(
+      concatMap((file) => {
+        this.isDuplicates.set([]);
+        return this.searchMediaService.searchUpload(file, threshold).pipe(
+          switchMap(response => {
+            gtag('event', 'search_media_upload', { threshold, results: response.length });
+
+            if (response.length === 0)
+              return of(response);
+
+            this.isDuplicates.set([...response.map((_, i) => i)]);
+            return timer(2500 * response.length).pipe(map(() => response));
+          }),
+          catchError(error => {
+            this.errorMessage.set(Object.keys(error.error).flatMap(e => error.error[e] as string[]).join('\n'));
+            return throwError(() => error);
+          }))
+      }),
+      finalize(() => {
+        this.resetForm();
+        this.searching = false;
+        this.isDuplicates.set([]);
+        this.changeDetector.markForCheck();
+      }))
       .subscribe();
   }
 
