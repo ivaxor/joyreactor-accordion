@@ -10,8 +10,8 @@
     <span class="fw-bold">Выбрано файлов: {{files.length}}</span>
     }
     @for (file of files; track $index) {
-    <span class="fw-bold">{{file.name}}</span>
-    <span class="small">({{file.size | bytes}})</span>
+    <span class="fw-bold text-truncate w-100 text-center">{{file.name}}</span>
+    <span class="small w-100 text-center">({{file.size | bytes}})</span>
     }
     } @else {
     <span i18n class="fw-bold">Кликните</span>
