@@ -27,7 +27,7 @@ public class SearchMediaController(
     ILogger<SearchMediaController> logger)
     : ControllerBase
 {
-    protected const int FileSizeLimit = 5 * 1024 * 1024;
+    protected const int FileSizeLimit = 100 * 1024 * 1024;
     protected static readonly FrozenSet<string> AllowedMimeTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         MediaTypeNames.Image.Png,
@@ -73,7 +73,7 @@ public class SearchMediaController(
         var downloadResponse = await httpClient.SendAsync(downloadRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         if (!downloadResponse.IsSuccessStatusCode)
         {
-            ModelState.AddModelError(nameof(request.MediaUrl), "Failed to download file using provided url");
+            ModelState.AddModelError(nameof(request.MediaUrl), $"Failed to download file using provided url. Status code: {downloadResponse.StatusCode}");
             return BadRequest(ModelState);
         }
 
