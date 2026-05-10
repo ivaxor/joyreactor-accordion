@@ -4,6 +4,11 @@
     @if (historyRecordExtended.isPreviewVideo) { <video [src]="historyRecordExtended.previewUrl" class="img-fluid bg-dark"></video> }
     @else if(!historyRecordExtended.isPreviewVideo) { <img [src]="historyRecordExtended.previewUrl" class="img-fluid bg-dark" /> }
   </a>
+  } @else if(historyRecordExtended.filePreviewUrl) {
+  <a [href]="historyRecordExtended.filePreviewUrl" target="_blank" [title]="historyRecordExtended.fileName">
+    @if (historyRecordExtended.isPreviewVideo) { <video [src]="historyRecordExtended.filePreviewUrl" class="img-fluid bg-dark"></video> }
+    @else if(!historyRecordExtended.isPreviewVideo) { <img [src]="historyRecordExtended.filePreviewUrl" class="img-fluid bg-dark" /> }
+  </a>
   } @else if (historyRecordExtended.fileName) {
   <div class="ratio" style="--bs-aspect-ratio: 50%;">
     <div class="placeholder w-100 h-100 p-1 rounded d-flex align-items-center justify-content-center text-center" style="cursor: default;">

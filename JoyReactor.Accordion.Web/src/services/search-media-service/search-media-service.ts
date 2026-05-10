@@ -23,7 +23,10 @@ export class SearchMediaService {
     request.append('threshold', threshold.toString());
 
     return this.http.post<SearchMediaResponse[]>(url, request)
-      .pipe(tap(response => this.searchMediaHistoryService.addUpload(file, response)));
+      .pipe(tap(response => {
+        this.searchMediaHistoryService.addUpload(file, response);
+        this.searchMediaHistoryService.setFilePreviewUrl(file);
+      }));
   }
 
   searchDownload(mediaUrl: string, threshold: number): Observable<SearchMediaResponse[]> {

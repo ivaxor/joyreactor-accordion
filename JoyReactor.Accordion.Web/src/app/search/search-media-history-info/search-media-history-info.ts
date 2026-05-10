@@ -1,7 +1,8 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, inject, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { SearchMediaHistoryRecord } from '../../../services/search-media-history-service/search-media-history-record';
 import { SearchMediaResponse } from '../../../services/search-media-service/search-media-response';
 import { DatePipe } from '@angular/common';
+import { SearchMediaHistoryService } from '../../../services/search-media-history-service/search-media-history-service';
 
 @Component({
   selector: 'app-search-media-history-info',
@@ -12,6 +13,8 @@ import { DatePipe } from '@angular/common';
 export class SearchMediaHistoryInfo implements OnChanges {
   @Input({ required: true }) historyRecord!: SearchMediaHistoryRecord;
   historyRecordExtended!: SearchMediaHistoryRecordExtended;
+
+  private searchMediaHistoryService = inject(SearchMediaHistoryService);
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!this.historyRecord)
@@ -24,8 +27,9 @@ export class SearchMediaHistoryInfo implements OnChanges {
         ...this.historyRecord,
         isJoyReactor: false,
         previewUrl: null,
-        isPreviewVideo: false,
+        isPreviewVideo: isVideo,
         isVideo: isVideo,
+        filePreviewUrl: this.searchMediaHistoryService.getFilePreviewUrl(this.historyRecord),
       };
     } else if (this.historyRecord.url) {
       const url = new URL(this.historyRecord.url);
@@ -49,6 +53,7 @@ export class SearchMediaHistoryInfo implements OnChanges {
         previewUrl: previewUrl,
         isPreviewVideo: isVideo && !isJoyReactor,
         isVideo: isVideo,
+        filePreviewUrl: null,
       };
     }
 
@@ -82,4 +87,5 @@ export interface SearchMediaHistoryRecordExtended extends SearchMediaHistoryReco
   previewUrl: string | null,
   isPreviewVideo: boolean,
   isVideo: boolean,
+  filePreviewUrl: string | null,
 }

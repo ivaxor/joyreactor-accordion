@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, from, map, Observable, switchMap, tap } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { SearchMediaHistoryRecord } from './search-media-history-record';
 import Dexie, { Table } from 'dexie';
 import { SearchMediaResponse } from '../search-media-service/search-media-response';
@@ -8,6 +8,7 @@ import { SearchMediaResponse } from '../search-media-service/search-media-respon
   providedIn: 'root',
 })
 export class SearchMediaHistoryService extends Dexie {
+  private filePreviewUrls = new Map<string, string>();
   private searchMediaHistory: Table<SearchMediaHistoryRecord, number>;
   private recordsSubject = new BehaviorSubject<SearchMediaHistoryRecord[]>([]);
   private offset = 0;
@@ -69,5 +70,16 @@ export class SearchMediaHistoryService extends Dexie {
   async clear(): Promise<void> {
     await this.searchMediaHistory.clear();
     this.recordsSubject.next([]);
+  }
+
+  setFilePreviewUrl(file: File): void {
+    this.filePreviewUrls.set(file.name, URL.createObjectURL(file));
+  }
+
+  getFilePreviewUrl(record: SearchMediaHistoryRecord): string | null {
+    if (!record.fileName)
+      return null;
+
+    return this.filePreviewUrls.get(record.fileName) ?? null;
   }
 }
