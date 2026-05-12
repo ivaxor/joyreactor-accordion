@@ -70,6 +70,12 @@ export class SearchMedia {
     }
   }
 
+  @HostListener('dragover', ['$event'])
+  onDragOver(evt: DragEvent) {
+    evt.preventDefault();
+    evt.stopPropagation();
+  }
+
   onUrlChange(): void {
     const currentUrl = this.searchForm.get('url')?.value || '';
     this.searchForm.patchValue(
