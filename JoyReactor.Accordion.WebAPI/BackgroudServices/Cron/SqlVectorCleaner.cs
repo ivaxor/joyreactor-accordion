@@ -22,7 +22,7 @@ public class SqlVectorCleaner(
     : RobustBackgroundService(settings, logger)
 {
     protected override bool IsIndefinite => false;
-    protected override TimeSpan SubsequentRunDelay => TimeSpan.FromDays(1);
+    protected override TimeSpan SubsequentRunDelay => TimeSpan.FromHours(1);
 
     protected const int BatchSize = 100_000;
 
