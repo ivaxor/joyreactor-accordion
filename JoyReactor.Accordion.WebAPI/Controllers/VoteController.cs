@@ -114,6 +114,7 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
         CancellationToken cancellationToken = default)
     {
         await VoteSemaphore.WaitAsync(cancellationToken);
+
         try
         {
             var vote = await sqlDatabaseContext.DuplicatePictureVotes
@@ -124,14 +125,28 @@ public class VoteController(SqlDatabaseContext sqlDatabaseContext) : ControllerB
                 return NotFound();
 
             var voterIpAddress = HttpContext.Connection.RemoteIpAddress!.ToString();
-
-            if (vote.YesVotes.Contains(voterIpAddress, StringComparer.OrdinalIgnoreCase) || vote.NoVotes.Contains(voterIpAddress, StringComparer.OrdinalIgnoreCase))
-                return Conflict();
+            var voterIdHash = $"{vote.Id}_{voterIpAddress}".ToSHA256HexString();
 
             if (request.Yes)
-                vote.YesVotes = [.. vote.YesVotes, voterIpAddress];
+            {
+                vote.YesVotes = vote.YesVotes.Append(voterIdHash)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+
+                vote.NoVotes = vote.NoVotes.Except([voterIdHash], StringComparer.OrdinalIgnoreCase)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+            }
             else
-                vote.NoVotes = [.. vote.NoVotes, voterIpAddress];
+            {
+                vote.YesVotes = vote.YesVotes.Except([voterIdHash], StringComparer.OrdinalIgnoreCase)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+
+                vote.NoVotes = vote.NoVotes.Append(voterIdHash)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+            }
 
             await sqlDatabaseContext.SaveChangesAsync(cancellationToken);
         }

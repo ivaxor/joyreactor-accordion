@@ -1,5 +1,6 @@
 ﻿using JoyReactor.Accordion.Logic.Database.Sql;
 using JoyReactor.Accordion.Logic.Database.Sql.Entities;
+using JoyReactor.Accordion.Logic.Extensions;
 using JoyReactor.Accordion.WebAPI.Consumers;
 using JoyReactor.Accordion.WebAPI.Models;
 using JoyReactor.Accordion.WebAPI.Models.Requests;
@@ -80,24 +81,26 @@ public class TelegramBotReceiver(
         {
             foreach (var vote in filteredVotes)
             {
-                var userId = $"{update.CallbackQuery.From.Id}";
+                var voterUserId = $"{update.CallbackQuery.From.Id}";
+                var voterIdHash = $"{vote.Id}_{voterUserId}".ToSHA256HexString();
+
                 if (voteRequest.Yes)
                 {
-                    vote.YesVotes = vote.YesVotes.Append(userId)
+                    vote.YesVotes = vote.YesVotes.Append(voterIdHash)
                         .Distinct(StringComparer.OrdinalIgnoreCase)
                         .ToArray();
 
-                    vote.NoVotes = vote.NoVotes.Except([userId], StringComparer.OrdinalIgnoreCase)
+                    vote.NoVotes = vote.NoVotes.Except([voterIdHash], StringComparer.OrdinalIgnoreCase)
                         .Distinct(StringComparer.OrdinalIgnoreCase)
                         .ToArray();
                 }
                 else
                 {
-                    vote.YesVotes = vote.YesVotes.Except([userId], StringComparer.OrdinalIgnoreCase)
+                    vote.YesVotes = vote.YesVotes.Except([voterIdHash], StringComparer.OrdinalIgnoreCase)
                         .Distinct(StringComparer.OrdinalIgnoreCase)
                         .ToArray();
 
-                    vote.NoVotes = vote.NoVotes.Append(userId)
+                    vote.NoVotes = vote.NoVotes.Append(voterIdHash)
                         .Distinct(StringComparer.OrdinalIgnoreCase)
                         .ToArray();
                 }
