@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "@angular/build": "^21.0.0",
-    "@angular/cli": "^21.2.0",
+    "@angular/cli": "^21.2.26",
     "@angular/compiler-cli": "^21.0.0",
     "@angular/localize": "^21.0.6",
     "@types/gtag.js": "^0.0.20",
